@@ -6,12 +6,14 @@
  * @license Apache-2.0
  */
 
+#include "simple-ldapd/backend/sqlite.hpp"
 #include "simple-ldapd/cli/client.hpp"
 #include "simple-ldapd/config/config.hpp"
 #include "simple-ldapd/core/daemon.hpp"
 #include "simple-ldapd/protocol/filter.hpp"
 #include "simple-ldapd/security/acl.hpp"
 
+#include <cstdio>
 #include <iostream>
 
 using namespace simple_ldapd;
@@ -165,6 +167,63 @@ bool testAclWriteByDn() {
          daemon.backend()->lookup(bob.dn).has_value();
 }
 
+#ifdef SIMPLE_LDAPD_SQLITE
+bool testSqliteLiveDurability() {
+  const std::string db = "test-write-sqlite.sqlite";
+  std::remove(db.c_str());
+  std::remove((db + "-wal").c_str());
+  std::remove((db + "-shm").c_str());
+  LdapConfig config;
+  config.listen_address = "127.0.0.1";
+  config.ldap_port = 0;
+  config.backend = "sqlite";
+  config.sqlite_file = db;
+  config.root_dn = "cn=admin,dc=example,dc=com";
+  config.root_password = "secret";
+  {
+    LdapDaemon daemon(config);
+    if (!seedBase(daemon) || daemon.backend() == nullptr ||
+        daemon.backend()->name() != "sqlite" || !daemon.start()) {
+      return false;
+    }
+    std::string error;
+    cli::ClientOptions options;
+    options.host = "127.0.0.1";
+    options.port = daemon.boundPort();
+    options.bind_dn = config.root_dn;
+    options.password = config.root_password;
+    auto client = cli::LdapClient::openBound(options, error);
+    if (!client) {
+      daemon.stop();
+      return false;
+    }
+    DirectoryEntry bob;
+    bob.dn = "uid=bob,ou=People,dc=example,dc=com";
+    bob.attributes["objectClass"].push_back("inetOrgPerson");
+    bob.attributes["uid"].push_back("bob");
+    bob.attributes["cn"].push_back("Bob Example");
+    bob.attributes["sn"].push_back("Example");
+    if (client->add(bob) != ResultCode::Success) {
+      daemon.stop();
+      return false;
+    }
+    client->unbind();
+    daemon.stop();
+  }
+  SqliteBackend reopened(db);
+  if (!reopened.initialize()) {
+    return false;
+  }
+  const auto found = reopened.lookup("uid=bob,ou=People,dc=example,dc=com");
+  std::remove(db.c_str());
+  std::remove((db + "-wal").c_str());
+  std::remove((db + "-shm").c_str());
+  return found && found->attributes.count("uid") == 1;
+}
+#else
+bool testSqliteLiveDurability() { return true; }
+#endif
+
 }  // namespace
 
 int main() {
@@ -182,6 +241,7 @@ int main() {
   run("testWriteOps", testWriteOps);
   run("testAnonymousCannotWrite", testAnonymousCannotWrite);
   run("testAclWriteByDn", testAclWriteByDn);
+  run("testSqliteLiveDurability", testSqliteLiveDurability);
   std::cout << "Write tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }

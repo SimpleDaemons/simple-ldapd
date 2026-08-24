@@ -114,6 +114,37 @@ bool testResultCodes() {
          kVersion[0] != '\0';
 }
 
+bool testSqliteRequiresFile() {
+  LdapConfig config;
+  config.backend = "sqlite";
+  return !config.validate();
+}
+
+bool testSqliteConfigParse() {
+  const std::string path = "test-simple-ldapd-sqlite.conf";
+  std::ofstream out(path);
+  out << "base_dn = dc=example,dc=com\n";
+  out << "backend = sqlite\n";
+  out << "sqlite_file = /var/lib/simple-ldapd/directory.sqlite\n";
+  out << "ldif_file = /var/lib/simple-ldapd/directory.ldif\n";
+  out.close();
+  LdapConfig config;
+  return config.loadFromFile(path) && config.backend == "sqlite" &&
+         config.sqlite_file == "/var/lib/simple-ldapd/directory.sqlite" &&
+         config.ldif_file == "/var/lib/simple-ldapd/directory.ldif";
+}
+
+bool testSqliteValidatesWithFile() {
+  LdapConfig config;
+  config.backend = "sqlite";
+  config.sqlite_file = "directory.sqlite";
+#ifdef SIMPLE_LDAPD_SQLITE
+  return config.validate();
+#else
+  return !config.validate();
+#endif
+}
+
 }  // namespace
 
 int main() {
@@ -138,6 +169,9 @@ int main() {
   run("testFileLoad", testFileLoad);
   run("testFilterParse", testFilterParse);
   run("testResultCodes", testResultCodes);
+  run("testSqliteRequiresFile", testSqliteRequiresFile);
+  run("testSqliteConfigParse", testSqliteConfigParse);
+  run("testSqliteValidatesWithFile", testSqliteValidatesWithFile);
   std::cout << "Config tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }
