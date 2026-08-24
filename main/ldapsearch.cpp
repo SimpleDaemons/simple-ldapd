@@ -53,12 +53,12 @@ int main(int argc, char *argv[]) {
   using simple_ldapd::SearchFilter;
   using simple_ldapd::SearchRequestData;
   using simple_ldapd::TcpConnection;
+  using simple_ldapd::cli::bindLdap;
   using simple_ldapd::cli::connectLdap;
   using simple_ldapd::cli::parseClientArgs;
   using simple_ldapd::cli::printClientUsage;
   using simple_ldapd::cli::printVersion;
   using simple_ldapd::encodeLdapMessage;
-  using simple_ldapd::makeBindRequest;
   using simple_ldapd::makeSearchRequest;
   using simple_ldapd::makeUnbindRequest;
 
@@ -95,24 +95,11 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if (!connection->sendAll(encodeLdapMessage(
-          makeBindRequest(1, options.bind_dn, password)))) {
-    std::cerr << "ldapsearch: bind send failed" << std::endl;
-    return 1;
-  }
-  simple_ldapd::LdapMessage bind_response;
-  if (!recvMessage(*connection, bind_response) ||
-      bind_response.op != simple_ldapd::ProtocolOp::BindResponse) {
-    std::cerr << "ldapsearch: bind failed" << std::endl;
-    return 1;
-  }
-  if (bind_response.result != ResultCode::Success) {
-    std::cerr << "ldapsearch: " << toString(bind_response.result);
-    if (!bind_response.diagnostic.empty()) {
-      std::cerr << " (" << bind_response.diagnostic << ")";
-    }
-    std::cerr << std::endl;
-    return static_cast<int>(bind_response.result);
+  int message_id = 1;
+  const ResultCode bound = bindLdap(*connection, message_id, options, password, error);
+  if (bound != ResultCode::Success) {
+    std::cerr << "ldapsearch: " << (error.empty() ? toString(bound) : error) << std::endl;
+    return static_cast<int>(bound);
   }
 
   SearchRequestData search;
@@ -120,7 +107,7 @@ int main(int argc, char *argv[]) {
   search.scope = options.scope;
   search.filter = std::move(filter);
   search.attributes = options.attributes;
-  if (!connection->sendAll(encodeLdapMessage(makeSearchRequest(2, search)))) {
+  if (!connection->sendAll(encodeLdapMessage(makeSearchRequest(message_id++, search)))) {
     std::cerr << "ldapsearch: search send failed" << std::endl;
     return 1;
   }
@@ -151,6 +138,6 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  connection->sendAll(encodeLdapMessage(makeUnbindRequest(3)));
+  connection->sendAll(encodeLdapMessage(makeUnbindRequest(message_id++)));
   return static_cast<int>(search_result);
 }

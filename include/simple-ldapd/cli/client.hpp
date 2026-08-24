@@ -18,6 +18,8 @@ namespace simple_ldapd {
 namespace cli {
 
 std::optional<TcpConnection> connectLdap(const ClientOptions &options, std::string &error);
+ResultCode bindLdap(TcpConnection &connection, int &message_id, const ClientOptions &options,
+                    const std::string &password, std::string &error);
 
 class LdapClient {
 public:
@@ -25,6 +27,8 @@ public:
   static std::optional<LdapClient> openBound(const ClientOptions &options, std::string &error);
 
   ResultCode simpleBind(const std::string &dn, const std::string &password);
+  ResultCode saslBind(const std::string &mechanism, const std::string &dn,
+                      const std::string &credentials);
   ResultCode add(const DirectoryEntry &entry);
   ResultCode modify(const std::string &dn, const std::vector<AttributeModification> &changes);
   ResultCode del(const std::string &dn);

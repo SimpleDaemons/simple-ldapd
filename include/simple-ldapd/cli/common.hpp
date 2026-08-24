@@ -32,6 +32,8 @@ struct ClientOptions {
   std::string ldif_file;
   std::vector<std::string> positionals;
   bool simple_auth{true};
+  std::string sasl_mechanism;
+  std::string sasl_authcid;
   bool prompt_password{false};
   bool add_mode{false};
   bool help{false};

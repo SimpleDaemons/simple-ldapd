@@ -70,6 +70,8 @@ void printClientUsage(const std::string &tool, const std::string &summary) {
             << "  -Z             StartTLS after connect\n"
             << "  --ca-file FILE Trust CA (or server cert) for TLS\n"
             << "  -x             Simple authentication\n"
+            << "  -Y MECH        SASL mechanism (PLAIN, DIGEST-MD5, EXTERNAL)\n"
+            << "  -U AUTHCID     SASL authentication identity\n"
             << "  -D BIND_DN     Bind DN\n"
             << "  -w PASSWORD    Bind password\n"
             << "  -W             Prompt for bind password\n"
@@ -121,6 +123,11 @@ ClientOptions parseClientArgs(int argc, char *argv[]) {
       }
     } else if (arg == "-x") {
       options.simple_auth = true;
+    } else if (arg == "-Y") {
+      options.sasl_mechanism = next();
+      options.simple_auth = false;
+    } else if (arg == "-U") {
+      options.sasl_authcid = next();
     } else if (arg == "-Z") {
       options.starttls = true;
     } else if (arg == "--ca-file") {
