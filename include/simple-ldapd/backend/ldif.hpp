@@ -9,6 +9,7 @@
 #pragma once
 
 #include "simple-ldapd/backend/memory.hpp"
+#include <mutex>
 #include <string>
 
 namespace simple_ldapd {
@@ -26,6 +27,7 @@ public:
 
 private:
   std::string path_;
+  mutable std::mutex persist_mutex_;
 };
 
 }  // namespace simple_ldapd

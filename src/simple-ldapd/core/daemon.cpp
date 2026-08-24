@@ -14,6 +14,7 @@
 #include "simple-ldapd/utils/logger.hpp"
 #include "simple-ldapd/version.hpp"
 #include <string>
+#include <vector>
 
 namespace simple_ldapd {
 
@@ -93,6 +94,7 @@ void LdapDaemon::stop() {
   if (accept_thread_.joinable()) {
     accept_thread_.join();
   }
+  joinWorkers();
 }
 
 bool LdapDaemon::running() const { return running_.load(); }
@@ -121,17 +123,67 @@ void LdapDaemon::serveConnection(TcpConnection connection, bool ldaps) {
   session.serve();
 }
 
+void LdapDaemon::launchSession(TcpConnection connection, bool ldaps) {
+  reapWorkers();
+  auto finished = std::make_shared<std::atomic<bool>>(false);
+  SessionWorker worker;
+  worker.finished = finished;
+  worker.thread =
+      std::thread([this, connection = std::move(connection), ldaps, finished]() mutable {
+        serveConnection(std::move(connection), ldaps);
+        finished->store(true);
+      });
+  std::lock_guard<std::mutex> lock(workers_mutex_);
+  workers_.push_back(std::move(worker));
+}
+
+void LdapDaemon::reapWorkers() {
+  std::vector<std::thread> finished;
+  {
+    std::lock_guard<std::mutex> lock(workers_mutex_);
+    auto it = workers_.begin();
+    while (it != workers_.end()) {
+      if (it->finished && it->finished->load()) {
+        finished.push_back(std::move(it->thread));
+        it = workers_.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  }
+  for (auto &thread : finished) {
+    if (thread.joinable()) {
+      thread.join();
+    }
+  }
+}
+
+void LdapDaemon::joinWorkers() {
+  std::vector<std::thread> live;
+  {
+    std::lock_guard<std::mutex> lock(workers_mutex_);
+    for (auto &worker : workers_) {
+      live.push_back(std::move(worker.thread));
+    }
+    workers_.clear();
+  }
+  for (auto &thread : live) {
+    if (thread.joinable()) {
+      thread.join();
+    }
+  }
+}
+
 void LdapDaemon::acceptLoop() {
   while (running_.load()) {
-    auto connection = listener_.acceptConnection(config_.enable_ldaps ? 100 : 200);
+    auto connection = listener_.acceptConnection(100);
     if (connection) {
-      serveConnection(std::move(*connection), false);
-      continue;
+      launchSession(std::move(*connection), false);
     }
     if (config_.enable_ldaps) {
       auto tls_connection = ldaps_listener_.acceptConnection(100);
       if (tls_connection) {
-        serveConnection(std::move(*tls_connection), true);
+        launchSession(std::move(*tls_connection), true);
       }
     }
   }

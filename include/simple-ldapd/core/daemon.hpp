@@ -16,7 +16,9 @@
 #include "simple-ldapd/security/tls.hpp"
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include <thread>
+#include <vector>
 
 namespace simple_ldapd {
 
@@ -41,8 +43,16 @@ public:
   Backend *backend() { return backend_.get(); }
 
 private:
+  struct SessionWorker {
+    std::thread thread;
+    std::shared_ptr<std::atomic<bool>> finished;
+  };
+
   void acceptLoop();
   void serveConnection(TcpConnection connection, bool ldaps);
+  void launchSession(TcpConnection connection, bool ldaps);
+  void reapWorkers();
+  void joinWorkers();
 
   LdapConfig config_;
   SchemaRegistry schema_;
@@ -54,6 +64,8 @@ private:
   std::atomic<bool> running_{false};
   std::atomic<bool> initialized_{false};
   std::thread accept_thread_;
+  std::mutex workers_mutex_;
+  std::vector<SessionWorker> workers_;
 };
 
 }  // namespace simple_ldapd

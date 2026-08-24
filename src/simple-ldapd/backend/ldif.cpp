@@ -109,6 +109,7 @@ void LdifBackend::persist() {
   if (path_.empty()) {
     return;
   }
+  std::lock_guard<std::mutex> lock(persist_mutex_);
   if (!exportFile(path_)) {
     Logger::instance().warning("LDIF persist failed: " + path_);
   }
