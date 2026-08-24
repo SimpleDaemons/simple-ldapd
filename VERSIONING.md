@@ -14,7 +14,7 @@ Git tags and GitHub Releases use the `vMAJOR.MINOR.PATCH` form and point at the 
 | **0.4.0** | 4 — TLS | LDAPS and StartTLS | Released (`v0.4.0`) |
 | **0.5.0** | 5 — Schemas | Enforce core/cosine/inetOrgPerson/posix/AD-compat | Released (`v0.5.0`) |
 | **0.6.0** | 6 — SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI hook | Released (`v0.6.0`) |
-| **0.7.0** | 7 — Kerberos | Consume tickets for GSSAPI bind (no in-tree KDC) | Planned |
+| **0.7.0** | 7 — Kerberos | Consume tickets for GSSAPI bind (no in-tree KDC) | Released (`v0.7.0`) |
 
 ## Rules
 

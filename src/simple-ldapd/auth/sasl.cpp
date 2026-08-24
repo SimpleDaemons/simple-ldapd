@@ -1,6 +1,6 @@
 /**
  * @file sasl.cpp
- * @brief SASL PLAIN, DIGEST-MD5, EXTERNAL, and GSSAPI hook
+ * @brief SASL PLAIN, DIGEST-MD5, EXTERNAL, and GSSAPI tickets
  * @author SimpleDaemons
  * @copyright 2026 SimpleDaemons
  * @license Apache-2.0

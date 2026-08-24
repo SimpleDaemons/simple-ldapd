@@ -39,7 +39,7 @@
 - PLAIN, DIGEST-MD5, EXTERNAL
 - GSSAPI hook (needs a ticket source; not a KDC)
 
-## Milestone 7 — Kerberos integration (later) — v0.7.0 (current)
+## Milestone 7 — Kerberos integration — v0.7.0
 
 - Consume tickets for GSSAPI bind
 - Optional companion KDC is out of tree unless revisited

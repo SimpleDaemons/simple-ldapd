@@ -2,7 +2,7 @@
 
 Lightweight LDAPv3 directory daemon for SSO via LDAP bind, with an OpenLDAP-style CLI and Active Directory-friendly schema names.
 
-simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.6.0** implements simple bind, SASL PLAIN/DIGEST-MD5/EXTERNAL, search, directory writes, TLS, and schema enforcement. GSSAPI still needs a ticket source. Versions follow [VERSIONING.md](VERSIONING.md).
+simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.7.0** implements simple bind, SASL PLAIN/DIGEST-MD5/EXTERNAL/GSSAPI, search, directory writes, TLS, and schema enforcement. GSSAPI consumes lab tickets from `gssapi_keytab` (not a KDC). Versions follow [VERSIONING.md](VERSIONING.md).
 
 ## Goals
 
@@ -14,7 +14,7 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 
 ## Non-goals (v0.x)
 
-- Kerberos KDC / ticket-based AD SSO (reserved in the roadmap)
+- Kerberos KDC / MIT ticket-based AD SSO (reserved; lab GSSAPI tickets are not a KDC)
 - OIDC or SAML (see `simple-oidcd` in the SimpleDaemons future list)
 - SMB, Group Policy, or a full Active Directory domain controller
 
@@ -28,7 +28,7 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 | Add / modify / delete / modrdn | Implemented (root DN bind) |
 | Schema enforcement on writes | Implemented |
 | LDAPS / StartTLS | Implemented |
-| SASL | PLAIN, DIGEST-MD5, EXTERNAL; GSSAPI advertised |
+| SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |
 
 ## Build
 
@@ -72,6 +72,7 @@ Search the seeded tree (anonymous or simple bind):
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -b dc=example,dc=com '(objectClass=*)'
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -Y PLAIN -U alice -w alice-secret -b dc=example,dc=com '(uid=alice)'
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -Y DIGEST-MD5 -U alice -w alice-secret -b dc=example,dc=com '(uid=alice)'
+./build/ldapsearch -H ldap://127.0.0.1:3389 -Y GSSAPI -U alice --keytab config/examples/simple/lab.keytab -b dc=example,dc=com '(uid=alice)'
 ./build/ldapsearch -H ldaps://127.0.0.1:6636 -x -D cn=admin,dc=example,dc=com -w secret -b dc=example,dc=com '(uid=alice)'
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -Z --ca-file tls/ca.crt -x -D cn=admin,dc=example,dc=com -w secret -b dc=example,dc=com '(uid=alice)'
 ./build/ldapadd -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -f change.ldif
@@ -79,7 +80,7 @@ Search the seeded tree (anonymous or simple bind):
 ./build/ldapdelete -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret 'uid=bob,ou=People,dc=example,dc=com'
 ```
 
-Writes require a root DN bind. `ldappasswd` is still a stub. LDAPS and StartTLS need `enable_ldaps` / `enable_starttls` plus `tls_cert_file` and `tls_key_file`; the high-security template also sets `require_confidentiality` so password binds are refused on cleartext.
+Writes require a root DN bind. `ldappasswd` is still a stub. LDAPS and StartTLS need `enable_ldaps` / `enable_starttls` plus `tls_cert_file` and `tls_key_file`; the high-security template also sets `require_confidentiality` so password binds are refused on cleartext. SASL GSSAPI needs `gssapi_keytab` (a text lab keytab, not MIT krb5 binary format).
 
 ## Layout
 
