@@ -10,6 +10,7 @@
 
 #include "simple-ldapd/backend/ldif.hpp"
 #include "simple-ldapd/backend/memory.hpp"
+#include "simple-ldapd/backend/sqlite.hpp"
 #include "simple-ldapd/core/session.hpp"
 #include "simple-ldapd/utils/logger.hpp"
 #include "simple-ldapd/version.hpp"
@@ -34,13 +35,19 @@ bool LdapDaemon::initialize() {
     Logger::instance().setLogFile(config_.log_file);
   }
   schema_.loadDirectory(config_.schema_dir);
-  if (!config_.ldif_file.empty() || config_.backend == "ldif") {
+  if (config_.backend == "sqlite") {
+    backend_ = std::make_unique<SqliteBackend>(config_.sqlite_file, config_.ldif_file);
+  } else if (!config_.ldif_file.empty() || config_.backend == "ldif") {
     backend_ = std::make_unique<LdifBackend>(config_.ldif_file);
   } else {
     backend_ = std::make_unique<MemoryBackend>();
   }
   if (!backend_->initialize()) {
     Logger::instance().warning("backend initialize returned false");
+    if (config_.backend == "sqlite") {
+      Logger::instance().error("sqlite backend failed to initialize");
+      return false;
+    }
   }
   sasl_.enable(SaslMechanism::Plain);
   sasl_.enable(SaslMechanism::DigestMd5);

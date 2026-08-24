@@ -10,8 +10,10 @@ BuildRequires:  cmake >= 3.10
 BuildRequires:  gcc-c++
 BuildRequires:  openssl-devel
 BuildRequires:  jsoncpp-devel
+BuildRequires:  sqlite-devel
 Requires:       openssl-libs
 Requires:       jsoncpp
+Requires:       sqlite-libs
 
 %description
 simple-ldapd is a modern, secure implementation of the LDAP protocol.

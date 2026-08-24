@@ -33,6 +33,7 @@ public:
   std::string tls_ca_file;
   std::string backend{"memory"};
   std::string ldif_file;
+  std::string sqlite_file;
   std::string schema_dir{"schemas"};
   std::string base_dn{"dc=example,dc=com"};
   std::string root_dn{"cn=admin,dc=example,dc=com"};

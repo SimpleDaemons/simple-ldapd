@@ -3,7 +3,7 @@ Version: ${VERSION}
 Section: net
 Priority: optional
 Architecture: amd64
-Depends: libssl3 (>= 3.0.0), libc6 (>= 2.31)
+Depends: libssl3 (>= 3.0.0), libc6 (>= 2.31), libsqlite3-0
 Maintainer: SimpleDaemons <support@simpledaemons.com>
 Description: simple-ldapd - A lightweight and secure daemon
  simple-ldapd is a modern, secure implementation of the LDAP protocol.

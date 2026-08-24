@@ -77,6 +77,8 @@ bool LdapConfig::loadFromFile(const std::string &path) {
       backend = value;
     } else if (key == "ldif_file") {
       ldif_file = value;
+    } else if (key == "sqlite_file") {
+      sqlite_file = value;
     } else if (key == "schema_dir") {
       schema_dir = value;
     } else if (key == "base_dn") {
@@ -124,8 +126,17 @@ bool LdapConfig::validateDetailed(std::vector<std::string> &errors) const {
     errors.emplace_back(
         "tls_cert_file and tls_key_file are required when TLS is enabled");
   }
-  if (backend != "memory" && backend != "ldif") {
-    errors.emplace_back("backend must be memory or ldif");
+  if (backend != "memory" && backend != "ldif" && backend != "sqlite") {
+    errors.emplace_back("backend must be memory, ldif, or sqlite");
+  }
+  if (backend == "sqlite") {
+#ifdef SIMPLE_LDAPD_SQLITE
+    if (sqlite_file.empty()) {
+      errors.emplace_back("sqlite_file is required when backend is sqlite");
+    }
+#else
+    errors.emplace_back("sqlite backend was not built (SQLite3 not found)");
+#endif
   }
   if (base_dn.empty()) {
     errors.emplace_back("base_dn is required");
