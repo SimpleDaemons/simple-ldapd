@@ -89,6 +89,8 @@ inline const char *toString(ResultCode code) {
     return "notAllowedOnNonLeaf";
   case ResultCode::AttributeOrValueExists:
     return "attributeOrValueExists";
+  case ResultCode::ConfidentialityRequired:
+    return "confidentialityRequired";
   default:
     return "other";
   }

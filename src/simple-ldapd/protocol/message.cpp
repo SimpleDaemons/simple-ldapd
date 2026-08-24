@@ -281,6 +281,27 @@ bool decodeModifyDnRequest(BerReader &reader, ModifyDnRequestData &modify_dn) {
   return reader.ok();
 }
 
+std::vector<uint8_t> encodeExtendedRequest(const std::string &oid, const std::string &value) {
+  BerWriter inner;
+  inner.writeOctetString(kBerSimpleAuth, oid);
+  if (!value.empty()) {
+    inner.writeOctetString(kBerContext1, value);
+  }
+  BerWriter outer;
+  outer.writeConstructed(kBerExtendedRequest, inner.bytes());
+  return outer.take();
+}
+
+bool decodeExtendedRequest(BerReader &reader, std::string &oid, std::string &value) {
+  if (!reader.readOctetString(kBerSimpleAuth, oid)) {
+    return false;
+  }
+  if (!reader.atEnd() && reader.peekTag() == kBerContext1) {
+    return reader.readOctetString(kBerContext1, value);
+  }
+  return reader.ok();
+}
+
 }  // namespace
 
 std::optional<LdapMessage> decodeLdapMessage(const std::vector<uint8_t> &wire) {
@@ -382,6 +403,19 @@ std::optional<LdapMessage> decodeLdapMessage(const std::vector<uint8_t> &wire) {
       return std::nullopt;
     }
     break;
+  case kBerExtendedRequest:
+    message.op = ProtocolOp::ExtendedRequest;
+    if (!body.readConstructed(tag, op) ||
+        !decodeExtendedRequest(op, message.extended_oid, message.extended_value)) {
+      return std::nullopt;
+    }
+    break;
+  case kBerExtendedResponse:
+    message.op = ProtocolOp::ExtendedResponse;
+    if (!body.readConstructed(tag, op) || !decodeResult(op, message)) {
+      return std::nullopt;
+    }
+    break;
   default:
     message.op = ProtocolOp::Unknown;
     if (!body.skip()) {
@@ -449,6 +483,9 @@ std::vector<uint8_t> encodeLdapMessage(const LdapMessage &message) {
     break;
   case ProtocolOp::ModifyDNResponse:
     protocol_op = resultOp(kBerModifyDNResponse);
+    break;
+  case ProtocolOp::ExtendedRequest:
+    protocol_op = encodeExtendedRequest(message.extended_oid, message.extended_value);
     break;
   case ProtocolOp::ExtendedResponse:
     protocol_op = resultOp(kBerExtendedResponse);
@@ -548,6 +585,16 @@ LdapMessage makeModifyDnRequest(int message_id, ModifyDnRequestData modify_dn) {
   message.message_id = message_id;
   message.op = ProtocolOp::ModifyDNRequest;
   message.modify_dn = std::move(modify_dn);
+  return message;
+}
+
+LdapMessage makeExtendedRequest(int message_id, const std::string &oid,
+                                const std::string &value) {
+  LdapMessage message;
+  message.message_id = message_id;
+  message.op = ProtocolOp::ExtendedRequest;
+  message.extended_oid = oid;
+  message.extended_value = value;
   return message;
 }
 

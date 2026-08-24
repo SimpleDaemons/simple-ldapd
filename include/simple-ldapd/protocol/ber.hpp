@@ -38,6 +38,7 @@ inline constexpr uint8_t kBerModifyDNResponse = 0x6D;
 inline constexpr uint8_t kBerExtendedRequest = 0x77;
 inline constexpr uint8_t kBerExtendedResponse = 0x78;
 inline constexpr uint8_t kBerSimpleAuth = 0x80;
+inline constexpr uint8_t kBerContext1 = 0x81;
 inline constexpr uint8_t kBerFilterAnd = 0xA0;
 inline constexpr uint8_t kBerFilterOr = 0xA1;
 inline constexpr uint8_t kBerFilterNot = 0xA2;

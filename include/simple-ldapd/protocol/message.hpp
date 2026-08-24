@@ -94,6 +94,8 @@ struct LdapMessage {
   ModifyRequestData modify;
   std::string delete_dn;
   ModifyDnRequestData modify_dn;
+  std::string extended_oid;
+  std::string extended_value;
 };
 
 std::optional<LdapMessage> decodeLdapMessage(const std::vector<uint8_t> &wire);
@@ -112,6 +114,8 @@ LdapMessage makeAddRequest(int message_id, AddRequestData add);
 LdapMessage makeModifyRequest(int message_id, ModifyRequestData modify);
 LdapMessage makeDelRequest(int message_id, const std::string &dn);
 LdapMessage makeModifyDnRequest(int message_id, ModifyDnRequestData modify_dn);
+LdapMessage makeExtendedRequest(int message_id, const std::string &oid,
+                                const std::string &value = {});
 LdapMessage makeLdapResult(int message_id, ProtocolOp op, ResultCode result,
                            const std::string &diagnostic = {});
 
