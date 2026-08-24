@@ -10,21 +10,69 @@
 
 #include "simple-ldapd/version.hpp"
 #include <iostream>
+#include <stdexcept>
 
 namespace simple_ldapd {
 namespace cli {
 
+namespace {
+
+void applyUri(ClientOptions &options, const std::string &uri) {
+  options.uri = uri;
+  std::string rest = uri;
+  options.ldaps = false;
+  options.port = kLdapDefaultPort;
+  if (rest.rfind("ldaps://", 0) == 0) {
+    options.ldaps = true;
+    options.port = kLdapsDefaultPort;
+    rest = rest.substr(8);
+  } else if (rest.rfind("ldap://", 0) == 0) {
+    rest = rest.substr(7);
+  }
+  const auto slash = rest.find('/');
+  if (slash != std::string::npos) {
+    if (options.base_dn.empty() && slash + 1 < rest.size()) {
+      options.base_dn = rest.substr(slash + 1);
+    }
+    rest = rest.substr(0, slash);
+  }
+  const auto colon = rest.rfind(':');
+  if (colon != std::string::npos && rest.find(']') == std::string::npos) {
+    options.host = rest.substr(0, colon);
+    try {
+      const int parsed = std::stoi(rest.substr(colon + 1));
+      if (parsed < 0 || parsed > 65535) {
+        options.parse_error = true;
+        return;
+      }
+      options.port = static_cast<port_t>(parsed);
+    } catch (const std::exception &) {
+      options.parse_error = true;
+      return;
+    }
+  } else {
+    options.host = rest;
+  }
+  if (options.host.empty()) {
+    options.host = "127.0.0.1";
+  }
+}
+
+}  // namespace
+
 void printClientUsage(const std::string &tool, const std::string &summary) {
-  std::cout << "Usage: " << tool << " [options]\n"
+  std::cout << "Usage: " << tool << " [options] [filter [attributes...]]\n"
             << summary << "\n\n"
             << "Options:\n"
-            << "  -H URI         LDAP URI (ldap:// or ldaps://)\n"
+            << "  -H URI         LDAP URI (ldap://host:port)\n"
             << "  -h HOST        LDAP host (OpenLDAP-compatible)\n"
+            << "  -p PORT        LDAP port\n"
             << "  -x             Simple authentication\n"
             << "  -D BIND_DN     Bind DN\n"
             << "  -w PASSWORD    Bind password\n"
             << "  -W             Prompt for bind password\n"
             << "  -b BASE_DN     Search base DN\n"
+            << "  -s SCOPE       base, one, or sub (default: sub)\n"
             << "  -f FILE        LDIF file\n"
             << "  --help         Show this help\n"
             << "  --version      Show version\n";
@@ -36,6 +84,9 @@ void printVersion(const std::string &tool) {
 
 ClientOptions parseClientArgs(int argc, char *argv[]) {
   ClientOptions options;
+  bool port_override = false;
+  port_t explicit_port = kLdapDefaultPort;
+  bool positional_filter = false;
   for (int i = 1; i < argc; ++i) {
     const std::string arg = argv[i];
     auto next = [&]() -> std::string {
@@ -50,9 +101,21 @@ ClientOptions parseClientArgs(int argc, char *argv[]) {
     } else if (arg == "--version") {
       options.version = true;
     } else if (arg == "-H") {
-      options.uri = next();
+      applyUri(options, next());
     } else if (arg == "-h") {
-      options.uri = "ldap://" + next();
+      applyUri(options, "ldap://" + next());
+    } else if (arg == "-p") {
+      try {
+        const int parsed = std::stoi(next());
+        if (parsed < 0 || parsed > 65535) {
+          options.parse_error = true;
+        } else {
+          port_override = true;
+          explicit_port = static_cast<port_t>(parsed);
+        }
+      } catch (const std::exception &) {
+        options.parse_error = true;
+      }
     } else if (arg == "-x") {
       options.simple_auth = true;
     } else if (arg == "-D") {
@@ -63,11 +126,36 @@ ClientOptions parseClientArgs(int argc, char *argv[]) {
       options.prompt_password = true;
     } else if (arg == "-b") {
       options.base_dn = next();
+    } else if (arg == "-s") {
+      const std::string scope = next();
+      if (scope == "base") {
+        options.scope = SearchScope::Base;
+      } else if (scope == "one") {
+        options.scope = SearchScope::OneLevel;
+      } else if (scope == "sub") {
+        options.scope = SearchScope::Subtree;
+      } else {
+        options.parse_error = true;
+      }
     } else if (arg == "-f") {
       options.ldif_file = next();
     } else if (!arg.empty() && arg[0] != '-') {
-      options.filter = arg;
+      if (!positional_filter) {
+        options.filter = arg;
+        positional_filter = true;
+      } else {
+        options.attributes.push_back(arg);
+      }
     }
+  }
+  if (options.uri.rfind("ldap", 0) == 0) {
+    applyUri(options, options.uri);
+  }
+  if (port_override) {
+    options.port = explicit_port;
+  }
+  if (!options.filter.empty() && options.filter.front() != '(') {
+    options.filter = "(" + options.filter + ")";
   }
   return options;
 }

@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "simple-ldapd/backend/backend.hpp"
+#include "simple-ldapd/utils/platform.hpp"
 #include <string>
 #include <vector>
 
@@ -16,10 +18,15 @@ namespace cli {
 
 struct ClientOptions {
   std::string uri{"ldap://127.0.0.1:389"};
+  std::string host{"127.0.0.1"};
+  port_t port{kLdapDefaultPort};
+  bool ldaps{false};
   std::string bind_dn;
   std::string password;
   std::string base_dn;
   std::string filter{"(objectClass=*)"};
+  std::vector<std::string> attributes;
+  SearchScope scope{SearchScope::Subtree};
   std::string ldif_file;
   bool simple_auth{true};
   bool prompt_password{false};

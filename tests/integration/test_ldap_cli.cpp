@@ -27,7 +27,8 @@ int main() {
   };
   auto options = cli::parseClientArgs(static_cast<int>(args.size()), args.data());
   if (options.uri != "ldap://127.0.0.1:3389" || options.base_dn != "dc=example,dc=com" ||
-      options.filter != "(uid=alice)") {
+      options.filter != "(uid=alice)" || options.host != "127.0.0.1" ||
+      options.port != 3389) {
     std::cout << "FAIL parseClientArgs" << std::endl;
     return 1;
   }
