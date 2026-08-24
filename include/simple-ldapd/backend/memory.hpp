@@ -25,6 +25,8 @@ public:
   bool add(const DirectoryEntry &entry) override;
   bool modify(const DirectoryEntry &entry) override;
   bool remove(const std::string &dn) override;
+  bool rename(const std::string &from, const std::string &to) override;
+  bool hasChildren(const std::string &dn) const override;
 
 private:
   mutable std::mutex mutex_;

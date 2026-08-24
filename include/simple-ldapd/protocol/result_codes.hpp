@@ -75,6 +75,20 @@ inline const char *toString(ResultCode code) {
     return "authMethodNotSupported";
   case ResultCode::SaslBindInProgress:
     return "saslBindInProgress";
+  case ResultCode::NoSuchAttribute:
+    return "noSuchAttribute";
+  case ResultCode::InvalidDnSyntax:
+    return "invalidDNSyntax";
+  case ResultCode::InsufficientAccessRights:
+    return "insufficientAccessRights";
+  case ResultCode::EntryAlreadyExists:
+    return "entryAlreadyExists";
+  case ResultCode::NamingViolation:
+    return "namingViolation";
+  case ResultCode::NotAllowedOnNonLeaf:
+    return "notAllowedOnNonLeaf";
+  case ResultCode::AttributeOrValueExists:
+    return "attributeOrValueExists";
   default:
     return "other";
   }

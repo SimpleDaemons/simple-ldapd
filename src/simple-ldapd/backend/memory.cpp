@@ -88,4 +88,40 @@ bool MemoryBackend::remove(const std::string &dn) {
   return false;
 }
 
+bool MemoryBackend::rename(const std::string &from, const std::string &to) {
+  if (from.empty() || to.empty()) {
+    return false;
+  }
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto source = entries_.end();
+  for (auto it = entries_.begin(); it != entries_.end(); ++it) {
+    if (dnEquals(it->first, from)) {
+      source = it;
+    } else if (dnEquals(it->first, to)) {
+      return false;
+    }
+  }
+  if (source == entries_.end()) {
+    return false;
+  }
+  if (dnEquals(from, to)) {
+    return true;
+  }
+  DirectoryEntry entry = source->second;
+  entries_.erase(source);
+  entry.dn = to;
+  entries_[to] = std::move(entry);
+  return true;
+}
+
+bool MemoryBackend::hasChildren(const std::string &dn) const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  for (const auto &pair : entries_) {
+    if (dnIsOneLevelChild(pair.first, dn)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace simple_ldapd

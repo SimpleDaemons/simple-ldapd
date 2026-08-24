@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "simple-ldapd/protocol/result_codes.hpp"
 #include <map>
 #include <optional>
 #include <string>
@@ -21,6 +22,14 @@ struct DirectoryEntry {
 };
 
 enum class SearchScope { Base = 0, OneLevel = 1, Subtree = 2 };
+
+enum class ModifyOp { Add = 0, Delete = 1, Replace = 2 };
+
+struct AttributeModification {
+  ModifyOp op{ModifyOp::Replace};
+  std::string type;
+  std::vector<std::string> values;
+};
 
 class SearchFilter;
 
@@ -38,6 +47,12 @@ public:
   virtual bool add(const DirectoryEntry &entry) = 0;
   virtual bool modify(const DirectoryEntry &entry) = 0;
   virtual bool remove(const std::string &dn) = 0;
+  virtual bool rename(const std::string &from, const std::string &to) = 0;
+  virtual bool hasChildren(const std::string &dn) const = 0;
+  virtual void persist() {}
 };
+
+ResultCode applyModifications(DirectoryEntry &entry,
+                              const std::vector<AttributeModification> &changes);
 
 }  // namespace simple_ldapd
