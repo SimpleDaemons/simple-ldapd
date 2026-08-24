@@ -17,6 +17,7 @@ dn: uid=alice,ou=People,dc=example,dc=com
 objectClass: inetOrgPerson
 objectClass: posixAccount
 objectClass: shadowAccount
+objectClass: user
 cn: Alice Example
 sn: Example
 uid: alice

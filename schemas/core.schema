@@ -1,22 +1,74 @@
-# RFC 4512 / RFC 4519 core schema subset (placeholder)
-# Full syntax, matching rules, and SUP hierarchy will be filled in later.
+# RFC 4512 / RFC 4519 core schema subset
 
-attributetype ( 2.5.4.0 NAME 'objectClass' )
-attributetype ( 2.5.4.3 NAME 'cn' )
-attributetype ( 2.5.4.4 NAME 'sn' )
-attributetype ( 2.5.4.6 NAME 'c' )
-attributetype ( 2.5.4.7 NAME 'l' )
-attributetype ( 2.5.4.8 NAME 'st' )
-attributetype ( 2.5.4.9 NAME 'street' )
-attributetype ( 2.5.4.10 NAME 'o' )
-attributetype ( 2.5.4.11 NAME 'ou' )
-attributetype ( 0.9.2342.19200300.100.1.25 NAME 'dc' )
-attributetype ( 2.5.4.49 NAME 'distinguishedName' )
-attributetype ( 2.5.4.35 NAME 'userPassword' )
+attributetype ( 2.5.4.0 NAME 'objectClass'
+  EQUALITY objectIdentifierMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.38 )
 
-objectclass ( 2.5.6.0 NAME 'top' )
-objectclass ( 2.5.6.6 NAME 'person' )
-objectclass ( 2.5.6.7 NAME 'organizationalPerson' )
-objectclass ( 2.5.6.4 NAME 'organization' )
-objectclass ( 2.5.6.5 NAME 'organizationalUnit' )
-objectclass ( 1.3.6.1.4.1.1466.344 NAME 'dcObject' )
+attributetype ( 2.5.4.41 NAME 'name'
+  EQUALITY caseIgnoreMatch
+  SUBSTR caseIgnoreSubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{32768} )
+
+attributetype ( 2.5.4.3 NAME ( 'cn' 'commonName' )
+  SUP name )
+
+attributetype ( 2.5.4.4 NAME ( 'sn' 'surname' )
+  SUP name )
+
+attributetype ( 2.5.4.6 NAME ( 'c' 'countryName' )
+  SUP name
+  SINGLE-VALUE )
+
+attributetype ( 2.5.4.7 NAME ( 'l' 'localityName' )
+  SUP name )
+
+attributetype ( 2.5.4.8 NAME ( 'st' 'stateOrProvinceName' )
+  SUP name )
+
+attributetype ( 2.5.4.9 NAME ( 'street' 'streetAddress' )
+  SUP name )
+
+attributetype ( 2.5.4.10 NAME ( 'o' 'organizationName' )
+  SUP name )
+
+attributetype ( 2.5.4.11 NAME ( 'ou' 'organizationalUnitName' )
+  SUP name )
+
+attributetype ( 0.9.2342.19200300.100.1.25 NAME ( 'dc' 'domainComponent' )
+  EQUALITY caseIgnoreIA5Match
+  SUBSTR caseIgnoreIA5SubstringsMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.26
+  SINGLE-VALUE )
+
+attributetype ( 2.5.4.13 NAME 'description'
+  EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15{1024} )
+
+attributetype ( 2.5.4.35 NAME 'userPassword'
+  EQUALITY octetStringMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.40 )
+
+attributetype ( 2.5.4.20 NAME 'telephoneNumber'
+  EQUALITY telephoneNumberMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.50 )
+
+objectclass ( 2.5.6.0 NAME 'top' ABSTRACT
+  MUST objectClass )
+
+objectclass ( 2.5.6.6 NAME 'person' SUP top STRUCTURAL
+  MUST ( sn $ cn )
+  MAY ( userPassword $ telephoneNumber $ description ) )
+
+objectclass ( 2.5.6.7 NAME 'organizationalPerson' SUP person STRUCTURAL
+  MAY ( ou $ st $ l $ street $ telephoneNumber $ description ) )
+
+objectclass ( 2.5.6.4 NAME 'organization' SUP top STRUCTURAL
+  MUST o
+  MAY ( userPassword $ telephoneNumber $ street $ st $ l $ description ) )
+
+objectclass ( 2.5.6.5 NAME 'organizationalUnit' SUP top STRUCTURAL
+  MUST ou
+  MAY ( userPassword $ telephoneNumber $ street $ st $ l $ description ) )
+
+objectclass ( 1.3.6.1.4.1.1466.344 NAME 'dcObject' SUP top AUXILIARY
+  MUST dc )
