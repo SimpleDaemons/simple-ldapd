@@ -46,7 +46,11 @@ inline constexpr uint8_t kBerFilterAnd = 0xA0;
 inline constexpr uint8_t kBerFilterOr = 0xA1;
 inline constexpr uint8_t kBerFilterNot = 0xA2;
 inline constexpr uint8_t kBerFilterEquality = 0xA3;
+inline constexpr uint8_t kBerFilterSubstrings = 0xA4;
 inline constexpr uint8_t kBerFilterPresent = 0x87;
+inline constexpr uint8_t kBerSubstringInitial = 0x80;
+inline constexpr uint8_t kBerSubstringAny = 0x81;
+inline constexpr uint8_t kBerSubstringFinal = 0x82;
 
 class BerWriter {
 public:

@@ -41,16 +41,51 @@ bool parseItem(const std::string &text, size_t &pos, FilterNode &out) {
   while (!attribute.empty() && std::isspace(static_cast<unsigned char>(attribute.back()))) {
     attribute.pop_back();
   }
+  if (attribute.empty()) {
+    return false;
+  }
   if (value == "*") {
     out.type = FilterType::Present;
     out.attribute = attribute;
     out.value.clear();
-  } else {
+    return true;
+  }
+  std::vector<std::string> parts;
+  std::string current;
+  for (size_t i = 0; i < value.size(); ++i) {
+    if (value[i] == '\\' && i + 1 < value.size()) {
+      current.push_back(value[i]);
+      current.push_back(value[++i]);
+      continue;
+    }
+    if (value[i] == '*') {
+      parts.push_back(current);
+      current.clear();
+      continue;
+    }
+    current.push_back(value[i]);
+  }
+  parts.push_back(current);
+  if (parts.size() == 1) {
     out.type = FilterType::Equality;
     out.attribute = attribute;
     out.value = value;
+    return true;
   }
-  return !attribute.empty();
+  out.type = FilterType::Substring;
+  out.attribute = attribute;
+  if (!parts.front().empty()) {
+    out.initial = parts.front();
+  }
+  if (!parts.back().empty()) {
+    out.final = parts.back();
+  }
+  for (size_t i = 1; i + 1 < parts.size(); ++i) {
+    if (!parts[i].empty()) {
+      out.any.push_back(parts[i]);
+    }
+  }
+  return true;
 }
 
 bool parseList(const std::string &text, size_t &pos, FilterNode &out) {
@@ -115,6 +150,36 @@ const std::vector<std::string> *findAttribute(const DirectoryEntry &entry,
   return nullptr;
 }
 
+bool substringMatches(const std::string &haystack, const FilterNode &node) {
+  const std::string hay = toLowerAscii(haystack);
+  size_t pos = 0;
+  if (!node.initial.empty()) {
+    const std::string initial = toLowerAscii(node.initial);
+    if (hay.size() < initial.size() || hay.compare(0, initial.size(), initial) != 0) {
+      return false;
+    }
+    pos = initial.size();
+  }
+  for (const auto &part : node.any) {
+    const std::string needle = toLowerAscii(part);
+    const auto found = hay.find(needle, pos);
+    if (found == std::string::npos) {
+      return false;
+    }
+    pos = found + needle.size();
+  }
+  if (!node.final.empty()) {
+    const std::string final_part = toLowerAscii(node.final);
+    if (hay.size() < pos + final_part.size()) {
+      return false;
+    }
+    if (hay.compare(hay.size() - final_part.size(), final_part.size(), final_part) != 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool nodeMatches(const FilterNode &node, const DirectoryEntry &entry) {
   switch (node.type) {
   case FilterType::True:
@@ -146,6 +211,18 @@ bool nodeMatches(const FilterNode &node, const DirectoryEntry &entry) {
     }
     for (const auto &value : *values) {
       if (iequals(value, node.value)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  case FilterType::Substring: {
+    const auto *values = findAttribute(entry, node.attribute);
+    if (values == nullptr) {
+      return false;
+    }
+    for (const auto &value : *values) {
+      if (substringMatches(value, node)) {
         return true;
       }
     }
@@ -185,12 +262,32 @@ void encodeNode(BerWriter &writer, const FilterNode &node) {
     writer.writeConstructed(kBerFilterEquality, inner.bytes());
     break;
   }
+  case FilterType::Substring: {
+    BerWriter inner;
+    inner.writeOctetString(node.attribute);
+    BerWriter parts;
+    if (!node.initial.empty()) {
+      parts.writeOctetString(kBerSubstringInitial, node.initial);
+    }
+    for (const auto &part : node.any) {
+      parts.writeOctetString(kBerSubstringAny, part);
+    }
+    if (!node.final.empty()) {
+      parts.writeOctetString(kBerSubstringFinal, node.final);
+    }
+    inner.writeConstructed(kBerSequence, parts.bytes());
+    writer.writeConstructed(kBerFilterSubstrings, inner.bytes());
+    break;
+  }
   case FilterType::True:
     writer.writeOctetString(kBerFilterPresent, "objectClass");
     break;
   case FilterType::False: {
     BerWriter inner;
-    encodeNode(inner, FilterNode{FilterType::Present, "objectClass", "", {}});
+    FilterNode present;
+    present.type = FilterType::Present;
+    present.attribute = "objectClass";
+    encodeNode(inner, present);
     writer.writeConstructed(kBerFilterNot, inner.bytes());
     break;
   }
@@ -239,6 +336,40 @@ bool decodeNode(BerReader &reader, FilterNode &out) {
     out.type = FilterType::Equality;
     return inner.readOctetString(out.attribute) && inner.readOctetString(out.value) &&
            inner.ok();
+  }
+  if (tag == kBerFilterSubstrings) {
+    BerReader inner;
+    if (!reader.readConstructed(tag, inner) || !inner.readOctetString(out.attribute)) {
+      return false;
+    }
+    BerReader parts;
+    if (!inner.readConstructed(kBerSequence, parts)) {
+      return false;
+    }
+    out.type = FilterType::Substring;
+    while (!parts.atEnd()) {
+      const uint8_t part_tag = parts.peekTag();
+      std::string component;
+      if (part_tag == kBerSubstringInitial) {
+        if (!parts.readOctetString(kBerSubstringInitial, component)) {
+          return false;
+        }
+        out.initial = std::move(component);
+      } else if (part_tag == kBerSubstringAny) {
+        if (!parts.readOctetString(kBerSubstringAny, component)) {
+          return false;
+        }
+        out.any.push_back(std::move(component));
+      } else if (part_tag == kBerSubstringFinal) {
+        if (!parts.readOctetString(kBerSubstringFinal, component)) {
+          return false;
+        }
+        out.final = std::move(component);
+      } else if (!parts.skip()) {
+        return false;
+      }
+    }
+    return parts.ok() && inner.ok();
   }
   return false;
 }
@@ -293,7 +424,14 @@ bool SearchFilter::matches(const DirectoryEntry &entry) const {
 
 std::vector<uint8_t> SearchFilter::encodeBer() const {
   BerWriter writer;
-  encodeNode(writer, valid_ ? root_ : FilterNode{FilterType::Present, "objectClass", "", {}});
+  if (valid_) {
+    encodeNode(writer, root_);
+  } else {
+    FilterNode present;
+    present.type = FilterType::Present;
+    present.attribute = "objectClass";
+    encodeNode(writer, present);
+  }
   return writer.take();
 }
 

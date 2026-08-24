@@ -15,13 +15,16 @@
 
 namespace simple_ldapd {
 
-enum class FilterType { And, Or, Not, Equality, Present, True, False };
+enum class FilterType { And, Or, Not, Equality, Present, Substring, True, False };
 
 struct FilterNode {
   FilterType type{FilterType::True};
   std::string attribute;
   std::string value;
   std::vector<FilterNode> children;
+  std::string initial;
+  std::vector<std::string> any;
+  std::string final;
 };
 
 class SearchFilter {
