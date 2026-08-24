@@ -7,6 +7,7 @@
 - Search with equality / and / or / not / present filters on the memory backend
 - Optional LDIF seed via `ldif_file`; writes persist back to that file
 - `userPassword` hidden unless bound as root DN; writes require a root DN bind
-- Working `ldapsearch` / `ldapadd` / `ldapmodify` / `ldapdelete`
-- SASL/TLS/rate-limiter types reserved for later milestones
+- Working `ldapsearch` / `ldapadd` / `ldapmodify` / `ldapdelete` (including `ldaps://` and `-Z`)
+- LDAPS and StartTLS via OpenSSL; `require_confidentiality` blocks cleartext password binds
+- SASL/rate-limiter types reserved for later milestones
 - Schema packs: core, cosine, inetOrgPerson, nis, ad-compat

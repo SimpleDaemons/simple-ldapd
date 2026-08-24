@@ -2,7 +2,7 @@
 
 Lightweight LDAPv3 directory daemon for SSO via LDAP bind, with an OpenLDAP-style CLI and Active Directory-friendly schema names.
 
-simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.3.0** implements simple bind, search, and directory writes over LDAPv3 (memory backend, optional LDIF persist). LDAPS and SASL are still ahead. Versions follow [VERSIONING.md](VERSIONING.md).
+simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.4.0** implements simple bind, search, directory writes, LDAPS, and StartTLS. SASL is still ahead. Versions follow [VERSIONING.md](VERSIONING.md).
 
 ## Goals
 
@@ -26,7 +26,8 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 | Config, schema registry, memory/LDIF backends | Implemented |
 | LDAPv3 BER codec, simple bind, search | Implemented (filter subset) |
 | Add / modify / delete / modrdn | Implemented (root DN bind) |
-| LDAPS / StartTLS / SASL | Interfaces only |
+| LDAPS / StartTLS | Implemented |
+| SASL | Interfaces only |
 
 ## Build
 
@@ -68,12 +69,14 @@ Search the seeded tree (anonymous or simple bind):
 ```bash
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -x -b dc=example,dc=com '(uid=alice)'
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -b dc=example,dc=com '(objectClass=*)'
+./build/ldapsearch -H ldaps://127.0.0.1:6636 -x -D cn=admin,dc=example,dc=com -w secret -b dc=example,dc=com '(uid=alice)'
+./build/ldapsearch -H ldap://127.0.0.1:3389 -Z --ca-file tls/ca.crt -x -D cn=admin,dc=example,dc=com -w secret -b dc=example,dc=com '(uid=alice)'
 ./build/ldapadd -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -f change.ldif
 ./build/ldapmodify -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -f change.ldif
 ./build/ldapdelete -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret 'uid=bob,ou=People,dc=example,dc=com'
 ```
 
-Writes require a root DN bind. `ldappasswd` is still a stub.
+Writes require a root DN bind. `ldappasswd` is still a stub. LDAPS and StartTLS need `enable_ldaps` / `enable_starttls` plus `tls_cert_file` and `tls_key_file`; the high-security template also sets `require_confidentiality` so password binds are refused on cleartext.
 
 ## Layout
 

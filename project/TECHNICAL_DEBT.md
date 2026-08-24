@@ -5,7 +5,6 @@
 - Accept loop is single-threaded (one connection at a time)
 - Writes are allowed only for the configured root DN (no per-entry ACLs)
 - SASL mechanisms advertise names but always return `authMethodNotSupported`
-- TLS context only checks that cert/key files exist
 - Client tool names (`ldapsearch`, …) collide with OpenLDAP if installed on the same prefix
 - jsoncpp is optional and unused by the current config parser
 - `ldappasswd` is still a stub

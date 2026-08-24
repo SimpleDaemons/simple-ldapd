@@ -16,7 +16,7 @@
 | `ldapsearch` | Implemented |
 | Add / modify / delete / modrdn | Implemented (root DN bind) |
 | SASL | Stub |
-| LDAPS / StartTLS | Stub |
+| LDAPS / StartTLS | Implemented |
 | CLI help/version | Implemented |
 | `ldapadd` / `ldapmodify` / `ldapdelete` | Implemented |
 | `ldappasswd` | Stub (exit 2) |

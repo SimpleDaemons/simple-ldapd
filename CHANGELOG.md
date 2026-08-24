@@ -4,6 +4,17 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-08-24
+
+Milestone 4 — TLS.
+
+### Added
+
+- LDAPS listener and StartTLS (`1.3.6.1.4.1.1466.20037`) over OpenSSL
+- Certificate / key / CA configuration; `require_confidentiality` for simple bind
+- `ldaps://`, `-Z` StartTLS, and `--ca-file` on the OpenLDAP-style clients
+- High-security template requires confidentiality so password binds cannot use cleartext
+
 ## [0.3.0] — 2026-08-24
 
 Milestone 3 — Write ops + LDIF.

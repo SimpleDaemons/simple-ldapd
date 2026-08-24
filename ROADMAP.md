@@ -22,13 +22,13 @@
 - LDIF import/export used as the default file backend
 - `ldapadd` / `ldapmodify` / `ldapdelete` talking to a live server
 
-## Milestone 4 — TLS — v0.4.0 (current)
+## Milestone 4 — TLS — v0.4.0
 
 - LDAPS (636) and StartTLS
 - Certificate and CA configuration
 - Require confidentiality for simple bind in the high-security template
 
-## Milestone 5 — Standard + AD-compat schemas — v0.5.0
+## Milestone 5 — Standard + AD-compat schemas — v0.5.0 (current)
 
 - Full schema parser (SYNTAX, EQUALITY, SUP, MUST/MAY)
 - Enforce schema on writes
