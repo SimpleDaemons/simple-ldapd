@@ -35,7 +35,10 @@ struct ClientOptions {
   std::string sasl_mechanism;
   std::string sasl_authcid;
   std::string keytab;
+  std::string new_password;
+  std::string old_password;
   bool prompt_password{false};
+  bool prompt_new_password{false};
   bool add_mode{false};
   bool help{false};
   bool version{false};
@@ -43,8 +46,9 @@ struct ClientOptions {
 };
 
 void printClientUsage(const std::string &tool, const std::string &summary);
+void printPasswdUsage();
 void printVersion(const std::string &tool);
-ClientOptions parseClientArgs(int argc, char *argv[]);
+ClientOptions parseClientArgs(int argc, char *argv[], bool passwd = false);
 int notImplementedExit(const std::string &tool);
 
 }  // namespace cli

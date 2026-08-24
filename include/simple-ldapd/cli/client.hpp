@@ -33,6 +33,7 @@ public:
   ResultCode modify(const std::string &dn, const std::vector<AttributeModification> &changes);
   ResultCode del(const std::string &dn);
   ResultCode modifyDn(const ModifyDnRequestData &request);
+  ResultCode passwordModify(const PasswordModifyRequest &request);
   void unbind();
 
 private:

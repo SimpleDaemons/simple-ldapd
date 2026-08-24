@@ -84,11 +84,34 @@ void printClientUsage(const std::string &tool, const std::string &summary) {
             << "  --version      Show version\n";
 }
 
+void printPasswdUsage() {
+  std::cout << "Usage: ldappasswd [options] [user]\n"
+            << "Change a user password\n\n"
+            << "Options:\n"
+            << "  -H URI         LDAP URI (ldap://host:port or ldaps://host:port)\n"
+            << "  -h HOST        LDAP host (OpenLDAP-compatible)\n"
+            << "  -p PORT        LDAP port\n"
+            << "  -Z             StartTLS after connect\n"
+            << "  --ca-file FILE Trust CA (or server cert) for TLS\n"
+            << "  -x             Simple authentication\n"
+            << "  -Y MECH        SASL mechanism (PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI)\n"
+            << "  -U AUTHCID     SASL authentication identity\n"
+            << "  --keytab FILE  Lab GSSAPI keytab (or SIMPLE_LDAPD_KTNAME)\n"
+            << "  -D BIND_DN     Bind DN\n"
+            << "  -w PASSWORD    Bind password\n"
+            << "  -W             Prompt for bind password\n"
+            << "  -s PASSWORD    New password\n"
+            << "  -a PASSWORD    Old password (optional if already bound as the user)\n"
+            << "  -S             Prompt for the new password\n"
+            << "  --help         Show this help\n"
+            << "  --version      Show version\n";
+}
+
 void printVersion(const std::string &tool) {
   std::cout << tool << " (simple-ldapd) " << kVersion << std::endl;
 }
 
-ClientOptions parseClientArgs(int argc, char *argv[]) {
+ClientOptions parseClientArgs(int argc, char *argv[], bool passwd) {
   ClientOptions options;
   bool port_override = false;
   port_t explicit_port = kLdapDefaultPort;
@@ -136,7 +159,13 @@ ClientOptions parseClientArgs(int argc, char *argv[]) {
     } else if (arg == "--ca-file") {
       options.ca_file = next();
     } else if (arg == "-a") {
-      options.add_mode = true;
+      if (passwd) {
+        options.old_password = next();
+      } else {
+        options.add_mode = true;
+      }
+    } else if (arg == "-S" && passwd) {
+      options.prompt_new_password = true;
     } else if (arg == "-D") {
       options.bind_dn = next();
     } else if (arg == "-w") {
@@ -146,12 +175,14 @@ ClientOptions parseClientArgs(int argc, char *argv[]) {
     } else if (arg == "-b") {
       options.base_dn = next();
     } else if (arg == "-s") {
-      const std::string scope = next();
-      if (scope == "base") {
+      const std::string value = next();
+      if (passwd) {
+        options.new_password = value;
+      } else if (value == "base") {
         options.scope = SearchScope::Base;
-      } else if (scope == "one") {
+      } else if (value == "one") {
         options.scope = SearchScope::OneLevel;
-      } else if (scope == "sub") {
+      } else if (value == "sub") {
         options.scope = SearchScope::Subtree;
       } else {
         options.parse_error = true;
@@ -174,7 +205,7 @@ ClientOptions parseClientArgs(int argc, char *argv[]) {
   if (port_override) {
     options.port = explicit_port;
   }
-  if (!options.filter.empty() && options.filter.front() != '(') {
+  if (!passwd && !options.filter.empty() && options.filter.front() != '(') {
     options.filter = "(" + options.filter + ")";
   }
   return options;

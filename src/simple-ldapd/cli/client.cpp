@@ -269,6 +269,14 @@ ResultCode LdapClient::modifyDn(const ModifyDnRequestData &request) {
   return response->result;
 }
 
+ResultCode LdapClient::passwordModify(const PasswordModifyRequest &request) {
+  auto response = exchange(makePasswordModifyRequest(next_id_++, request));
+  if (!response || response->op != ProtocolOp::ExtendedResponse) {
+    return ResultCode::Unavailable;
+  }
+  return response->result;
+}
+
 void LdapClient::unbind() {
   connection_.sendAll(encodeLdapMessage(makeUnbindRequest(next_id_++)));
 }
