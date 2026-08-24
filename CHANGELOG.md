@@ -4,6 +4,16 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-08-24
+
+Milestone 5 — Standard + AD-compat schemas.
+
+### Added
+
+- OpenLDAP-style schema parser (NAME, SUP, SYNTAX, EQUALITY, MUST, MAY, SINGLE-VALUE)
+- Write-time enforcement for add, modify, and modrdn
+- Filled core, cosine, inetOrgPerson, posix, and AD-compat schema files (`sAMAccountName`, `memberOf`, auxiliary `user`)
+
 ## [0.4.0] — 2026-08-24
 
 Milestone 4 — TLS.

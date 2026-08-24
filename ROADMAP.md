@@ -28,13 +28,13 @@
 - Certificate and CA configuration
 - Require confidentiality for simple bind in the high-security template
 
-## Milestone 5 — Standard + AD-compat schemas — v0.5.0 (current)
+## Milestone 5 — Standard + AD-compat schemas — v0.5.0
 
 - Full schema parser (SYNTAX, EQUALITY, SUP, MUST/MAY)
 - Enforce schema on writes
 - `posixAccount` / `inetOrgPerson` / `sAMAccountName` / `memberOf` used by real clients
 
-## Milestone 6 — SASL — v0.6.0
+## Milestone 6 — SASL — v0.6.0 (current)
 
 - PLAIN, DIGEST-MD5, EXTERNAL
 - GSSAPI hook (needs a ticket source; not a KDC)
