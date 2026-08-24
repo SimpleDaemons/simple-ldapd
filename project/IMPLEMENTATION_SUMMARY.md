@@ -11,4 +11,4 @@
 - Schema files for core, cosine, inetOrgPerson, posix, and AD-compat names; writes are checked against MUST/MAY/SYNTAX
 - LDAPS and StartTLS via OpenSSL; `require_confidentiality` blocks cleartext password binds
 - Schema packs: core, cosine, inetOrgPerson, nis, ad-compat (enforced on writes)
-- SASL/rate-limiter types reserved for later milestones
+- SASL PLAIN, DIGEST-MD5, and EXTERNAL; GSSAPI is advertised until a ticket source exists

@@ -4,6 +4,17 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-08-24
+
+Milestone 6 — SASL.
+
+### Added
+
+- SASL PLAIN and DIGEST-MD5 binds (uid / sAMAccountName / DN)
+- SASL EXTERNAL over TLS (authzid DN) and a GSSAPI hook that advertises but does not consume tickets
+- Root DSE `supportedSASLMechanisms` and `namingContexts`
+- Client `-Y` / `-U` for PLAIN and DIGEST-MD5
+
 ## [0.5.0] — 2026-08-24
 
 Milestone 5 — Standard + AD-compat schemas.

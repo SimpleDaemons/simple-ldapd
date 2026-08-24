@@ -15,7 +15,7 @@
 | Search filters | Implemented (`equality`, `and`/`or`/`not`, `present`) |
 | `ldapsearch` | Implemented |
 | Add / modify / delete / modrdn | Implemented (root DN bind) |
-| SASL | Stub |
+| SASL | PLAIN, DIGEST-MD5, EXTERNAL; GSSAPI advertised |
 | LDAPS / StartTLS | Implemented |
 | CLI help/version | Implemented |
 | `ldapadd` / `ldapmodify` / `ldapdelete` | Implemented |

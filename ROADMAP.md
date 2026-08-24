@@ -34,12 +34,12 @@
 - Enforce schema on writes
 - `posixAccount` / `inetOrgPerson` / `sAMAccountName` / `memberOf` used by real clients
 
-## Milestone 6 — SASL — v0.6.0 (current)
+## Milestone 6 — SASL — v0.6.0
 
 - PLAIN, DIGEST-MD5, EXTERNAL
 - GSSAPI hook (needs a ticket source; not a KDC)
 
-## Milestone 7 — Kerberos integration (later) — v0.7.0
+## Milestone 7 — Kerberos integration (later) — v0.7.0 (current)
 
 - Consume tickets for GSSAPI bind
 - Optional companion KDC is out of tree unless revisited
