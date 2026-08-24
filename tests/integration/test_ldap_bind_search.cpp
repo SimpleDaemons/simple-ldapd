@@ -10,6 +10,7 @@
 #include "simple-ldapd/core/daemon.hpp"
 #include "simple-ldapd/protocol/filter.hpp"
 #include "simple-ldapd/protocol/message.hpp"
+#include "simple-ldapd/security/acl.hpp"
 #include "simple-ldapd/utils/net.hpp"
 
 #include <iostream>
@@ -226,6 +227,39 @@ bool testConcurrentClients() {
          done->op == ProtocolOp::SearchResultDone && done->result == ResultCode::Success;
 }
 
+bool testAnonymousDeniedByAcl() {
+  LdapConfig config;
+  config.listen_address = "127.0.0.1";
+  config.ldap_port = 0;
+  AclRule rule;
+  std::string error;
+  parseAclLine("users search dc=example,dc=com", rule, error);
+  config.acls.push_back(rule);
+  LdapDaemon daemon(config);
+  if (!seed(daemon) || !daemon.start()) {
+    return false;
+  }
+  auto connection = TcpConnection::connectTo("127.0.0.1", daemon.boundPort());
+  if (!connection || !sendMessage(*connection, makeBindRequest(1, "", ""))) {
+    daemon.stop();
+    return false;
+  }
+  auto bind = recvMessage(*connection);
+  SearchRequestData search;
+  search.base_dn = "dc=example,dc=com";
+  search.filter = SearchFilter::parse("(uid=alice)");
+  if (!bind || bind->result != ResultCode::Success ||
+      !sendMessage(*connection, makeSearchRequest(2, search))) {
+    daemon.stop();
+    return false;
+  }
+  auto done = recvMessage(*connection);
+  sendMessage(*connection, makeUnbindRequest(3));
+  daemon.stop();
+  return done && done->op == ProtocolOp::SearchResultDone &&
+         done->result == ResultCode::InsufficientAccessRights;
+}
+
 }  // namespace
 
 int main() {
@@ -244,6 +278,7 @@ int main() {
   run("testRootSeesPasswordAndUserBind", testRootSeesPasswordAndUserBind);
   run("testSubstringSearch", testSubstringSearch);
   run("testConcurrentClients", testConcurrentClients);
+  run("testAnonymousDeniedByAcl", testAnonymousDeniedByAcl);
   std::cout << "Bind/search tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }

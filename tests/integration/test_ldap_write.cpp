@@ -10,6 +10,7 @@
 #include "simple-ldapd/config/config.hpp"
 #include "simple-ldapd/core/daemon.hpp"
 #include "simple-ldapd/protocol/filter.hpp"
+#include "simple-ldapd/security/acl.hpp"
 
 #include <iostream>
 
@@ -115,6 +116,55 @@ bool testAnonymousCannotWrite() {
   return result == ResultCode::InsufficientAccessRights;
 }
 
+bool testAclWriteByDn() {
+  LdapConfig config;
+  config.listen_address = "127.0.0.1";
+  config.ldap_port = 0;
+  config.root_dn = "cn=admin,dc=example,dc=com";
+  config.root_password = "secret";
+  AclRule search;
+  AclRule write;
+  std::string error;
+  parseAclLine("users search dc=example,dc=com", search, error);
+  parseAclLine("dn:uid=alice,ou=People,dc=example,dc=com write ou=People,dc=example,dc=com",
+               write, error);
+  config.acls.push_back(search);
+  config.acls.push_back(write);
+  LdapDaemon daemon(config);
+  DirectoryEntry alice;
+  alice.dn = "uid=alice,ou=People,dc=example,dc=com";
+  alice.attributes["objectClass"].push_back("inetOrgPerson");
+  alice.attributes["uid"].push_back("alice");
+  alice.attributes["cn"].push_back("Alice Example");
+  alice.attributes["sn"].push_back("Example");
+  alice.attributes["userPassword"].push_back("alice-secret");
+  if (!seedBase(daemon) || !daemon.backend()->add(alice) || !daemon.start()) {
+    return false;
+  }
+  cli::ClientOptions options;
+  options.host = "127.0.0.1";
+  options.port = daemon.boundPort();
+  options.bind_dn = alice.dn;
+  options.password = "alice-secret";
+  auto client = cli::LdapClient::openBound(options, error);
+  if (!client) {
+    daemon.stop();
+    return false;
+  }
+  DirectoryEntry bob;
+  bob.dn = "uid=bob,ou=People,dc=example,dc=com";
+  bob.attributes["objectClass"].push_back("inetOrgPerson");
+  bob.attributes["uid"].push_back("bob");
+  bob.attributes["cn"].push_back("Bob Example");
+  bob.attributes["sn"].push_back("Example");
+  const ResultCode added = client->add(bob);
+  const ResultCode denied = client->del("dc=example,dc=com");
+  client->unbind();
+  daemon.stop();
+  return added == ResultCode::Success && denied == ResultCode::InsufficientAccessRights &&
+         daemon.backend()->lookup(bob.dn).has_value();
+}
+
 }  // namespace
 
 int main() {
@@ -131,6 +181,7 @@ int main() {
   };
   run("testWriteOps", testWriteOps);
   run("testAnonymousCannotWrite", testAnonymousCannotWrite);
+  run("testAclWriteByDn", testAclWriteByDn);
   std::cout << "Write tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }
