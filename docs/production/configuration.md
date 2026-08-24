@@ -4,8 +4,8 @@ Start from the shipped templates; do not use `development.conf` on a public inte
 
 | Template | Ports | TLS | Extra |
 |----------|-------|-----|--------|
-| `config/templates/production.conf` | 389 / 636 | LDAPS + StartTLS | SQLite persist, `log_level = info` |
-| `config/templates/high-security.conf` | 389 / 636 | LDAPS + StartTLS | `require_confidentiality = true`, `acl = users search *`, `log_level = warning` |
+| `config/templates/production.conf` | 389 / 636 | LDAPS + StartTLS | SQLite persist, `bind_rate_limit = 60`, `log_level = info` |
+| `config/templates/high-security.conf` | 389 / 636 | LDAPS + StartTLS | `require_confidentiality`, `tls_verify_client`, `acl = users search *`, `bind_rate_limit = 30` |
 
 Install paths assumed by those files:
 
@@ -32,6 +32,7 @@ backend = sqlite
 sqlite_file = /var/lib/simple-ldapd/directory.sqlite
 schema_dir = /etc/simple-ldapd/schemas
 require_confidentiality = true
+bind_rate_limit = 60
 foreground = true
 ```
 

@@ -61,7 +61,11 @@ Pass `--ca-file` to the client. Confirm `enable_ldaps` / `enable_starttls` match
 
 ## Verbose logging
 
-`log_level` in the config file is not applied yet. The process logs at info (and above) to stderr or `log_file`.
+`log_level` is applied (`debug`, `info`, `warning`, `error`, `fatal`). Logs go to stderr or `log_file`.
+
+## busy
+
+`bind_rate_limit` was exceeded for that client IP. Wait for the one-minute window or raise the limit (`0` disables).
 
 ## Build / OpenSSL
 

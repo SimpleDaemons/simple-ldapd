@@ -2,10 +2,7 @@
 
 Tracked as [roadmap](../ROADMAP.md) milestones where they are product work.
 
-- `log_level` is parsed and not applied — milestone 15
-- `RateLimiter` is a stub — milestone 15
-- SASL EXTERNAL trusts the authzid on TLS without verifying a client certificate — milestone 15
-- Client tool names (`ldapsearch`, …) collide with OpenLDAP if installed on the same prefix — milestone 15
+- Client tool names (`ldapsearch`, …) still collide with OpenLDAP unless `-DLDAP_CLI_PREFIX=simple-` (or a private `CMAKE_INSTALL_PREFIX`) is used
 - Search filters still omit ordering, approximate, and extensible match — later
 - `memberOf` is a static attribute, not maintained from group membership — later
 - GSSAPI lab tickets are HMAC-SHA256, not MIT Kerberos / RFC 4120 — later / out of tree

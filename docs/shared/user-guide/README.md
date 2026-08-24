@@ -1,6 +1,6 @@
 # User guide
 
-OpenLDAP-style tools talk to a running simple-ldapd. Install prefixes that also have OpenLDAP will collide on `ldapsearch` and friends; use `./build/ldapsearch` or a dedicated prefix.
+OpenLDAP-style tools talk to a running simple-ldapd. Default names match OpenLDAP; use `-DLDAP_CLI_PREFIX=simple-` or a private `CMAKE_INSTALL_PREFIX` if you need both on `PATH`.
 
 | Document | Contents |
 |----------|----------|

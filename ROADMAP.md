@@ -94,7 +94,7 @@
 
 ## Toward 1.0.0
 
-Milestones 10–14 (concurrent sessions, ACLs, hashed passwords, remaining LDAP ops, SQLite) are released. **1.0.0** still waits on hardening (milestone 15) so a small SSO deployment is not missing bind rate limits, applied `log_level`, or verified SASL EXTERNAL client certificates.
+Milestones 10–15 are released. **1.0.0** is the production-usable SSO directory cut on top of this series.
 
 ## Later (not scheduled)
 

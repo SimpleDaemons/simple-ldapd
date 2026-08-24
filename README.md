@@ -2,7 +2,7 @@
 
 Lightweight LDAPv3 directory daemon for SSO via LDAP bind, with an OpenLDAP-style CLI and Active Directory-friendly schema names.
 
-simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.14.0** implements simple bind, SASL, search, concurrent sessions, ACLs, hashed `userPassword`, Compare, Who Am I, paged results, SQLite persist, directory writes, TLS, schema enforcement, GSSAPI lab tickets, and `ldappasswd`. Versions follow [VERSIONING.md](VERSIONING.md).
+simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.15.0** implements simple bind, SASL, search, concurrent sessions, ACLs, hashed `userPassword`, Compare, Who Am I, paged results, SQLite persist, directory writes, TLS, schema enforcement, GSSAPI lab tickets, `ldappasswd`, applied `log_level`, bind rate limits, and verified SASL EXTERNAL client certificates. Versions follow [VERSIONING.md](VERSIONING.md).
 
 ## Goals
 
@@ -28,12 +28,13 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 | Add / modify / delete / modrdn | Implemented (root DN or `acl` write) |
 | Schema enforcement on writes | Implemented |
 | LDAPS / StartTLS | Implemented |
-| SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |
+| SASL | PLAIN, DIGEST-MD5, EXTERNAL (verified client cert), GSSAPI lab tickets |
 | Access control | Implemented (`acl` lines; root DN is superuser) |
 | `ldappasswd` | Implemented (RFC 3062; stores `{SSHA}`) |
 | Compare / Who Am I / paged results | Implemented (`ldapcompare`, `ldapwhoami`, `-E pr=N`) |
 | Password storage | `{SSHA}` / `{SHA}` / `{CLEARTEXT}`; `userAccountControl` disable bit |
 | SQLite persist | Implemented (`backend = sqlite`; optional LDIF seed) |
+| Hardening | `log_level`, `bind_rate_limit`, SASL EXTERNAL client certs |
 
 ## Documentation
 

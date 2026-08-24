@@ -55,7 +55,7 @@ flowchart TB
 | `Session` | Read PDUs, dispatch bind/search/write/compare/extended ops, apply ACLs, hide `userPassword` unless bound as root |
 | BER codec | Encode/decode messages and search filters |
 | `SimpleBindAuthenticator` | Anonymous, root DN + `root_password`, hashed or cleartext `userPassword`; resolve uid / sAMAccountName; honor `userAccountControl` |
-| `SaslAuthenticator` | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |
+| `SaslAuthenticator` | PLAIN, DIGEST-MD5, EXTERNAL (verified client cert), GSSAPI lab tickets |
 | `SchemaRegistry` | OpenLDAP-style `*.schema` files; MUST/MAY/SYNTAX on writes |
 | `MemoryBackend` | In-process tree; optional LDIF seed |
 | `LdifBackend` | Same tree plus persist back to `ldif_file` |

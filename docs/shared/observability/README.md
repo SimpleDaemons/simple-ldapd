@@ -9,13 +9,13 @@ simple-ldapd logs text lines. There is no Prometheus endpoint, tracing, or SNMP.
 | `log_file` empty | stderr (captured by systemd journal, launchd, or the terminal) |
 | `log_file` set | Append to that path |
 
-`log_level` is accepted in the config file but is not applied yet; the logger stays at info. Startup logs listen address and ports. Shutdown logs `simple-ldapd stopped`.
+`log_level` is applied at start (`debug`, `info`, `warning`, `error`, `fatal`). Startup logs listen address and ports. Shutdown logs `simple-ldapd stopped`.
 
 ## What to watch
 
 - Process / unit running
 - Listen sockets 389/636 (or 3389 in the lab)
-- Bind failures in client applications (`invalidCredentials`, `confidentialityRequired`)
+- Bind failures in client applications (`invalidCredentials`, `confidentialityRequired`, `busy`)
 - Disk space and permissions on `ldif_file` and `log_file`
 - Latency under load (session threads share one in-memory tree)
 

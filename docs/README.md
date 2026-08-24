@@ -1,6 +1,6 @@
 # simple-ldapd documentation
 
-Documentation for **simple-ldapd v0.14.0**, a lightweight LDAPv3 directory daemon for SSO via LDAP bind. OpenLDAP-style CLI tools and Active Directory–friendly schema names are included. This is not a domain controller and not a Kerberos KDC.
+Documentation for **simple-ldapd v0.15.0**, a lightweight LDAPv3 directory daemon for SSO via LDAP bind. OpenLDAP-style CLI tools and Active Directory–friendly schema names are included. This is not a domain controller and not a Kerberos KDC.
 
 License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 
@@ -25,7 +25,7 @@ License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 | Troubleshooting | [Troubleshooting](shared/troubleshooting/README.md) |
 | Building and tests | [Development](development/README.md) |
 
-## What works in v0.14.0
+## What works in v0.15.0
 
 - LDAPv3 bind (anonymous, simple, SASL PLAIN / DIGEST-MD5 / EXTERNAL / lab GSSAPI)
 - Search with equality, present, substring, and/or/not filters
@@ -39,6 +39,7 @@ License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 - Schema enforcement on writes
 - In-memory directory with optional LDIF seed and persist (`ldif_file`)
 - SQLite directory (`backend = sqlite`, `sqlite_file`); optional `ldif_file` seed when the database is empty
+- Applied `log_level`, per-IP `bind_rate_limit`, SASL EXTERNAL with a verified client certificate
 
 ## Known limits
 

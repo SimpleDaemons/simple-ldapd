@@ -45,6 +45,7 @@ Binaries land in `build/`: `simple-ldapd`, `ldapsearch`, `ldapadd`, `ldapmodify`
 | `ENABLE_SQLITE` | ON | Link SQLite3; required for `backend = sqlite` |
 | `ENABLE_PACKAGING` | ON | CPack targets |
 | `ENABLE_STATIC_LINKING` | OFF | Self-contained binaries |
+| `LDAP_CLI_PREFIX` | (empty) | Prefix OpenLDAP-style tool names (e.g. `simple-` → `simple-ldapsearch`) |
 | `BUILD_SHARED_LIBS` | OFF | Shared library (static `simple-ldapd_lib` is the default) |
 
 macOS looks for OpenSSL under Homebrew (`/opt/homebrew/opt/openssl@3`, `/usr/local/opt/openssl@3`) and SQLite under `/opt/homebrew/opt/sqlite` or `/usr/local/opt/sqlite`.

@@ -13,7 +13,8 @@ Key/value syntax (`name = value`). Comments start with `#`.
 | enable_starttls | false | StartTLS on the LDAP port |
 | tls_cert_file | | Server certificate |
 | tls_key_file | | Server private key |
-| tls_ca_file | | Optional CA / client trust |
+| tls_ca_file | | Optional CA / client trust (required for EXTERNAL and `tls_verify_client`) |
+| tls_verify_client | false | Require a client certificate on every TLS handshake |
 | backend | memory | `memory`, `ldif`, or `sqlite` |
 | ldif_file | | LDIF seed; persist for the LDIF backend; seed-only when sqlite is empty |
 | sqlite_file | | Required when `backend = sqlite` |
@@ -22,7 +23,8 @@ Key/value syntax (`name = value`). Comments start with `#`.
 | root_dn | cn=admin,dc=example,dc=com | Directory manager DN |
 | root_password | | Root DN bind password |
 | log_file | | Optional log path |
-| log_level | info | `debug`, `info`, `warning` |
+| log_level | info | `debug`, `info`, `warning`, `error`, `fatal` |
+| bind_rate_limit | 0 | Binds per minute per client IP; `0` disables |
 | foreground | true | Stay in the foreground |
 | require_confidentiality | false | Refuse cleartext password binds |
 | krb_realm | from `base_dn` | Lab GSSAPI realm (e.g. EXAMPLE.COM) |

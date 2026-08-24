@@ -1,6 +1,6 @@
 # Production
 
-v0.14.0 can bind, search, write, persist to SQLite, encrypt, enforce schema, apply ACLs, hash passwords, compare, page results, and change passwords, and it serves more than one client at a time. It is still early: lab GSSAPI rather than MIT Kerberos, and no `stop`/`reload` commands.
+v0.15.0 can bind, search, write, persist to SQLite, encrypt, enforce schema, apply ACLs, hash passwords, compare, page results, change passwords, throttle binds, and require client certificates for SASL EXTERNAL, and it serves more than one client at a time. It is still early: lab GSSAPI rather than MIT Kerberos, and no `stop`/`reload` commands.
 
 Use this section when exposing 389/636 on a host, not for the 3389 lab template.
 

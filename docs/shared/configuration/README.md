@@ -25,7 +25,8 @@ Canonical key list: [config/README.md](../../../config/README.md). Production no
 | `enable_starttls` | `false` | StartTLS on the LDAP port |
 | `tls_cert_file` | | Server certificate |
 | `tls_key_file` | | Server private key |
-| `tls_ca_file` | | Optional CA file |
+| `tls_ca_file` | | Optional CA file. Required for SASL EXTERNAL and `tls_verify_client` |
+| `tls_verify_client` | `false` | Require a client certificate on every TLS handshake |
 | `backend` | `memory` | `memory`, `ldif`, or `sqlite`. `backend = sqlite` wins even if `ldif_file` is set. Otherwise a non-empty `ldif_file` selects `LdifBackend` even if `backend` is `memory` |
 | `ldif_file` | | LDIF seed. For `ldif`, successful writes persist back to this path. For `sqlite`, seed only when the database is empty |
 | `sqlite_file` | | Required when `backend = sqlite` |
@@ -34,7 +35,8 @@ Canonical key list: [config/README.md](../../../config/README.md). Production no
 | `root_dn` | `cn=admin,dc=example,dc=com` | Directory manager |
 | `root_password` | | Root bind password (not changeable via `ldappasswd`) |
 | `log_file` | | Optional log path; otherwise stderr |
-| `log_level` | `info` | Parsed but not yet applied; the logger stays at info |
+| `log_level` | `info` | `debug`, `info`, `warning`, `error`, `fatal`; applied to the logger |
+| `bind_rate_limit` | `0` | Binds per minute per client IP; `0` unlimited. Exceeded binds return `busy` |
 | `foreground` | `true` | `--daemon` sets this false but does not fork |
 | `require_confidentiality` | `false` | Refuse cleartext password binds |
 | `krb_realm` | derived from `base_dn` | Lab GSSAPI realm (e.g. `EXAMPLE.COM`) |

@@ -4,6 +4,19 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.15.0] — 2026-08-24
+
+Milestone 15 — Hardening.
+
+### Added
+
+- `log_level` is applied (`debug`, `info`, `warning`, `error`, `fatal`)
+- `bind_rate_limit` (binds per minute per client IP; `0` disables); exceeded binds return `busy`
+- SASL EXTERNAL requires a verified TLS client certificate; authzid must match the certificate CN
+- `tls_verify_client` requires a client certificate on every TLS handshake (`tls_ca_file` required)
+- Client `--cert` / `--key` for EXTERNAL; CMake `LDAP_CLI_PREFIX` (e.g. `simple-`) to avoid OpenLDAP name collisions
+- Install prefix is no longer forced to `/usr` when `CMAKE_INSTALL_PREFIX` is set
+
 ## [0.14.0] — 2026-08-24
 
 Milestone 14 — SQLite backend.

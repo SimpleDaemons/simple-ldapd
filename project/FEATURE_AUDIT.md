@@ -16,9 +16,10 @@
 | Search filters | Implemented (`equality`, `and`/`or`/`not`, `present`, substring) |
 | `ldapsearch` | Implemented (paged `-E pr=N`, typesOnly `-A`, `-l`/`-z`) |
 | Add / modify / delete / modrdn | Implemented (root DN or `acl` write) |
-| SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |
+| SASL | PLAIN, DIGEST-MD5, EXTERNAL (verified client cert), GSSAPI lab tickets |
 | LDAPS / StartTLS | Implemented |
 | Access control | Implemented (`acl` WHO/PERM/subtree) |
+| Bind rate limit | Implemented (`bind_rate_limit` per client IP) |
 | CLI help/version | Implemented |
 | `ldapadd` / `ldapmodify` / `ldapdelete` | Implemented |
 | `ldapcompare` / `ldapwhoami` | Implemented |

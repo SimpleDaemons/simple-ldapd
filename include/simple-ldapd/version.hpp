@@ -10,7 +10,7 @@
 
 namespace simple_ldapd {
 
-inline constexpr const char *kVersion = "0.14.0";
+inline constexpr const char *kVersion = "0.15.0";
 inline constexpr const char *kProjectName = "simple-ldapd";
 inline constexpr const char *kDescription =
     "Simple LDAP Daemon - A lightweight directory service";

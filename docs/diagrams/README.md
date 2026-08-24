@@ -1,6 +1,6 @@
 # Diagrams
 
-Mermaid diagrams for simple-ldapd v0.14.0. They render on GitHub and in editors with Mermaid support ([mermaid.live](https://mermaid.live) to preview).
+Mermaid diagrams for simple-ldapd v0.15.0. They render on GitHub and in editors with Mermaid support ([mermaid.live](https://mermaid.live) to preview).
 
 | Document | Contents |
 |----------|----------|

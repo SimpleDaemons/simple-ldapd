@@ -33,7 +33,7 @@ SIGINT and SIGTERM stop the accept loop. There is no pidfile or `simple-ldapd st
 
 ## Client tools
 
-`ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldappasswd`, `ldapcompare`, and `ldapwhoami` share OpenLDAP-compatible flags.
+`ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldappasswd`, `ldapcompare`, and `ldapwhoami` share OpenLDAP-compatible flags. CMake `-DLDAP_CLI_PREFIX=simple-` installs them as `simple-ldapsearch` and so on.
 
 | Flag | Meaning |
 |------|---------|
@@ -42,6 +42,7 @@ SIGINT and SIGTERM stop the accept loop. There is no pidfile or `simple-ldapd st
 | `-p PORT` | Port |
 | `-Z` | StartTLS after connect |
 | `--ca-file FILE` | Trust CA or server cert for TLS |
+| `--cert FILE` / `--key FILE` | Client certificate for SASL EXTERNAL |
 | `-x` | Simple authentication (default) |
 | `-Y MECH` | SASL: `PLAIN`, `DIGEST-MD5`, `EXTERNAL`, `GSSAPI` |
 | `-U AUTHCID` | SASL authentication identity |

@@ -57,4 +57,4 @@ Stop the service, restore `directory.sqlite` (and WAL sidecars if present) and c
 
 ## Logs
 
-`log_file` appends timestamped lines. Unset `log_file` to use stderr (journald under systemd). `log_level` is stored from config but not applied to the logger yet. There are no metrics or tracing exporters. See [observability](../shared/observability/README.md).
+`log_file` appends timestamped lines. Unset `log_file` to use stderr (journald under systemd). `log_level` is applied (`debug` through `fatal`). There are no metrics or tracing exporters. See [observability](../shared/observability/README.md).

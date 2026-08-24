@@ -14,7 +14,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-Binaries are in `build/`. They are not renamed; `ldapsearch` and the other tools will shadow OpenLDAP if you install them on the same `PATH`.
+Binaries are in `build/`. Default names match OpenLDAP (`ldapsearch`, …). Install with `-DLDAP_CLI_PREFIX=simple-` (or a private `CMAKE_INSTALL_PREFIX`) if you need to keep OpenLDAP on `PATH`.
 
 ## Make
 

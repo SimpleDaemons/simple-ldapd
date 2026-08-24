@@ -23,7 +23,7 @@ This is a bind-centric directory, not an AD DC. Treat `root_dn` as superuser.
 | Anonymous | Empty DN + empty password always binds. Search is allowed with no `acl` lines; `acl = users search *` denies anonymous reads. |
 | Simple | Use TLS. Bind DN resolution accepts uid / sAMAccountName. |
 | SASL PLAIN / DIGEST-MD5 | Same identities as simple bind. PLAIN still needs TLS. DIGEST-MD5 needs `{CLEARTEXT}` or unprefixed `userPassword`. |
-| SASL EXTERNAL | Trusts the authzid DN; **does not verify a client certificate**. |
+| SASL EXTERNAL | TLS client certificate required and verified against `tls_ca_file`; authzid must match the certificate CN |
 | SASL GSSAPI | Lab HMAC tickets only. Not MIT Kerberos. |
 
 ## Authorization
