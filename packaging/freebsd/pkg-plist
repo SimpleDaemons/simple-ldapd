@@ -1,0 +1,6 @@
+bin/simple-ldapd
+bin/ldapsearch
+bin/ldapadd
+bin/ldapmodify
+bin/ldapdelete
+bin/ldappasswd

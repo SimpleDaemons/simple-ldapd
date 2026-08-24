@@ -1,0 +1,7 @@
+simple-ldapd is a lightweight LDAPv3 directory daemon for SSO via LDAP bind.
+
+It ships an OpenLDAP-style CLI (ldapsearch, ldapadd, ldapmodify, ldapdelete,
+ldappasswd), standard schema placeholders, and an AD-compatible attribute
+pack. Protocol, TLS, and SASL implementations are still stubs in v0.1.0.
+
+WWW: https://github.com/SimpleDaemons/simple-ldapd

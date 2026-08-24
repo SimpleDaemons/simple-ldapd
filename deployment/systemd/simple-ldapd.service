@@ -1,0 +1,17 @@
+[Unit]
+Description=Simple LDAP Daemon - A lightweight directory service
+After=network.target
+
+[Service]
+Type=simple
+User=simple-ldapd
+Group=simple-ldapd
+ExecStart=/usr/local/bin/simple-ldapd
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=simple-ldapd
+
+[Install]
+WantedBy=multi-user.target

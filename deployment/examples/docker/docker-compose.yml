@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  simple-ldapd:
+    image: simple-ldapd:latest
+    container_name: simple-ldapd
+    ports:
+      - "389:389/tcp"
+      - "636:636/tcp"
+    volumes:
+      - ./config:/etc/simple-ldapd:ro
+      - ./data:/var/lib/simple-ldapd
+      - ./logs:/var/log/simple-ldapd
+    environment:
+      - SIMPLE_LDAPD_CONFIG=/etc/simple-ldapd/simple-ldapd.conf
+      - SIMPLE_LDAPD_LOG_LEVEL=info
+      - SIMPLE_LDAPD_BIND_ADDRESS=0.0.0.0
+      - SIMPLE_LDAPD_BIND_PORT=389
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "389"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - simple-ldapd-network
+
+networks:
+  simple-ldapd-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16

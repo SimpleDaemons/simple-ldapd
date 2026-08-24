@@ -1,0 +1,23 @@
+#!/bin/bash
+# Post-removal script for simple-ldapd
+
+set -e
+
+PROJECT_NAME="simple-ldapd"
+CONFIG_DIR="/etc/$PROJECT_NAME"
+LOG_DIR="/var/log/$PROJECT_NAME"
+
+if [ "$1" = "purge" ]; then
+    # Remove configuration files (optional - user may want to keep them)
+    # Uncomment to remove config on purge:
+    # rm -rf "$CONFIG_DIR"
+    
+    # Remove log files
+    rm -rf "$LOG_DIR"
+    
+    # Remove service user (optional)
+    # userdel simple-ldapd 2>/dev/null || true
+fi
+
+exit 0
+

@@ -1,0 +1,111 @@
+---
+- name: Setup simple-ldapd development environment
+  hosts: all
+  become: yes
+  vars:
+    project_dir: /opt/simple-ldapd
+    build_user: simple-ldapd
+    build_group: simple-ldapd
+    project_name: simple-ldapd
+    
+  tasks:
+    - name: Update package cache
+      package:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+      
+    - name: Install build dependencies (Ubuntu/Debian)
+      package:
+        name:
+          - build-essential
+          - cmake
+          - git
+          - pkg-config
+          - libssl-dev
+          - libjsoncpp-dev
+          - libyaml-cpp-dev
+          - libgtest-dev
+          - libgmock-dev
+          - python3
+          - python3-pip
+        state: present
+      when: ansible_os_family == "Debian"
+      
+    - name: Install build dependencies (CentOS/RHEL)
+      package:
+        name:
+          - gcc-c++
+          - cmake
+          - git
+          - pkgconfig
+          - openssl-devel
+          - jsoncpp-devel
+          - yaml-cpp-devel
+          - gtest-devel
+          - gmock-devel
+          - python3
+          - python3-pip
+        state: present
+      when: ansible_os_family == "RedHat"
+      
+    - name: Create build user
+      user:
+        name: "{{ build_user }}"
+        group: "{{ build_group }}"
+        shell: /bin/bash
+        create_home: yes
+        state: present
+        
+    - name: Create project directory
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        owner: "{{ build_user }}"
+        group: "{{ build_group }}"
+        mode: '0755'
+        
+    - name: Clone repository
+      git:
+        repo: "{{ git_repo_url | default('https://github.com/simpledaemons/' + project_name + '.git') }}"
+        dest: "{{ project_dir }}"
+        version: "{{ git_branch | default('main') }}"
+        force: yes
+      become_user: "{{ build_user }}"
+      
+    - name: Create build directory
+      file:
+        path: "{{ project_dir }}/build"
+        state: directory
+        owner: "{{ build_user }}"
+        group: "{{ build_group }}"
+        mode: '0755'
+        
+    - name: Configure CMake
+      command: cmake ..
+      args:
+        chdir: "{{ project_dir }}/build"
+      become_user: "{{ build_user }}"
+      
+    - name: Build project
+      make:
+        chdir: "{{ project_dir }}/build"
+        target: all
+      become_user: "{{ build_user }}"
+      
+    - name: Run tests
+      command: make test
+      args:
+        chdir: "{{ project_dir }}/build"
+      become_user: "{{ build_user }}"
+      register: test_result
+      failed_when: false
+      
+    - name: Display test results
+      debug:
+        var: test_result.stdout_lines
+        
+  handlers:
+    - name: reload systemd
+      systemd:
+        daemon_reload: yes
+

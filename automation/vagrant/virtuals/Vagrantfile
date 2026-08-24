@@ -1,0 +1,48 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# VM-specific Vagrantfile template
+# This file is used by the vm-manager script to create VM instances
+
+Vagrant.configure("2") do |config|
+  # VM configuration
+  config.vm.box = "{BOX_NAME}"
+  config.vm.hostname = "simple-ldapd-{VM_NAME}"
+  
+  # Network configuration
+  config.vm.network "private_network", ip: "{VM_IP}"
+  
+  # VM resources
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "simple-ldapd-{VM_NAME}"
+    vb.memory = "{VM_MEMORY}"
+    vb.cpus = "{VM_CPUS}"
+    vb.gui = false
+  end
+  
+  # Provisioning with Ansible
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "automation/ansible/playbook.yml"
+    ansible.inventory_path = "automation/ansible/inventory.ini"
+    ansible.limit = "development"
+    ansible.extra_vars = {
+      git_repo_url: ".",
+      git_branch: "main"
+    }
+    ansible.verbose = true
+  end
+  
+  # Shared directories
+  config.vm.synced_folder ".", "/vagrant", type: "rsync", 
+    rsync__exclude: [".git/", "dist/", "*.o", "*.so", "*.a", "automation/vagrant/virtuals/", ".vagrant/"]
+  
+  # Application source code
+  config.vm.synced_folder "./src", "/opt/simple-ldapd/src", type: "rsync"
+  config.vm.synced_folder "./include", "/opt/simple-ldapd/include", type: "rsync"
+  config.vm.synced_folder "./tests", "/opt/simple-ldapd/tests", type: "rsync"
+  config.vm.synced_folder "./config", "/opt/simple-ldapd/config", type: "rsync"
+  
+  # Build directory
+  config.vm.synced_folder "./build", "/opt/simple-ldapd/build", type: "rsync"
+end
+

@@ -1,0 +1,62 @@
+#!/bin/bash
+# Build script for Vagrant VM
+# Usage: ./vm-build [vm_name] [clean|test|install]
+
+set -e
+
+# Get VM name from first argument or default to ubuntu_dev
+VM_NAME="${1:-ubuntu_dev}"
+VM_DIR="automation/vagrant/virtuals/$VM_NAME"
+
+# Check if VM directory exists
+if [ ! -d "$VM_DIR" ]; then
+    echo "❌ VM directory $VM_DIR not found"
+    echo "Available VMs: ubuntu_dev, centos_dev"
+    exit 1
+fi
+
+# Change to VM directory
+cd "$VM_DIR"
+
+# Check if Vagrant VM is running
+if ! vagrant status | grep -q "running"; then
+    echo "Starting Vagrant VM..."
+    vagrant up
+fi
+
+# Sync files to VM
+echo "Syncing files to VM..."
+vagrant rsync
+
+# Run build commands on VM
+case "${2:-build}" in
+    "clean")
+        echo "Cleaning build directory..."
+        vagrant ssh -c "cd /opt/simple-ldapd && sudo -u simple-ldapd rm -rf build && mkdir -p build"
+        ;;
+    "test")
+        echo "Running tests..."
+        vagrant ssh -c "cd /opt/simple-ldapd/build && sudo -u simple-ldapd make test"
+        ;;
+    "install")
+        echo "Installing service..."
+        vagrant ssh -c "cd /opt/simple-ldapd && sudo systemctl enable simple-ldapd && sudo systemctl start simple-ldapd"
+        ;;
+    "status")
+        echo "Checking service status..."
+        vagrant ssh -c "sudo systemctl status simple-ldapd --no-pager"
+        ;;
+    "logs")
+        echo "Showing service logs..."
+        vagrant ssh -c "sudo journalctl -u simple-ldapd -f"
+        ;;
+    "build")
+        echo "Building project..."
+        vagrant ssh -c "cd /opt/simple-ldapd/build && sudo -u simple-ldapd cmake .. && sudo -u simple-ldapd make -j\$(nproc)"
+        ;;
+    *)
+        echo "Usage: $0 [vm_name] [clean|test|install|status|logs|build]"
+        exit 1
+        ;;
+esac
+

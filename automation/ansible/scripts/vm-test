@@ -1,0 +1,26 @@
+#!/bin/bash
+# Test script for Vagrant VM
+# Usage: ./vm-test [vm_name] [test_pattern]
+
+VM_NAME="${1:-ubuntu_dev}"
+VM_DIR="automation/vagrant/virtuals/$VM_NAME"
+TEST_PATTERN="${2:-}"
+
+if [ ! -d "$VM_DIR" ]; then
+    echo "❌ VM directory $VM_DIR not found"
+    exit 1
+fi
+
+cd "$VM_DIR"
+
+if ! vagrant status | grep -q "running"; then
+    echo "Starting Vagrant VM..."
+    vagrant up
+fi
+
+if [ -z "$TEST_PATTERN" ]; then
+    vagrant ssh -c "cd /opt/simple-ldapd/build && sudo -u simple-ldapd make test"
+else
+    vagrant ssh -c "cd /opt/simple-ldapd/build && sudo -u simple-ldapd ctest -R '$TEST_PATTERN' --output-on-failure"
+fi
+

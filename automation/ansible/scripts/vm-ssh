@@ -1,0 +1,20 @@
+#!/bin/bash
+# SSH wrapper for Vagrant VM
+# Usage: ./vm-ssh [vm_name] [command]
+
+VM_NAME="${1:-ubuntu_dev}"
+VM_DIR="automation/vagrant/virtuals/$VM_NAME"
+
+if [ ! -d "$VM_DIR" ]; then
+    echo "❌ VM directory $VM_DIR not found"
+    exit 1
+fi
+
+cd "$VM_DIR"
+
+if [ -z "$2" ]; then
+    vagrant ssh
+else
+    vagrant ssh -c "$2"
+fi
+

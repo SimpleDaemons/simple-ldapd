@@ -1,0 +1,53 @@
+#!/bin/bash
+# Post-installation script for simple-ldapd
+# Requires license acceptance
+
+set -e
+
+PROJECT_NAME="simple-ldapd"
+CONFIG_DIR="/etc/$PROJECT_NAME"
+LOG_DIR="/var/log/$PROJECT_NAME"
+SERVICE_USER="simple-ldapd"
+
+# Display license and require acceptance
+if [ "$1" = "configure" ]; then
+    echo "=========================================="
+    echo "simple-ldapd License Agreement"
+    echo "=========================================="
+    echo ""
+    cat /usr/share/doc/$PROJECT_NAME/copyright 2>/dev/null || \
+        cat /usr/share/$PROJECT_NAME/LICENSE.txt 2>/dev/null || \
+        echo "Please review the license at: https://github.com/simpledaemons/$PROJECT_NAME/blob/main/LICENSE"
+    echo ""
+    echo "By continuing, you agree to the terms of the license."
+    echo ""
+    read -p "Do you accept the license? [y/N]: " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "License not accepted. Installation cancelled."
+        exit 1
+    fi
+    
+    # Create service user
+    if ! id "$SERVICE_USER" &>/dev/null; then
+        useradd -r -s /usr/sbin/nologin -d /var/lib/$PROJECT_NAME -c "$PROJECT_NAME service user" "$SERVICE_USER"
+    fi
+    
+    # Create directories
+    mkdir -p "$CONFIG_DIR"
+    mkdir -p "$LOG_DIR"
+    mkdir -p "/var/lib/$PROJECT_NAME"
+    
+    # Set permissions
+    chown -R "$SERVICE_USER:$SERVICE_USER" "$CONFIG_DIR"
+    chown -R "$SERVICE_USER:$SERVICE_USER" "$LOG_DIR"
+    chown -R "$SERVICE_USER:$SERVICE_USER" "/var/lib/$PROJECT_NAME"
+    
+    # Enable and start service
+    systemctl daemon-reload
+    systemctl enable "$PROJECT_NAME" 2>/dev/null || true
+    systemctl start "$PROJECT_NAME" 2>/dev/null || true
+fi
+
+exit 0
+

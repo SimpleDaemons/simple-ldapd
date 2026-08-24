@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install openssl jsoncpp cmake cppcheck
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=ON
+
+      - name: Build
+        run: cmake --build build -j$(sysctl -n hw.ncpu)
+
+      - name: Test
+        run: cd build && ctest --output-on-failure
+
+      - name: cppcheck
+        run: |
+          cppcheck --enable=warning,performance,portability \
+            --suppress=missingIncludeSystem \
+            --error-exitcode=1 \
+            -I include \
+            src/simple-ldapd main 2>&1 | tee cppcheck.log

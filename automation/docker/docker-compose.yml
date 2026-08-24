@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Development environment
+  dev:
+    build:
+      context: ../..
+      dockerfile: automation/docker/Dockerfile
+      target: dev
+    volumes:
+      - ../..:/app
+      - build-cache:/app/build
+    ports:
+      - "123:123/udp"
+    environment:
+      - PLATFORM=linux
+      - DISTRO=ubuntu
+    command: /bin/bash
+    profiles:
+      - dev
+
+  # Runtime container
+  simple-ldapd:
+    build:
+      context: ../..
+      dockerfile: automation/docker/Dockerfile
+      target: runtime
+    ports:
+      - "123:123/udp"
+    volumes:
+      - ../../config:/etc/simple-ldapd:ro
+      - ../../logs:/var/log/simple-ldapd
+    environment:
+      - LOG_LEVEL=info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "simple-ldapd", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    profiles:
+      - runtime
+
+volumes:
+  build-cache:
+    driver: local
+
