@@ -19,5 +19,5 @@
 | LDAPS / StartTLS | Implemented |
 | CLI help/version | Implemented |
 | `ldapadd` / `ldapmodify` / `ldapdelete` | Implemented |
-| `ldappasswd` | Stub (exit 2) |
+| `ldappasswd` | Implemented (RFC 3062) |
 | Kerberos KDC | Out of scope |

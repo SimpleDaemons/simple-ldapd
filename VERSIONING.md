@@ -15,6 +15,7 @@ Git tags and GitHub Releases use the `vMAJOR.MINOR.PATCH` form and point at the 
 | **0.5.0** | 5 — Schemas | Enforce core/cosine/inetOrgPerson/posix/AD-compat | Released (`v0.5.0`) |
 | **0.6.0** | 6 — SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI hook | Released (`v0.6.0`) |
 | **0.7.0** | 7 — Kerberos | Consume tickets for GSSAPI bind (no in-tree KDC) | Released (`v0.7.0`) |
+| **0.8.0** | 8 — Password modify | RFC 3062 and `ldappasswd` | Released (`v0.8.0`) |
 
 ## Rules
 

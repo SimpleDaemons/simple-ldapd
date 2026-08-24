@@ -3,7 +3,7 @@
 # Copyright 2026 SimpleDaemons
 
 cmake_minimum_required(VERSION 3.16)
-project(simple-ldapd VERSION 0.7.0 LANGUAGES CXX)
+project(simple-ldapd VERSION 0.8.0 LANGUAGES CXX)
 
 set(PROJECT_DESCRIPTION "Simple LDAP Daemon - A lightweight directory service")
 

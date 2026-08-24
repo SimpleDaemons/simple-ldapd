@@ -4,6 +4,16 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-08-24
+
+Milestone 8 — Password modify / `ldappasswd`.
+
+### Added
+
+- RFC 3062 Password Modify extended operation (`1.3.6.1.4.1.4203.1.11.1`)
+- Self-service `userPassword` change, or root DN set for another entry
+- Working `ldappasswd` (`-s` / `-a` / `-S`)
+
 ## [0.7.0] — 2026-08-24
 
 Milestone 7 — Kerberos integration (consume tickets; no in-tree KDC).

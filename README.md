@@ -2,7 +2,7 @@
 
 Lightweight LDAPv3 directory daemon for SSO via LDAP bind, with an OpenLDAP-style CLI and Active Directory-friendly schema names.
 
-simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.7.0** implements simple bind, SASL PLAIN/DIGEST-MD5/EXTERNAL/GSSAPI, search, directory writes, TLS, and schema enforcement. GSSAPI consumes lab tickets from `gssapi_keytab` (not a KDC). Versions follow [VERSIONING.md](VERSIONING.md).
+simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.8.0** implements simple bind, SASL, search, directory writes, TLS, schema enforcement, GSSAPI lab tickets, and `ldappasswd`. Versions follow [VERSIONING.md](VERSIONING.md).
 
 ## Goals
 
@@ -29,6 +29,7 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 | Schema enforcement on writes | Implemented |
 | LDAPS / StartTLS | Implemented |
 | SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |
+| `ldappasswd` | Implemented (RFC 3062) |
 
 ## Build
 
@@ -78,9 +79,11 @@ Search the seeded tree (anonymous or simple bind):
 ./build/ldapadd -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -f change.ldif
 ./build/ldapmodify -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -f change.ldif
 ./build/ldapdelete -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret 'uid=bob,ou=People,dc=example,dc=com'
+./build/ldappasswd -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -s alice-new uid=alice,dc=example,dc=com
+./build/ldappasswd -H ldap://127.0.0.1:3389 -x -D uid=alice,dc=example,dc=com -w alice-secret -s alice-newer
 ```
 
-Writes require a root DN bind. `ldappasswd` is still a stub. LDAPS and StartTLS need `enable_ldaps` / `enable_starttls` plus `tls_cert_file` and `tls_key_file`; the high-security template also sets `require_confidentiality` so password binds are refused on cleartext. SASL GSSAPI needs `gssapi_keytab` (a text lab keytab, not MIT krb5 binary format).
+Writes (add/modify/delete/modrdn) require a root DN bind. `ldappasswd` can also be used by a bound user to change their own `userPassword`. LDAPS and StartTLS need `enable_ldaps` / `enable_starttls` plus `tls_cert_file` and `tls_key_file`; the high-security template also sets `require_confidentiality` so password binds are refused on cleartext. SASL GSSAPI needs `gssapi_keytab` (a text lab keytab, not MIT krb5 binary format).
 
 ## Layout
 

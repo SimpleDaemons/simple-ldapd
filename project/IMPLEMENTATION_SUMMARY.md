@@ -7,8 +7,9 @@
 - Search with equality / and / or / not / present filters on the memory backend
 - Optional LDIF seed via `ldif_file`; writes persist back to that file
 - `userPassword` hidden unless bound as root DN; writes require a root DN bind
-- Working `ldapsearch` / `ldapadd` / `ldapmodify` / `ldapdelete` (including `ldaps://` and `-Z`)
+- Working `ldapsearch` / `ldapadd` / `ldapmodify` / `ldapdelete` / `ldappasswd` (including `ldaps://` and `-Z`)
 - Schema files for core, cosine, inetOrgPerson, posix, and AD-compat names; writes are checked against MUST/MAY/SYNTAX
 - LDAPS and StartTLS via OpenSSL; `require_confidentiality` blocks cleartext password binds
 - Schema packs: core, cosine, inetOrgPerson, nis, ad-compat (enforced on writes)
 - SASL PLAIN, DIGEST-MD5, EXTERNAL, and GSSAPI lab tickets from `gssapi_keytab`
+- RFC 3062 password modify: a bound user may change their own `userPassword`; the root DN may set another entry

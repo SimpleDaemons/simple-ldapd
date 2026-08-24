@@ -43,3 +43,8 @@
 
 - Consume tickets for GSSAPI bind
 - Optional companion KDC is out of tree unless revisited
+
+## Milestone 8 — Password modify — v0.8.0
+
+- RFC 3062 Password Modify extended operation
+- `ldappasswd` for self-change and root-set passwords

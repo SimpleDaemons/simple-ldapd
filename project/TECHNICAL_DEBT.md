@@ -7,4 +7,4 @@
 - SASL EXTERNAL trusts the authzid on TLS without verifying a client certificate
 - Client tool names (`ldapsearch`, …) collide with OpenLDAP if installed on the same prefix
 - jsoncpp is optional and unused by the current config parser
-- `ldappasswd` is still a stub
+- `root_password` lives in config and cannot be changed with `ldappasswd`
