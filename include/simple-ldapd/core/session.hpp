@@ -28,8 +28,13 @@ public:
 
 private:
   bool send(const LdapMessage &message);
+  bool mayWrite() const;
   LdapMessage handleBind(const LdapMessage &request);
   bool handleSearch(const LdapMessage &request);
+  LdapMessage handleAdd(const LdapMessage &request);
+  LdapMessage handleModify(const LdapMessage &request);
+  LdapMessage handleDelete(const LdapMessage &request);
+  LdapMessage handleModifyDn(const LdapMessage &request);
   SearchEntryData toSearchEntry(const DirectoryEntry &entry,
                                 const SearchRequestData &request) const;
 
