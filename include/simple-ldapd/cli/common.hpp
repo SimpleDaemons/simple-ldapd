@@ -28,8 +28,10 @@ struct ClientOptions {
   std::vector<std::string> attributes;
   SearchScope scope{SearchScope::Subtree};
   std::string ldif_file;
+  std::vector<std::string> positionals;
   bool simple_auth{true};
   bool prompt_password{false};
+  bool add_mode{false};
   bool help{false};
   bool version{false};
   bool parse_error{false};

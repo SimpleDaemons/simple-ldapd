@@ -73,6 +73,7 @@ void printClientUsage(const std::string &tool, const std::string &summary) {
             << "  -W             Prompt for bind password\n"
             << "  -b BASE_DN     Search base DN\n"
             << "  -s SCOPE       base, one, or sub (default: sub)\n"
+            << "  -a             Treat LDIF records as add (ldapmodify)\n"
             << "  -f FILE        LDIF file\n"
             << "  --help         Show this help\n"
             << "  --version      Show version\n";
@@ -118,6 +119,8 @@ ClientOptions parseClientArgs(int argc, char *argv[]) {
       }
     } else if (arg == "-x") {
       options.simple_auth = true;
+    } else if (arg == "-a") {
+      options.add_mode = true;
     } else if (arg == "-D") {
       options.bind_dn = next();
     } else if (arg == "-w") {
@@ -140,6 +143,7 @@ ClientOptions parseClientArgs(int argc, char *argv[]) {
     } else if (arg == "-f") {
       options.ldif_file = next();
     } else if (!arg.empty() && arg[0] != '-') {
+      options.positionals.push_back(arg);
       if (!positional_filter) {
         options.filter = arg;
         positional_filter = true;
