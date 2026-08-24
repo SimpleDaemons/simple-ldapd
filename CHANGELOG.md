@@ -4,6 +4,10 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+### Added
+
+- `automation/ansible/scripts/collect-packages.sh` pulls packages from the four build hosts into `dist/centralized/vVERSION/` (with `SHA256SUMS`) for a GitHub release
+
 ### Changed
 
 - systemd unit starts `/usr/bin/simple-ldapd --config /etc/simple-ldapd/simple-ldapd.conf --foreground` as `simple-ldapd` with `CAP_NET_BIND_SERVICE`
@@ -13,6 +17,7 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 - CMake links SQLite with `SQLite3_LIBRARIES` so Debian's `SQLite::SQLite3` find-module target configures
 - `make package-all` reads the version from CMake `project()` (currently 0.15.0) and lists binary (`.deb`/`.rpm`) and source (`-src.tar.gz`/`-src.zip`) artifacts separately
 - Linux packages install `/etc/simple-ldapd/templates`, `/etc/simple-ldapd/examples`, schemas, and `/usr/share/doc/simple-ldapd/` (docs were previously omitted; configs were landing under `${prefix}/etc`)
+- `make package-source` writes a ZIP with `tar` when `zip` is missing (FreeBSD) and does not fail `package-all`
 
 
 ## [0.15.0] — 2026-08-24

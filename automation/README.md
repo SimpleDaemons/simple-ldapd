@@ -119,6 +119,7 @@ automation/ansible/
     ├── setup-remote.sh     # service user + /var/lib + /var/log + tls
     ├── build.sh
     ├── remote-build.sh     # ansible-playbook playbook-build.yml
+    ├── collect-packages.sh # pull artifacts from the four builders for a GitHub release
     └── organize-packages.sh
 ```
 
@@ -129,6 +130,10 @@ ansible-playbook -i automation/ansible/inventory.ini automation/ansible/playbook
 # Remote build + packages
 ./automation/ansible/scripts/remote-build.sh --packages
 ./automation/ansible/scripts/remote-build.sh --cli-prefix simple-
+
+# After make package-all on BUILD_DEB, BUILD_RPM, BUILD_PKG, BUILD_MACOS:
+./automation/ansible/scripts/collect-packages.sh
+# Artifacts: dist/centralized/vVERSION/ (+ SHA256SUMS)
 
 # Optional: install the unit after a local VM build (does not start)
 ./automation/ansible/scripts/vm-build ubuntu_dev install

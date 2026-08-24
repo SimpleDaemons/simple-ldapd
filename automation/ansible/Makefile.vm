@@ -2,7 +2,7 @@
 # Usage: make -f automation/ansible/Makefile.vm <target>
 # Run from the project root.
 
-.PHONY: vm-up vm-down vm-ssh vm-build vm-test vm-status vm-logs vm-clean vm-install vm-setup vm-dev
+.PHONY: vm-up vm-down vm-ssh vm-build vm-test vm-status vm-logs vm-clean vm-install vm-setup vm-dev collect-packages
 
 VM_SCRIPTS := automation/ansible/scripts
 
@@ -39,6 +39,9 @@ vm-install:
 vm-setup: vm-up vm-build vm-test vm-install
 
 vm-dev: vm-build vm-test vm-install
+
+collect-packages:
+	$(VM_SCRIPTS)/collect-packages.sh
 
 vm-test-box:
 	cd automation/vagrant && VAGRANT_BOX=$(BOX) vagrant up

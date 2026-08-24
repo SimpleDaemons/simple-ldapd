@@ -1,0 +1,55 @@
+---
+# Pull CPack artifacts from BUILD_DEB / BUILD_RPM / BUILD_PKG / BUILD_MACOS.
+# No facts and no sudo (BUILD_PKG has neither passwordless sudo nor a guaranteed /opt tree).
+- name: Collect simple-ldapd packages for release
+  hosts: build-vms
+  gather_facts: false
+  become: false
+  ignore_unreachable: true
+  vars:
+    project_name: simple-ldapd
+    # Set from collect-packages.sh (-e). Must be an absolute path.
+    local_release_dir: "{{ playbook_dir }}/../../dist/centralized/latest"
+
+  tasks:
+    - name: Find package files on the host
+      shell: |
+        set +e
+        collect_dir() {
+          [ -d "$1" ] || return 0
+          find "$1" -maxdepth 4 -type f \( \
+            -name '{{ project_name }}-*.deb' -o \
+            -name '{{ project_name }}-*.rpm' -o \
+            -name '{{ project_name }}-*.dmg' -o \
+            -name '{{ project_name }}-*.pkg' -o \
+            -name '{{ project_name }}-*-src.tar.gz' -o \
+            -name '{{ project_name }}-*-src.zip' \) 2>/dev/null
+        }
+        {
+          for root in /opt/{{ project_name }} \
+                      "/home/{{ ansible_user }}/{{ project_name }}" \
+                      "/usr/home/{{ ansible_user }}/{{ project_name }}" \
+                      "/Users/{{ ansible_user }}/{{ project_name }}"; do
+            collect_dir "$root/build"
+            collect_dir "$root/dist"
+            collect_dir "$root/dist/centralized"
+          done
+        } | awk -F/ '{ last[$NF] = $0 } END { for (n in last) print last[n] }'
+      args:
+        executable: /bin/sh
+      register: found_packages
+      changed_when: false
+      failed_when: false
+
+    - name: Show packages found
+      debug:
+        msg: "{{ inventory_hostname }}: {{ found_packages.stdout_lines | default([]) | length }} file(s)"
+
+    - name: Fetch packages to the release directory
+      fetch:
+        src: "{{ item }}"
+        dest: "{{ local_release_dir }}/{{ item | basename }}"
+        flat: true
+      loop: "{{ found_packages.stdout_lines | default([]) }}"
+      when: found_packages.stdout_lines | default([]) | length > 0
+      failed_when: false

@@ -327,7 +327,14 @@ static-zip: static-build
 ifeq ($(PLATFORM),windows)
 	@cd $(DIST_DIR) && powershell -Command "Compress-Archive -Path '$(PROJECT_NAME)-$(VERSION)-static-$(PLATFORM)' -DestinationPath '$(PROJECT_NAME)-$(VERSION)-static-$(PLATFORM).zip' -Force"
 else
-	@cd $(DIST_DIR) && zip -r $(PROJECT_NAME)-$(VERSION)-static-$(PLATFORM).zip $(PROJECT_NAME)-$(VERSION)-static-$(PLATFORM)/
+	@cd $(DIST_DIR) && if command -v zip >/dev/null 2>&1; then \
+		zip -r $(PROJECT_NAME)-$(VERSION)-static-$(PLATFORM).zip $(PROJECT_NAME)-$(VERSION)-static-$(PLATFORM)/; \
+	elif tar -a -cf $(PROJECT_NAME)-$(VERSION)-static-$(PLATFORM).zip $(PROJECT_NAME)-$(VERSION)-static-$(PLATFORM)/; then \
+		echo "Created static ZIP with tar"; \
+	else \
+		rm -f $(PROJECT_NAME)-$(VERSION)-static-$(PLATFORM).zip; \
+		echo "Skipping static ZIP (install zip)"; \
+	fi
 endif
 	@rm -rf $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-static-$(PLATFORM)
 	@echo "Static binary ZIP package created: $(PROJECT_NAME)-$(VERSION)-static-$(PLATFORM).zip"
@@ -730,18 +737,34 @@ else
 		config \
 		scripts
 	@echo "Creating ZIP source package..."
-	zip -r $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-src.zip \
-		$(SRC_DIR) \
-		$(INCLUDE_DIR) \
-		CMakeLists.txt \
-		Makefile \
-		README.md \
-		LICENSE \
-		deployment \
-		config \
-		scripts
+	@if command -v zip >/dev/null 2>&1; then \
+		zip -r $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-src.zip \
+			$(SRC_DIR) \
+			$(INCLUDE_DIR) \
+			CMakeLists.txt \
+			Makefile \
+			README.md \
+			LICENSE \
+			deployment \
+			config \
+			scripts; \
+	elif tar -a -cf $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-src.zip \
+			$(SRC_DIR) \
+			$(INCLUDE_DIR) \
+			CMakeLists.txt \
+			Makefile \
+			README.md \
+			LICENSE \
+			deployment \
+			config \
+			scripts; then \
+		echo "Created ZIP with tar"; \
+	else \
+		rm -f $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-src.zip; \
+		echo "Skipping ZIP (install zip to produce $(PROJECT_NAME)-$(VERSION)-src.zip)"; \
+	fi
 endif
-	@echo "Source packages created: TAR.GZ and ZIP"
+	@echo "Source packages created"
 
 # Package all formats (binary + source)
 package-all: package package-source
@@ -758,9 +781,12 @@ package-all: package package-source
 	done; \
 	[ "$$found" -eq 1 ] || echo "No binary packages found"
 	@echo "Source packages:"
-	@ls -la $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-src.tar.gz \
-	        $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-src.zip \
-	        2>/dev/null || echo "No source packages found"
+	@found=0; \
+	for f in $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-src.tar.gz \
+	         $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-src.zip; do \
+	  if [ -f "$$f" ]; then ls -la "$$f"; found=1; fi; \
+	done; \
+	[ "$$found" -eq 1 ] || echo "No source packages found"
 
 # Individual package targets for each format
 package-deb: build

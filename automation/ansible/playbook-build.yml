@@ -87,6 +87,23 @@
         - ansible_facts['os_family'] == "RedHat"
         - need_root | bool
 
+    - name: Install build dependencies (FreeBSD)
+      package:
+        name:
+          - cmake
+          - git
+          - pkgconf
+          - openssl
+          - sqlite3
+          - jsoncpp
+          - zip
+          - gmake
+        state: present
+      become: "{{ need_root }}"
+      when:
+        - ansible_facts['os_family'] == "FreeBSD"
+        - need_root | bool
+
     - name: Install build dependencies (macOS)
       homebrew:
         name:
