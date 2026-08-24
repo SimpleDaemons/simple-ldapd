@@ -63,6 +63,16 @@ inline const char *toString(ResultCode code) {
     return "operationsError";
   case ResultCode::ProtocolError:
     return "protocolError";
+  case ResultCode::TimeLimitExceeded:
+    return "timeLimitExceeded";
+  case ResultCode::SizeLimitExceeded:
+    return "sizeLimitExceeded";
+  case ResultCode::CompareFalse:
+    return "compareFalse";
+  case ResultCode::CompareTrue:
+    return "compareTrue";
+  case ResultCode::UnavailableCriticalExtension:
+    return "unavailableCriticalExtension";
   case ResultCode::Unavailable:
     return "unavailable";
   case ResultCode::UnwillingToPerform:

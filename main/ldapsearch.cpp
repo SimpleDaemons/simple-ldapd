@@ -107,37 +107,62 @@ int main(int argc, char *argv[]) {
   search.scope = options.scope;
   search.filter = std::move(filter);
   search.attributes = options.attributes;
-  if (!connection->sendAll(encodeLdapMessage(makeSearchRequest(message_id++, search)))) {
-    std::cerr << "ldapsearch: search send failed" << std::endl;
-    return 1;
-  }
+  search.types_only = options.types_only;
+  search.size_limit = options.size_limit;
+  search.time_limit = options.time_limit;
 
+  auto sendSearch = [&](const std::string &cookie) -> bool {
+    auto request = makeSearchRequest(message_id++, search);
+    if (options.page_size > 0) {
+      request.controls.push_back(
+          simple_ldapd::makePagedResultsControl(options.page_size, cookie));
+    }
+    return connection->sendAll(encodeLdapMessage(request));
+  };
+
+  std::string cookie;
   ResultCode search_result = ResultCode::OperationsError;
-  while (true) {
-    simple_ldapd::LdapMessage message;
-    if (!recvMessage(*connection, message)) {
-      std::cerr << "ldapsearch: search response truncated" << std::endl;
+  std::string diagnostic;
+  do {
+    if (!sendSearch(cookie)) {
+      std::cerr << "ldapsearch: search send failed" << std::endl;
       return 1;
     }
-    if (message.op == simple_ldapd::ProtocolOp::SearchResultEntry) {
-      printEntry(message.entry);
-      continue;
-    }
-    if (message.op == simple_ldapd::ProtocolOp::SearchResultDone) {
-      search_result = message.result;
-      if (search_result != ResultCode::Success) {
-        std::cerr << "ldapsearch: " << toString(search_result);
-        if (!message.diagnostic.empty()) {
-          std::cerr << " (" << message.diagnostic << ")";
-        }
-        std::cerr << std::endl;
+    cookie.clear();
+    while (true) {
+      simple_ldapd::LdapMessage message;
+      if (!recvMessage(*connection, message)) {
+        std::cerr << "ldapsearch: search response truncated" << std::endl;
+        return 1;
       }
-      break;
+      if (message.op == simple_ldapd::ProtocolOp::SearchResultEntry) {
+        printEntry(message.entry);
+        continue;
+      }
+      if (message.op == simple_ldapd::ProtocolOp::SearchResultDone) {
+        search_result = message.result;
+        diagnostic = message.diagnostic;
+        for (const auto &control : message.controls) {
+          if (control.oid == simple_ldapd::kPagedResultsOid) {
+            int unused = 0;
+            simple_ldapd::decodePagedResultsValue(control.value, unused, cookie);
+          }
+        }
+        break;
+      }
+      std::cerr << "ldapsearch: unexpected search response" << std::endl;
+      return 1;
     }
-    std::cerr << "ldapsearch: unexpected search response" << std::endl;
-    return 1;
+  } while (!cookie.empty() && search_result == ResultCode::Success);
+
+  if (search_result != ResultCode::Success) {
+    std::cerr << "ldapsearch: " << toString(search_result);
+    if (!diagnostic.empty()) {
+      std::cerr << " (" << diagnostic << ")";
+    }
+    std::cerr << std::endl;
   }
 
   connection->sendAll(encodeLdapMessage(makeUnbindRequest(message_id++)));
-  return static_cast<int>(search_result);
+  return search_result == ResultCode::Success ? 0 : static_cast<int>(search_result);
 }

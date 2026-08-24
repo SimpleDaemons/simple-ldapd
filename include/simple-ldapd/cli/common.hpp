@@ -37,6 +37,10 @@ struct ClientOptions {
   std::string keytab;
   std::string new_password;
   std::string old_password;
+  int page_size{0};
+  int size_limit{0};
+  int time_limit{0};
+  bool types_only{false};
   bool prompt_password{false};
   bool prompt_new_password{false};
   bool add_mode{false};

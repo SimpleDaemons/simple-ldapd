@@ -34,6 +34,8 @@ public:
   ResultCode del(const std::string &dn);
   ResultCode modifyDn(const ModifyDnRequestData &request);
   ResultCode passwordModify(const PasswordModifyRequest &request);
+  ResultCode compare(const CompareRequestData &request);
+  ResultCode whoAmI(std::string &authzid);
   void unbind();
 
 private:

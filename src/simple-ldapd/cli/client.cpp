@@ -277,6 +277,26 @@ ResultCode LdapClient::passwordModify(const PasswordModifyRequest &request) {
   return response->result;
 }
 
+ResultCode LdapClient::compare(const CompareRequestData &request) {
+  auto response = exchange(makeCompareRequest(next_id_++, request));
+  if (!response || response->op != ProtocolOp::CompareResponse) {
+    return ResultCode::Unavailable;
+  }
+  return response->result;
+}
+
+ResultCode LdapClient::whoAmI(std::string &authzid) {
+  authzid.clear();
+  auto response = exchange(makeExtendedRequest(next_id_++, kWhoAmIOid));
+  if (!response || response->op != ProtocolOp::ExtendedResponse) {
+    return ResultCode::Unavailable;
+  }
+  if (response->result == ResultCode::Success) {
+    authzid = response->extended_value;
+  }
+  return response->result;
+}
+
 void LdapClient::unbind() {
   connection_.sendAll(encodeLdapMessage(makeUnbindRequest(next_id_++)));
 }

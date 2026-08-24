@@ -37,6 +37,18 @@ bool decodeResult(BerReader &reader, LdapMessage &message) {
       }
       continue;
     }
+    if (reader.peekTag() == kBerContext10) {
+      if (!reader.readOctetString(kBerContext10, message.extended_oid)) {
+        return false;
+      }
+      continue;
+    }
+    if (reader.peekTag() == kBerContext11) {
+      if (!reader.readOctetString(kBerContext11, message.extended_value)) {
+        return false;
+      }
+      continue;
+    }
     if (!reader.skip()) {
       return false;
     }
@@ -319,6 +331,68 @@ bool decodeModifyDnRequest(BerReader &reader, ModifyDnRequestData &modify_dn) {
   return reader.ok();
 }
 
+std::vector<uint8_t> encodeCompareRequest(const CompareRequestData &compare) {
+  BerWriter ava;
+  ava.writeOctetString(compare.attribute);
+  ava.writeOctetString(compare.value);
+  BerWriter inner;
+  inner.writeOctetString(compare.dn);
+  inner.writeConstructed(kBerSequence, ava.bytes());
+  BerWriter outer;
+  outer.writeConstructed(kBerCompareRequest, inner.bytes());
+  return outer.take();
+}
+
+bool decodeCompareRequest(BerReader &reader, CompareRequestData &compare) {
+  BerReader ava;
+  return reader.readOctetString(compare.dn) && reader.readConstructed(kBerSequence, ava) &&
+         ava.readOctetString(compare.attribute) && ava.readOctetString(compare.value) &&
+         reader.ok();
+}
+
+std::vector<uint8_t> encodeControls(const std::vector<LdapControl> &controls) {
+  BerWriter list;
+  for (const auto &control : controls) {
+    BerWriter item;
+    item.writeOctetString(control.oid);
+    if (control.critical) {
+      item.writeBoolean(true);
+    }
+    if (!control.value.empty()) {
+      item.writeOctetString(control.value);
+    }
+    list.writeConstructed(kBerSequence, item.bytes());
+  }
+  BerWriter outer;
+  outer.writeConstructed(kBerControls, list.bytes());
+  return outer.take();
+}
+
+bool decodeControls(BerReader &reader, std::vector<LdapControl> &controls) {
+  while (!reader.atEnd()) {
+    BerReader item;
+    if (!reader.readConstructed(kBerSequence, item)) {
+      return false;
+    }
+    LdapControl control;
+    if (!item.readOctetString(control.oid)) {
+      return false;
+    }
+    if (!item.atEnd() && item.peekTag() == kBerBoolean) {
+      if (!item.readBoolean(control.critical)) {
+        return false;
+      }
+    }
+    if (!item.atEnd()) {
+      if (!item.readOctetString(control.value)) {
+        return false;
+      }
+    }
+    controls.push_back(std::move(control));
+  }
+  return reader.ok();
+}
+
 std::vector<uint8_t> encodeExtendedRequest(const std::string &oid, const std::string &value) {
   BerWriter inner;
   inner.writeOctetString(kBerSimpleAuth, oid);
@@ -441,6 +515,18 @@ std::optional<LdapMessage> decodeLdapMessage(const std::vector<uint8_t> &wire) {
       return std::nullopt;
     }
     break;
+  case kBerCompareRequest:
+    message.op = ProtocolOp::CompareRequest;
+    if (!body.readConstructed(tag, op) || !decodeCompareRequest(op, message.compare)) {
+      return std::nullopt;
+    }
+    break;
+  case kBerCompareResponse:
+    message.op = ProtocolOp::CompareResponse;
+    if (!body.readConstructed(tag, op) || !decodeResult(op, message)) {
+      return std::nullopt;
+    }
+    break;
   case kBerExtendedRequest:
     message.op = ProtocolOp::ExtendedRequest;
     if (!body.readConstructed(tag, op) ||
@@ -461,14 +547,32 @@ std::optional<LdapMessage> decodeLdapMessage(const std::vector<uint8_t> &wire) {
     }
     break;
   }
+  if (!body.atEnd() && body.peekTag() == kBerControls) {
+    BerReader controls;
+    if (!body.readConstructed(kBerControls, controls) ||
+        !decodeControls(controls, message.controls)) {
+      return std::nullopt;
+    }
+  }
   return message;
 }
 
 std::vector<uint8_t> encodeLdapMessage(const LdapMessage &message) {
   auto resultOp = [&](uint8_t tag) {
+    auto inner_bytes =
+        encodeResult(message.result, message.matched_dn, message.diagnostic);
+    if (tag == kBerExtendedResponse &&
+        (!message.extended_oid.empty() || !message.extended_value.empty())) {
+      BerWriter extra;
+      extra.writeBytes(inner_bytes.data(), inner_bytes.size());
+      if (!message.extended_oid.empty()) {
+        extra.writeOctetString(kBerContext10, message.extended_oid);
+      }
+      extra.writeOctetString(kBerContext11, message.extended_value);
+      inner_bytes = extra.take();
+    }
     BerWriter writer;
-    writer.writeConstructed(
-        tag, encodeResult(message.result, message.matched_dn, message.diagnostic));
+    writer.writeConstructed(tag, inner_bytes);
     return writer.take();
   };
 
@@ -522,6 +626,12 @@ std::vector<uint8_t> encodeLdapMessage(const LdapMessage &message) {
   case ProtocolOp::ModifyDNResponse:
     protocol_op = resultOp(kBerModifyDNResponse);
     break;
+  case ProtocolOp::CompareRequest:
+    protocol_op = encodeCompareRequest(message.compare);
+    break;
+  case ProtocolOp::CompareResponse:
+    protocol_op = resultOp(kBerCompareResponse);
+    break;
   case ProtocolOp::ExtendedRequest:
     protocol_op = encodeExtendedRequest(message.extended_oid, message.extended_value);
     break;
@@ -536,6 +646,10 @@ std::vector<uint8_t> encodeLdapMessage(const LdapMessage &message) {
   BerWriter body;
   body.writeInteger(message.message_id);
   body.writeBytes(protocol_op.data(), protocol_op.size());
+  if (!message.controls.empty()) {
+    const auto controls = encodeControls(message.controls);
+    body.writeBytes(controls.data(), controls.size());
+  }
   BerWriter envelope;
   envelope.writeConstructed(kBerSequence, body.bytes());
   return envelope.take();
@@ -639,6 +753,44 @@ LdapMessage makeModifyDnRequest(int message_id, ModifyDnRequestData modify_dn) {
   message.op = ProtocolOp::ModifyDNRequest;
   message.modify_dn = std::move(modify_dn);
   return message;
+}
+
+LdapMessage makeCompareRequest(int message_id, CompareRequestData compare) {
+  LdapMessage message;
+  message.message_id = message_id;
+  message.op = ProtocolOp::CompareRequest;
+  message.compare = std::move(compare);
+  return message;
+}
+
+std::string encodePagedResultsValue(int size, const std::string &cookie) {
+  BerWriter inner;
+  inner.writeInteger(size);
+  inner.writeOctetString(cookie);
+  BerWriter outer;
+  outer.writeConstructed(kBerSequence, inner.bytes());
+  return std::string(outer.bytes().begin(), outer.bytes().end());
+}
+
+bool decodePagedResultsValue(const std::string &value, int &size, std::string &cookie) {
+  const std::vector<uint8_t> wire(value.begin(), value.end());
+  BerReader reader(wire);
+  BerReader inner;
+  int64_t parsed = 0;
+  if (!reader.readConstructed(kBerSequence, inner) || !inner.readInteger(parsed) ||
+      !inner.readOctetString(cookie)) {
+    return false;
+  }
+  size = static_cast<int>(parsed);
+  return reader.ok();
+}
+
+LdapControl makePagedResultsControl(int size, const std::string &cookie, bool critical) {
+  LdapControl control;
+  control.oid = kPagedResultsOid;
+  control.critical = critical;
+  control.value = encodePagedResultsValue(size, cookie);
+  return control;
 }
 
 LdapMessage makeExtendedRequest(int message_id, const std::string &oid,

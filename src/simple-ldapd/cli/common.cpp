@@ -78,6 +78,10 @@ void printClientUsage(const std::string &tool, const std::string &summary) {
             << "  -W             Prompt for bind password\n"
             << "  -b BASE_DN     Search base DN\n"
             << "  -s SCOPE       base, one, or sub (default: sub)\n"
+            << "  -A             Types only (attribute names, no values)\n"
+            << "  -l SECONDS     Search time limit (0 = unlimited)\n"
+            << "  -z COUNT       Search size limit (0 = unlimited)\n"
+            << "  -E pr=N        Paged results (RFC 2696), N entries per page\n"
             << "  -a             Treat LDIF records as add (ldapmodify)\n"
             << "  -f FILE        LDIF file\n"
             << "  --help         Show this help\n"
@@ -186,6 +190,37 @@ ClientOptions parseClientArgs(int argc, char *argv[], bool passwd) {
         options.scope = SearchScope::Subtree;
       } else {
         options.parse_error = true;
+      }
+    } else if (arg == "-A") {
+      options.types_only = true;
+    } else if (arg == "-l") {
+      try {
+        options.time_limit = std::stoi(next());
+      } catch (const std::exception &) {
+        options.parse_error = true;
+      }
+    } else if (arg == "-z") {
+      try {
+        options.size_limit = std::stoi(next());
+      } catch (const std::exception &) {
+        options.parse_error = true;
+      }
+    } else if (arg == "-E") {
+      const std::string value = next();
+      auto eq = value.find('=');
+      if (eq == std::string::npos || value.compare(0, eq, "pr") != 0) {
+        options.parse_error = true;
+      } else {
+        std::string count = value.substr(eq + 1);
+        const auto slash = count.find('/');
+        if (slash != std::string::npos) {
+          count = count.substr(0, slash);
+        }
+        try {
+          options.page_size = std::stoi(count);
+        } catch (const std::exception &) {
+          options.parse_error = true;
+        }
       }
     } else if (arg == "-f") {
       options.ldif_file = next();

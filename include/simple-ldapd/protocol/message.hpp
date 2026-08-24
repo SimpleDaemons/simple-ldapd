@@ -32,6 +32,8 @@ enum class ProtocolOp {
   DelResponse,
   ModifyDNRequest,
   ModifyDNResponse,
+  CompareRequest,
+  CompareResponse,
   ExtendedRequest,
   ExtendedResponse,
   Unknown
@@ -83,6 +85,18 @@ struct ModifyDnRequestData {
   std::string new_superior;
 };
 
+struct CompareRequestData {
+  std::string dn;
+  std::string attribute;
+  std::string value;
+};
+
+struct LdapControl {
+  std::string oid;
+  bool critical{false};
+  std::string value;
+};
+
 struct LdapMessage {
   int message_id{0};
   ProtocolOp op{ProtocolOp::Unknown};
@@ -99,6 +113,8 @@ struct LdapMessage {
   std::string extended_oid;
   std::string extended_value;
   std::string server_sasl_creds;
+  CompareRequestData compare;
+  std::vector<LdapControl> controls;
 };
 
 std::optional<LdapMessage> decodeLdapMessage(const std::vector<uint8_t> &wire);
@@ -121,12 +137,19 @@ LdapMessage makeAddRequest(int message_id, AddRequestData add);
 LdapMessage makeModifyRequest(int message_id, ModifyRequestData modify);
 LdapMessage makeDelRequest(int message_id, const std::string &dn);
 LdapMessage makeModifyDnRequest(int message_id, ModifyDnRequestData modify_dn);
+LdapMessage makeCompareRequest(int message_id, CompareRequestData compare);
 LdapMessage makeExtendedRequest(int message_id, const std::string &oid,
                                 const std::string &value = {});
 LdapMessage makeLdapResult(int message_id, ProtocolOp op, ResultCode result,
                            const std::string &diagnostic = {});
 
 inline constexpr const char *kPasswordModifyOid = "1.3.6.1.4.1.4203.1.11.1";
+inline constexpr const char *kWhoAmIOid = "1.3.6.1.4.1.4203.1.11.3";
+inline constexpr const char *kPagedResultsOid = "1.2.840.113556.1.4.319";
+
+std::string encodePagedResultsValue(int size, const std::string &cookie);
+bool decodePagedResultsValue(const std::string &value, int &size, std::string &cookie);
+LdapControl makePagedResultsControl(int size, const std::string &cookie, bool critical = false);
 
 struct PasswordModifyRequest {
   std::string user_identity;

@@ -16,6 +16,10 @@
 #include "simple-ldapd/security/tls.hpp"
 #include "simple-ldapd/utils/dn.hpp"
 #include "simple-ldapd/version.hpp"
+#include <algorithm>
+#include <chrono>
+#include <cstdlib>
+#include <optional>
 
 namespace simple_ldapd {
 
@@ -96,6 +100,9 @@ void Session::serve() {
     case ProtocolOp::ModifyDNRequest:
       response = handleModifyDn(*request);
       break;
+    case ProtocolOp::CompareRequest:
+      response = handleCompare(*request);
+      break;
     case ProtocolOp::ExtendedRequest:
       if (request->extended_oid == kStartTlsOid) {
         if (!config_.enable_starttls || tls_ == nullptr || !tls_->enabled() ||
@@ -117,6 +124,10 @@ void Session::serve() {
       }
       if (request->extended_oid == kPasswordModifyOid) {
         response = handlePasswordModify(*request);
+        break;
+      }
+      if (request->extended_oid == kWhoAmIOid) {
+        response = handleWhoAmI(*request);
         break;
       }
       response =
@@ -184,6 +195,23 @@ bool Session::handleSearch(const LdapMessage &request) {
     return send(makeSearchDone(request.message_id, ResultCode::ProtocolError,
                                "invalid search filter"));
   }
+  int page_size = -1;
+  std::string cookie;
+  for (const auto &control : request.controls) {
+    if (iequals(control.oid, kPagedResultsOid)) {
+      if (!decodePagedResultsValue(control.value, page_size, cookie)) {
+        return send(makeSearchDone(request.message_id,
+                                   control.critical ? ResultCode::UnavailableCriticalExtension
+                                                    : ResultCode::ProtocolError,
+                                   "invalid paged results control"));
+      }
+      continue;
+    }
+    if (control.critical) {
+      return send(makeSearchDone(request.message_id, ResultCode::UnavailableCriticalExtension,
+                                 "unsupported critical control"));
+    }
+  }
   const std::string &base = request.search.base_dn;
   if (!base.empty() && !backend_.lookup(base)) {
     return send(makeSearchDone(request.message_id, ResultCode::NoSuchObject,
@@ -208,20 +236,64 @@ bool Session::handleSearch(const LdapMessage &request) {
   } else {
     matches = backend_.search(base, request.search.scope, request.search.filter);
   }
+  std::vector<DirectoryEntry> visible;
+  for (auto &entry : matches) {
+    if (maySearch(entry.dn)) {
+      visible.push_back(std::move(entry));
+    }
+  }
+  int offset = 0;
+  if (!cookie.empty()) {
+    char *end = nullptr;
+    const long parsed = std::strtol(cookie.c_str(), &end, 10);
+    if (end == cookie.c_str() || (end != nullptr && *end != '\0') || parsed < 0) {
+      return send(makeSearchDone(request.message_id, ResultCode::ProtocolError,
+                                 "invalid paged results cookie"));
+    }
+    offset = static_cast<int>(parsed);
+  }
+  const auto deadline =
+      request.search.time_limit > 0
+          ? std::optional<std::chrono::steady_clock::time_point>(
+                std::chrono::steady_clock::now() +
+                std::chrono::seconds(request.search.time_limit))
+          : std::nullopt;
   int sent = 0;
-  for (const auto &entry : matches) {
-    if (!maySearch(entry.dn)) {
-      continue;
+  ResultCode done_result = ResultCode::Success;
+  if (page_size == 0) {
+    LdapMessage done = makeSearchDone(request.message_id, ResultCode::Success);
+    done.controls.push_back(makePagedResultsControl(0, {}));
+    return send(done);
+  }
+  for (int i = offset; i < static_cast<int>(visible.size()); ++i) {
+    if (deadline && std::chrono::steady_clock::now() >= *deadline) {
+      done_result = ResultCode::TimeLimitExceeded;
+      break;
     }
     if (request.search.size_limit > 0 && sent >= request.search.size_limit) {
-      return send(makeSearchDone(request.message_id, ResultCode::SizeLimitExceeded));
+      done_result = ResultCode::SizeLimitExceeded;
+      break;
     }
-    if (!send(makeSearchEntry(request.message_id, toSearchEntry(entry, request.search)))) {
+    if (page_size > 0 && sent >= page_size) {
+      break;
+    }
+    if (!send(makeSearchEntry(request.message_id, toSearchEntry(visible[static_cast<size_t>(i)],
+                                                               request.search)))) {
       return false;
     }
     ++sent;
   }
-  return send(makeSearchDone(request.message_id, ResultCode::Success));
+  LdapMessage done = makeSearchDone(request.message_id, done_result);
+  if (page_size > 0) {
+    const int next = offset + sent;
+    const std::string next_cookie =
+        next < static_cast<int>(visible.size()) && done_result != ResultCode::SizeLimitExceeded
+            ? std::to_string(next)
+            : std::string{};
+    const int remaining = std::max(0, static_cast<int>(visible.size()) - next);
+    done.controls.push_back(makePagedResultsControl(remaining, next_cookie));
+  }
+  return send(done);
 }
 
 DirectoryEntry Session::rootDse() const {
@@ -232,6 +304,8 @@ DirectoryEntry Session::rootDse() const {
   entry.attributes["vendorName"].push_back("SimpleDaemons");
   entry.attributes["vendorVersion"].push_back(kVersion);
   entry.attributes["supportedExtension"].push_back(kPasswordModifyOid);
+  entry.attributes["supportedExtension"].push_back(kWhoAmIOid);
+  entry.attributes["supportedControl"].push_back(kPagedResultsOid);
   if (config_.enable_starttls) {
     entry.attributes["supportedExtension"].push_back(kStartTlsOid);
   }
@@ -403,6 +477,61 @@ LdapMessage Session::handleModifyDn(const LdapMessage &request) {
   }
   backend_.persist();
   return makeLdapResult(request.message_id, ProtocolOp::ModifyDNResponse, ResultCode::Success);
+}
+
+LdapMessage Session::handleCompare(const LdapMessage &request) {
+  if (request.compare.dn.empty() || request.compare.attribute.empty()) {
+    return makeLdapResult(request.message_id, ProtocolOp::CompareResponse,
+                          ResultCode::ProtocolError, "invalid compare request");
+  }
+  if (!maySearch(request.compare.dn)) {
+    return makeLdapResult(request.message_id, ProtocolOp::CompareResponse,
+                          ResultCode::InsufficientAccessRights, "insufficient access");
+  }
+  const auto entry = backend_.lookup(request.compare.dn);
+  if (!entry) {
+    return makeLdapResult(request.message_id, ProtocolOp::CompareResponse,
+                          ResultCode::NoSuchObject, "no such object");
+  }
+  const std::vector<std::string> *values = nullptr;
+  for (const auto &pair : entry->attributes) {
+    if (iequals(pair.first, request.compare.attribute)) {
+      values = &pair.second;
+      break;
+    }
+  }
+  if (values == nullptr) {
+    return makeLdapResult(request.message_id, ProtocolOp::CompareResponse,
+                          ResultCode::NoSuchAttribute, "no such attribute");
+  }
+  bool matched = false;
+  if (isUserPassword(request.compare.attribute)) {
+    for (const auto &value : *values) {
+      if (verifyUserPassword(value, request.compare.value)) {
+        matched = true;
+        break;
+      }
+    }
+  } else {
+    for (const auto &value : *values) {
+      if (iequals(value, request.compare.value)) {
+        matched = true;
+        break;
+      }
+    }
+  }
+  return makeLdapResult(request.message_id, ProtocolOp::CompareResponse,
+                        matched ? ResultCode::CompareTrue : ResultCode::CompareFalse);
+}
+
+LdapMessage Session::handleWhoAmI(const LdapMessage &request) {
+  LdapMessage response =
+      makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse, ResultCode::Success);
+  response.extended_oid = kWhoAmIOid;
+  if (!bind_dn_.empty()) {
+    response.extended_value = "dn:" + bind_dn_;
+  }
+  return response;
 }
 
 LdapMessage Session::handlePasswordModify(const LdapMessage &request) {

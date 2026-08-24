@@ -134,6 +134,8 @@ set(LDAP_BINARIES
     ldapmodify
     ldapdelete
     ldappasswd
+    ldapcompare
+    ldapwhoami
 )
 
 foreach(_bin IN LISTS LDAP_BINARIES)
@@ -207,6 +209,7 @@ if(ENABLE_TESTS)
     add_ldap_test(test_ldap_cli tests/integration/test_ldap_cli.cpp)
     add_ldap_test(test_ldap_bind_search tests/integration/test_ldap_bind_search.cpp)
     add_ldap_test(test_ldap_write tests/integration/test_ldap_write.cpp)
+    add_ldap_test(test_ldap_ops tests/integration/test_ldap_ops.cpp)
     add_ldap_test(test_ldap_schema tests/integration/test_ldap_schema.cpp)
     add_ldap_test(test_ldap_gssapi tests/unit/test_ldap_gssapi.cpp)
     add_ldap_test(test_ldap_sasl tests/integration/test_ldap_sasl.cpp)
