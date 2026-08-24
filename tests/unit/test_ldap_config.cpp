@@ -39,10 +39,16 @@ bool testDefaultConfig() {
   return true;
 }
 
-bool testInvalidPort() {
+bool testInvalidBaseDn() {
+  LdapConfig config;
+  config.base_dn.clear();
+  return !config.validate();
+}
+
+bool testEphemeralPortAllowed() {
   LdapConfig config;
   config.ldap_port = 0;
-  return !config.validate();
+  return config.validate();
 }
 
 bool testFileLoad() {
@@ -80,7 +86,8 @@ int main() {
     }
   };
   run("testDefaultConfig", testDefaultConfig);
-  run("testInvalidPort", testInvalidPort);
+  run("testInvalidBaseDn", testInvalidBaseDn);
+  run("testEphemeralPortAllowed", testEphemeralPortAllowed);
   run("testFileLoad", testFileLoad);
   run("testFilterParse", testFilterParse);
   run("testResultCodes", testResultCodes);

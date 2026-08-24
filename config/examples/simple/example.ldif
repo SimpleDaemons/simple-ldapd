@@ -27,6 +27,7 @@ uidNumber: 1001
 gidNumber: 1001
 homeDirectory: /home/alice
 loginShell: /bin/bash
+userPassword: alice-secret
 memberOf: cn=developers,ou=Groups,dc=example,dc=com
 
 dn: cn=developers,ou=Groups,dc=example,dc=com

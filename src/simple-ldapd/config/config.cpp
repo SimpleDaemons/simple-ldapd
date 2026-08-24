@@ -83,6 +83,8 @@ bool LdapConfig::loadFromFile(const std::string &path) {
       base_dn = value;
     } else if (key == "root_dn") {
       root_dn = value;
+    } else if (key == "root_password") {
+      root_password = value;
     } else if (key == "log_file") {
       log_file = value;
     } else if (key == "log_level") {
@@ -101,9 +103,6 @@ bool LdapConfig::validate() const {
 
 bool LdapConfig::validateDetailed(std::vector<std::string> &errors) const {
   errors.clear();
-  if (ldap_port == 0) {
-    errors.emplace_back("ldap_port must be non-zero");
-  }
   if (enable_ldaps && ldaps_port == 0) {
     errors.emplace_back("ldaps_port must be non-zero when LDAPS is enabled");
   }

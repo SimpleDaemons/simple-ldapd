@@ -35,6 +35,7 @@ public:
   std::string schema_dir{"schemas"};
   std::string base_dn{"dc=example,dc=com"};
   std::string root_dn{"cn=admin,dc=example,dc=com"};
+  std::string root_password;
   std::string log_file;
   std::string log_level{"info"};
   bool foreground{true};
