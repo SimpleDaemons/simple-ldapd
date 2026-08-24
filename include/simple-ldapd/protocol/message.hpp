@@ -126,6 +126,18 @@ LdapMessage makeExtendedRequest(int message_id, const std::string &oid,
 LdapMessage makeLdapResult(int message_id, ProtocolOp op, ResultCode result,
                            const std::string &diagnostic = {});
 
+inline constexpr const char *kPasswordModifyOid = "1.3.6.1.4.1.4203.1.11.1";
+
+struct PasswordModifyRequest {
+  std::string user_identity;
+  std::optional<std::string> old_password;
+  std::optional<std::string> new_password;
+};
+
+std::string encodePasswordModifyValue(const PasswordModifyRequest &request);
+bool decodePasswordModifyValue(const std::string &value, PasswordModifyRequest &request);
+LdapMessage makePasswordModifyRequest(int message_id, const PasswordModifyRequest &request);
+
 DirectoryEntry toDirectoryEntry(const AddRequestData &add);
 AddRequestData toAddRequest(const DirectoryEntry &entry);
 

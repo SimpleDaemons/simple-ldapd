@@ -164,6 +164,20 @@ bool testExtendedRequestRoundtrip() {
          result->op == ProtocolOp::ExtendedResponse && result->result == ResultCode::Success;
 }
 
+bool testPasswordModifyRoundtrip() {
+  PasswordModifyRequest request;
+  request.user_identity = "uid=alice,dc=example,dc=com";
+  request.old_password = "old-secret";
+  request.new_password = "new-secret";
+  const auto decoded = decodeLdapMessage(encodeLdapMessage(makePasswordModifyRequest(3, request)));
+  PasswordModifyRequest parsed;
+  return decoded && decoded->op == ProtocolOp::ExtendedRequest &&
+         decoded->extended_oid == kPasswordModifyOid &&
+         decodePasswordModifyValue(decoded->extended_value, parsed) &&
+         parsed.user_identity == request.user_identity && parsed.old_password == "old-secret" &&
+         parsed.new_password == "new-secret";
+}
+
 bool testSaslBindRoundtrip() {
   const std::string creds = std::string(1, '\0') + "alice" + std::string(1, '\0') + "secret";
   const auto request = decodeLdapMessage(
@@ -200,6 +214,7 @@ int main() {
   run("testAddModifyMessages", testAddModifyMessages);
   run("testApplyModifications", testApplyModifications);
   run("testExtendedRequestRoundtrip", testExtendedRequestRoundtrip);
+  run("testPasswordModifyRoundtrip", testPasswordModifyRoundtrip);
   run("testSaslBindRoundtrip", testSaslBindRoundtrip);
   std::cout << "Protocol tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;

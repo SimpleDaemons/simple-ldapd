@@ -661,6 +661,63 @@ LdapMessage makeLdapResult(int message_id, ProtocolOp op, ResultCode result,
   return message;
 }
 
+std::string encodePasswordModifyValue(const PasswordModifyRequest &request) {
+  BerWriter fields;
+  if (!request.user_identity.empty()) {
+    fields.writeOctetString(kBerSimpleAuth, request.user_identity);
+  }
+  if (request.old_password) {
+    fields.writeOctetString(kBerContext1, *request.old_password);
+  }
+  if (request.new_password) {
+    fields.writeOctetString(kBerContext2, *request.new_password);
+  }
+  BerWriter sequence;
+  sequence.writeConstructed(kBerSequence, fields.bytes());
+  const auto bytes = sequence.take();
+  return std::string(reinterpret_cast<const char *>(bytes.data()), bytes.size());
+}
+
+bool decodePasswordModifyValue(const std::string &value, PasswordModifyRequest &request) {
+  request = {};
+  if (value.empty()) {
+    return true;
+  }
+  const std::vector<uint8_t> wire(value.begin(), value.end());
+  BerReader top(wire);
+  BerReader sequence;
+  if (!top.readConstructed(kBerSequence, sequence)) {
+    return false;
+  }
+  while (!sequence.atEnd()) {
+    const uint8_t tag = sequence.peekTag();
+    std::string field;
+    if (tag == kBerSimpleAuth) {
+      if (!sequence.readOctetString(kBerSimpleAuth, field)) {
+        return false;
+      }
+      request.user_identity = std::move(field);
+    } else if (tag == kBerContext1) {
+      if (!sequence.readOctetString(kBerContext1, field)) {
+        return false;
+      }
+      request.old_password = std::move(field);
+    } else if (tag == kBerContext2) {
+      if (!sequence.readOctetString(kBerContext2, field)) {
+        return false;
+      }
+      request.new_password = std::move(field);
+    } else if (!sequence.skip()) {
+      return false;
+    }
+  }
+  return sequence.ok();
+}
+
+LdapMessage makePasswordModifyRequest(int message_id, const PasswordModifyRequest &request) {
+  return makeExtendedRequest(message_id, kPasswordModifyOid, encodePasswordModifyValue(request));
+}
+
 DirectoryEntry toDirectoryEntry(const AddRequestData &add) {
   DirectoryEntry entry;
   entry.dn = add.dn;

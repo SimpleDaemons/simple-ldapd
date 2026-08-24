@@ -39,6 +39,7 @@ inline constexpr uint8_t kBerExtendedRequest = 0x77;
 inline constexpr uint8_t kBerExtendedResponse = 0x78;
 inline constexpr uint8_t kBerSimpleAuth = 0x80;
 inline constexpr uint8_t kBerContext1 = 0x81;
+inline constexpr uint8_t kBerContext2 = 0x82;
 inline constexpr uint8_t kBerServerSaslCreds = 0x87;
 inline constexpr uint8_t kBerSaslAuth = 0xA3;
 inline constexpr uint8_t kBerFilterAnd = 0xA0;
