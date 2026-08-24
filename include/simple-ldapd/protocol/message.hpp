@@ -30,6 +30,8 @@ enum class ProtocolOp {
   AddResponse,
   DelRequest,
   DelResponse,
+  ModifyDNRequest,
+  ModifyDNResponse,
   ExtendedRequest,
   ExtendedResponse,
   Unknown
@@ -62,6 +64,23 @@ struct SearchEntryData {
   std::vector<PartialAttribute> attributes;
 };
 
+struct AddRequestData {
+  std::string dn;
+  std::vector<PartialAttribute> attributes;
+};
+
+struct ModifyRequestData {
+  std::string dn;
+  std::vector<AttributeModification> changes;
+};
+
+struct ModifyDnRequestData {
+  std::string dn;
+  std::string new_rdn;
+  bool delete_old_rdn{true};
+  std::string new_superior;
+};
+
 struct LdapMessage {
   int message_id{0};
   ProtocolOp op{ProtocolOp::Unknown};
@@ -71,6 +90,10 @@ struct LdapMessage {
   BindRequestData bind;
   SearchRequestData search;
   SearchEntryData entry;
+  AddRequestData add;
+  ModifyRequestData modify;
+  std::string delete_dn;
+  ModifyDnRequestData modify_dn;
 };
 
 std::optional<LdapMessage> decodeLdapMessage(const std::vector<uint8_t> &wire);
@@ -85,7 +108,14 @@ LdapMessage makeSearchEntry(int message_id, SearchEntryData entry);
 LdapMessage makeSearchDone(int message_id, ResultCode result,
                            const std::string &diagnostic = {});
 LdapMessage makeUnbindRequest(int message_id);
+LdapMessage makeAddRequest(int message_id, AddRequestData add);
+LdapMessage makeModifyRequest(int message_id, ModifyRequestData modify);
+LdapMessage makeDelRequest(int message_id, const std::string &dn);
+LdapMessage makeModifyDnRequest(int message_id, ModifyDnRequestData modify_dn);
 LdapMessage makeLdapResult(int message_id, ProtocolOp op, ResultCode result,
                            const std::string &diagnostic = {});
+
+DirectoryEntry toDirectoryEntry(const AddRequestData &add);
+AddRequestData toAddRequest(const DirectoryEntry &entry);
 
 }  // namespace simple_ldapd

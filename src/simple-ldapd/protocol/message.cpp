@@ -111,9 +111,9 @@ bool decodeSearchRequest(BerReader &reader, SearchRequestData &search) {
   return attrs.ok();
 }
 
-std::vector<uint8_t> encodeSearchEntry(const SearchEntryData &entry) {
+std::vector<uint8_t> encodeAttributes(const std::vector<PartialAttribute> &attributes) {
   BerWriter attrs;
-  for (const auto &attribute : entry.attributes) {
+  for (const auto &attribute : attributes) {
     BerWriter values;
     for (const auto &value : attribute.values) {
       values.writeOctetString(value);
@@ -123,22 +123,10 @@ std::vector<uint8_t> encodeSearchEntry(const SearchEntryData &entry) {
     partial.writeConstructed(kBerSet, values.bytes());
     attrs.writeConstructed(kBerSequence, partial.bytes());
   }
-  BerWriter inner;
-  inner.writeOctetString(entry.dn);
-  inner.writeConstructed(kBerSequence, attrs.bytes());
-  BerWriter outer;
-  outer.writeConstructed(kBerSearchResultEntry, inner.bytes());
-  return outer.take();
+  return attrs.take();
 }
 
-bool decodeSearchEntry(BerReader &reader, SearchEntryData &entry) {
-  if (!reader.readOctetString(entry.dn)) {
-    return false;
-  }
-  BerReader attrs;
-  if (!reader.readConstructed(kBerSequence, attrs)) {
-    return false;
-  }
+bool decodeAttributes(BerReader &attrs, std::vector<PartialAttribute> &out) {
   while (!attrs.atEnd()) {
     BerReader partial;
     if (!attrs.readConstructed(kBerSequence, partial)) {
@@ -159,9 +147,138 @@ bool decodeSearchEntry(BerReader &reader, SearchEntryData &entry) {
       }
       attribute.values.push_back(value);
     }
-    entry.attributes.push_back(attribute);
+    out.push_back(attribute);
   }
   return attrs.ok();
+}
+
+std::vector<uint8_t> encodeSearchEntry(const SearchEntryData &entry) {
+  BerWriter inner;
+  inner.writeOctetString(entry.dn);
+  inner.writeConstructed(kBerSequence, encodeAttributes(entry.attributes));
+  BerWriter outer;
+  outer.writeConstructed(kBerSearchResultEntry, inner.bytes());
+  return outer.take();
+}
+
+bool decodeSearchEntry(BerReader &reader, SearchEntryData &entry) {
+  if (!reader.readOctetString(entry.dn)) {
+    return false;
+  }
+  BerReader attrs;
+  if (!reader.readConstructed(kBerSequence, attrs)) {
+    return false;
+  }
+  return decodeAttributes(attrs, entry.attributes);
+}
+
+std::vector<uint8_t> encodeAddRequest(const AddRequestData &add) {
+  BerWriter inner;
+  inner.writeOctetString(add.dn);
+  inner.writeConstructed(kBerSequence, encodeAttributes(add.attributes));
+  BerWriter outer;
+  outer.writeConstructed(kBerAddRequest, inner.bytes());
+  return outer.take();
+}
+
+bool decodeAddRequest(BerReader &reader, AddRequestData &add) {
+  if (!reader.readOctetString(add.dn)) {
+    return false;
+  }
+  BerReader attrs;
+  if (!reader.readConstructed(kBerSequence, attrs)) {
+    return false;
+  }
+  return decodeAttributes(attrs, add.attributes);
+}
+
+std::vector<uint8_t> encodeModifyRequest(const ModifyRequestData &modify) {
+  BerWriter changes;
+  for (const auto &change : modify.changes) {
+    BerWriter values;
+    for (const auto &value : change.values) {
+      values.writeOctetString(value);
+    }
+    BerWriter partial;
+    partial.writeOctetString(change.type);
+    partial.writeConstructed(kBerSet, values.bytes());
+    BerWriter item;
+    item.writeEnumerated(static_cast<int>(change.op));
+    item.writeConstructed(kBerSequence, partial.bytes());
+    changes.writeConstructed(kBerSequence, item.bytes());
+  }
+  BerWriter inner;
+  inner.writeOctetString(modify.dn);
+  inner.writeConstructed(kBerSequence, changes.bytes());
+  BerWriter outer;
+  outer.writeConstructed(kBerModifyRequest, inner.bytes());
+  return outer.take();
+}
+
+bool decodeModifyRequest(BerReader &reader, ModifyRequestData &modify) {
+  if (!reader.readOctetString(modify.dn)) {
+    return false;
+  }
+  BerReader changes;
+  if (!reader.readConstructed(kBerSequence, changes)) {
+    return false;
+  }
+  while (!changes.atEnd()) {
+    BerReader item;
+    if (!changes.readConstructed(kBerSequence, item)) {
+      return false;
+    }
+    int op = 0;
+    if (!item.readEnumerated(op)) {
+      return false;
+    }
+    BerReader partial;
+    if (!item.readConstructed(kBerSequence, partial)) {
+      return false;
+    }
+    AttributeModification change;
+    change.op = static_cast<ModifyOp>(op);
+    if (!partial.readOctetString(change.type)) {
+      return false;
+    }
+    BerReader values;
+    if (!partial.readConstructed(kBerSet, values)) {
+      return false;
+    }
+    while (!values.atEnd()) {
+      std::string value;
+      if (!values.readOctetString(value)) {
+        return false;
+      }
+      change.values.push_back(value);
+    }
+    modify.changes.push_back(std::move(change));
+  }
+  return changes.ok();
+}
+
+std::vector<uint8_t> encodeModifyDnRequest(const ModifyDnRequestData &modify_dn) {
+  BerWriter inner;
+  inner.writeOctetString(modify_dn.dn);
+  inner.writeOctetString(modify_dn.new_rdn);
+  inner.writeBoolean(modify_dn.delete_old_rdn);
+  if (!modify_dn.new_superior.empty()) {
+    inner.writeOctetString(kBerSimpleAuth, modify_dn.new_superior);
+  }
+  BerWriter outer;
+  outer.writeConstructed(kBerModifyDNRequest, inner.bytes());
+  return outer.take();
+}
+
+bool decodeModifyDnRequest(BerReader &reader, ModifyDnRequestData &modify_dn) {
+  if (!reader.readOctetString(modify_dn.dn) || !reader.readOctetString(modify_dn.new_rdn) ||
+      !reader.readBoolean(modify_dn.delete_old_rdn)) {
+    return false;
+  }
+  if (!reader.atEnd() && reader.peekTag() == kBerSimpleAuth) {
+    return reader.readOctetString(kBerSimpleAuth, modify_dn.new_superior);
+  }
+  return reader.ok();
 }
 
 }  // namespace
@@ -219,19 +336,49 @@ std::optional<LdapMessage> decodeLdapMessage(const std::vector<uint8_t> &wire) {
     break;
   case kBerModifyRequest:
     message.op = ProtocolOp::ModifyRequest;
-    if (!body.skip()) {
+    if (!body.readConstructed(tag, op) || !decodeModifyRequest(op, message.modify)) {
+      return std::nullopt;
+    }
+    break;
+  case kBerModifyResponse:
+    message.op = ProtocolOp::ModifyResponse;
+    if (!body.readConstructed(tag, op) || !decodeResult(op, message)) {
       return std::nullopt;
     }
     break;
   case kBerAddRequest:
     message.op = ProtocolOp::AddRequest;
-    if (!body.skip()) {
+    if (!body.readConstructed(tag, op) || !decodeAddRequest(op, message.add)) {
+      return std::nullopt;
+    }
+    break;
+  case kBerAddResponse:
+    message.op = ProtocolOp::AddResponse;
+    if (!body.readConstructed(tag, op) || !decodeResult(op, message)) {
       return std::nullopt;
     }
     break;
   case kBerDelRequest:
     message.op = ProtocolOp::DelRequest;
-    if (!body.skip()) {
+    if (!body.readOctetString(kBerDelRequest, message.delete_dn)) {
+      return std::nullopt;
+    }
+    break;
+  case kBerDelResponse:
+    message.op = ProtocolOp::DelResponse;
+    if (!body.readConstructed(tag, op) || !decodeResult(op, message)) {
+      return std::nullopt;
+    }
+    break;
+  case kBerModifyDNRequest:
+    message.op = ProtocolOp::ModifyDNRequest;
+    if (!body.readConstructed(tag, op) || !decodeModifyDnRequest(op, message.modify_dn)) {
+      return std::nullopt;
+    }
+    break;
+  case kBerModifyDNResponse:
+    message.op = ProtocolOp::ModifyDNResponse;
+    if (!body.readConstructed(tag, op) || !decodeResult(op, message)) {
       return std::nullopt;
     }
     break;
@@ -276,14 +423,32 @@ std::vector<uint8_t> encodeLdapMessage(const LdapMessage &message) {
   case ProtocolOp::SearchResultDone:
     protocol_op = resultOp(kBerSearchResultDone);
     break;
+  case ProtocolOp::ModifyRequest:
+    protocol_op = encodeModifyRequest(message.modify);
+    break;
   case ProtocolOp::ModifyResponse:
     protocol_op = resultOp(kBerModifyResponse);
+    break;
+  case ProtocolOp::AddRequest:
+    protocol_op = encodeAddRequest(message.add);
     break;
   case ProtocolOp::AddResponse:
     protocol_op = resultOp(kBerAddResponse);
     break;
+  case ProtocolOp::DelRequest: {
+    BerWriter writer;
+    writer.writeOctetString(kBerDelRequest, message.delete_dn);
+    protocol_op = writer.take();
+    break;
+  }
   case ProtocolOp::DelResponse:
     protocol_op = resultOp(kBerDelResponse);
+    break;
+  case ProtocolOp::ModifyDNRequest:
+    protocol_op = encodeModifyDnRequest(message.modify_dn);
+    break;
+  case ProtocolOp::ModifyDNResponse:
+    protocol_op = resultOp(kBerModifyDNResponse);
     break;
   case ProtocolOp::ExtendedResponse:
     protocol_op = resultOp(kBerExtendedResponse);
@@ -354,6 +519,38 @@ LdapMessage makeUnbindRequest(int message_id) {
   return message;
 }
 
+LdapMessage makeAddRequest(int message_id, AddRequestData add) {
+  LdapMessage message;
+  message.message_id = message_id;
+  message.op = ProtocolOp::AddRequest;
+  message.add = std::move(add);
+  return message;
+}
+
+LdapMessage makeModifyRequest(int message_id, ModifyRequestData modify) {
+  LdapMessage message;
+  message.message_id = message_id;
+  message.op = ProtocolOp::ModifyRequest;
+  message.modify = std::move(modify);
+  return message;
+}
+
+LdapMessage makeDelRequest(int message_id, const std::string &dn) {
+  LdapMessage message;
+  message.message_id = message_id;
+  message.op = ProtocolOp::DelRequest;
+  message.delete_dn = dn;
+  return message;
+}
+
+LdapMessage makeModifyDnRequest(int message_id, ModifyDnRequestData modify_dn) {
+  LdapMessage message;
+  message.message_id = message_id;
+  message.op = ProtocolOp::ModifyDNRequest;
+  message.modify_dn = std::move(modify_dn);
+  return message;
+}
+
 LdapMessage makeLdapResult(int message_id, ProtocolOp op, ResultCode result,
                            const std::string &diagnostic) {
   LdapMessage message;
@@ -362,6 +559,24 @@ LdapMessage makeLdapResult(int message_id, ProtocolOp op, ResultCode result,
   message.result = result;
   message.diagnostic = diagnostic;
   return message;
+}
+
+DirectoryEntry toDirectoryEntry(const AddRequestData &add) {
+  DirectoryEntry entry;
+  entry.dn = add.dn;
+  for (const auto &attribute : add.attributes) {
+    entry.attributes[attribute.type] = attribute.values;
+  }
+  return entry;
+}
+
+AddRequestData toAddRequest(const DirectoryEntry &entry) {
+  AddRequestData add;
+  add.dn = entry.dn;
+  for (const auto &pair : entry.attributes) {
+    add.attributes.push_back(PartialAttribute{pair.first, pair.second});
+  }
+  return add;
 }
 
 }  // namespace simple_ldapd
