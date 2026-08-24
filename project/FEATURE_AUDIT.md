@@ -12,7 +12,7 @@
 | Daemon listen | Implemented (accept loop, port 0 for tests) |
 | LDAPv3 BER codec | Implemented (bind/search/unbind/add/modify/delete/modrdn) |
 | Simple bind | Implemented (anonymous, root DN, `userPassword`) |
-| Search filters | Implemented (`equality`, `and`/`or`/`not`, `present`) |
+| Search filters | Implemented (`equality`, `and`/`or`/`not`, `present`, substring) |
 | `ldapsearch` | Implemented |
 | Add / modify / delete / modrdn | Implemented (root DN bind) |
 | SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |

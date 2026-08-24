@@ -4,6 +4,16 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-08-24
+
+Milestone 9 — Substring filters.
+
+### Added
+
+- RFC 4511 substring search filters (`initial` / `any` / `final`)
+- String parse of `(cn=Ali*)`, `*Exam*`, `*example`, and mixed `A*e`
+- BER encode/decode (tag `0xA4`) so `ldapsearch` and other clients work on the wire
+
 ## [0.8.1] — 2026-08-24
 
 ### Fixed

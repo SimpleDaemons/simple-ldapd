@@ -2,7 +2,7 @@
 
 Lightweight LDAPv3 directory daemon for SSO via LDAP bind, with an OpenLDAP-style CLI and Active Directory-friendly schema names.
 
-simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.8.1** implements simple bind, SASL, search, directory writes, TLS, schema enforcement, GSSAPI lab tickets, and `ldappasswd`. Versions follow [VERSIONING.md](VERSIONING.md).
+simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.9.0** implements simple bind, SASL, search (including substring filters), directory writes, TLS, schema enforcement, GSSAPI lab tickets, and `ldappasswd`. Versions follow [VERSIONING.md](VERSIONING.md).
 
 ## Goals
 
@@ -24,7 +24,7 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 |------|--------|
 | Build, tests, CPack packaging | Implemented |
 | Config, schema registry, memory/LDIF backends | Implemented |
-| LDAPv3 BER codec, simple bind, search | Implemented (filter subset) |
+| LDAPv3 BER codec, simple bind, search | Implemented (equality, present, substring, and/or/not) |
 | Add / modify / delete / modrdn | Implemented (root DN bind) |
 | Schema enforcement on writes | Implemented |
 | LDAPS / StartTLS | Implemented |
@@ -70,6 +70,7 @@ Search the seeded tree (anonymous or simple bind):
 
 ```bash
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -x -b dc=example,dc=com '(uid=alice)'
+./build/ldapsearch -H ldap://127.0.0.1:3389 -x -b dc=example,dc=com '(cn=Ali*)'
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -b dc=example,dc=com '(objectClass=*)'
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -Y PLAIN -U alice -w alice-secret -b dc=example,dc=com '(uid=alice)'
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -Y DIGEST-MD5 -U alice -w alice-secret -b dc=example,dc=com '(uid=alice)'

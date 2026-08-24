@@ -16,6 +16,7 @@ Git tags and GitHub Releases use the `vMAJOR.MINOR.PATCH` form and point at the 
 | **0.6.0** | 6 — SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI hook | Released (`v0.6.0`) |
 | **0.7.0** | 7 — Kerberos | Consume tickets for GSSAPI bind (no in-tree KDC) | Released (`v0.7.0`) |
 | **0.8.0** | 8 — Password modify | RFC 3062 and `ldappasswd` | Released (`v0.8.0`) |
+| **0.9.0** | 9 — Substring filters | RFC 4511 `initial` / `any` / `final` search | Released (`v0.9.0`) |
 
 ## Rules
 

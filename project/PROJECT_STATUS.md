@@ -1,8 +1,8 @@
 # simple-ldapd project status
 
-**Version:** 0.8.1  
+**Version:** 0.9.0  
 **Status:** Early development (bind/search/writes/TLS/schemas/SASL/ldappasswd)  
-**Progress:** ~90%  
+**Progress:** ~92%  
 **Last updated:** August 2026
 
 ## Complete

@@ -48,3 +48,8 @@
 
 - RFC 3062 Password Modify extended operation
 - `ldappasswd` for self-change and root-set passwords
+
+## Milestone 9 — Substring filters — v0.9.0
+
+- RFC 4511 substring filters (`initial` / `any` / `final`)
+- String parse, BER encode/decode, and live `ldapsearch`
