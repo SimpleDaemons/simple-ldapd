@@ -4,6 +4,12 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.8.1] — 2026-08-24
+
+### Fixed
+
+- Simple bind resolves `uid` / `sAMAccountName` when the bind DN parent does not match the entry (the seeded alice lives under `ou=People`)
+
 ## [0.8.0] — 2026-08-24
 
 Milestone 8 — Password modify / `ldappasswd`.

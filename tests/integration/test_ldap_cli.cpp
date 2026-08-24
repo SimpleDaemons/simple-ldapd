@@ -98,13 +98,13 @@ int main() {
       const_cast<char *>("secret"),
       const_cast<char *>("-s"),
       const_cast<char *>("new-secret"),
-      const_cast<char *>("uid=alice,dc=example,dc=com"),
+      const_cast<char *>("uid=alice,ou=People,dc=example,dc=com"),
   };
   auto passwd_options =
       cli::parseClientArgs(static_cast<int>(passwd_args.size()), passwd_args.data(), true);
   if (passwd_options.new_password != "new-secret" ||
       passwd_options.positionals.size() != 1 ||
-      passwd_options.positionals.front() != "uid=alice,dc=example,dc=com") {
+      passwd_options.positionals.front() != "uid=alice,ou=People,dc=example,dc=com") {
     std::cout << "FAIL parsePasswdArgs" << std::endl;
     return 1;
   }
