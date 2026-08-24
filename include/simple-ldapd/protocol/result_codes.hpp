@@ -91,6 +91,14 @@ inline const char *toString(ResultCode code) {
     return "attributeOrValueExists";
   case ResultCode::ConfidentialityRequired:
     return "confidentialityRequired";
+  case ResultCode::UndefinedAttributeType:
+    return "undefinedAttributeType";
+  case ResultCode::ConstraintViolation:
+    return "constraintViolation";
+  case ResultCode::InvalidAttributeSyntax:
+    return "invalidAttributeSyntax";
+  case ResultCode::ObjectClassViolation:
+    return "objectClassViolation";
   default:
     return "other";
   }
