@@ -99,6 +99,14 @@ bool LdapConfig::loadFromFile(const std::string &path) {
       gssapi_keytab = value;
     } else if (key == "gssapi_service") {
       gssapi_service = value;
+    } else if (key == "acl") {
+      AclRule rule;
+      std::string error;
+      if (!parseAclLine(value, rule, error)) {
+        acl_errors.push_back(error.empty() ? "invalid acl" : error);
+      } else {
+        acls.push_back(std::move(rule));
+      }
     }
   }
   return true;
@@ -127,6 +135,9 @@ bool LdapConfig::validateDetailed(std::vector<std::string> &errors) const {
     if (!keytab) {
       errors.emplace_back("gssapi_keytab is not readable");
     }
+  }
+  for (const auto &error : acl_errors) {
+    errors.push_back(error);
   }
   return errors.empty();
 }

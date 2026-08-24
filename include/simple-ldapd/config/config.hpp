@@ -9,6 +9,7 @@
 #pragma once
 
 #include "simple-ldapd/utils/platform.hpp"
+#include "simple-ldapd/security/acl.hpp"
 #include <string>
 #include <vector>
 
@@ -43,6 +44,8 @@ public:
   std::string krb_realm;
   std::string gssapi_keytab;
   std::string gssapi_service;
+  std::vector<AclRule> acls;
+  std::vector<std::string> acl_errors;
 };
 
 }  // namespace simple_ldapd

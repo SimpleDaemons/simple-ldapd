@@ -33,7 +33,8 @@ public:
 
 private:
   bool send(const LdapMessage &message);
-  bool mayWrite() const;
+  bool maySearch(const std::string &entry_dn) const;
+  bool mayWrite(const std::string &entry_dn) const;
   LdapMessage handleBind(const LdapMessage &request);
   bool handleSearch(const LdapMessage &request);
   LdapMessage handleAdd(const LdapMessage &request);

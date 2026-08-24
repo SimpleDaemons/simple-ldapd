@@ -11,6 +11,7 @@
 #include "simple-ldapd/auth/bind.hpp"
 #include "simple-ldapd/auth/sasl.hpp"
 #include "simple-ldapd/schema/registry.hpp"
+#include "simple-ldapd/security/acl.hpp"
 #include "simple-ldapd/security/tls.hpp"
 #include "simple-ldapd/utils/dn.hpp"
 #include "simple-ldapd/version.hpp"
@@ -187,6 +188,10 @@ bool Session::handleSearch(const LdapMessage &request) {
     return send(makeSearchDone(request.message_id, ResultCode::NoSuchObject,
                                "no such object"));
   }
+  if (!base.empty() && !maySearch(base)) {
+    return send(makeSearchDone(request.message_id, ResultCode::InsufficientAccessRights,
+                               "insufficient access"));
+  }
   std::vector<DirectoryEntry> matches;
   if (base.empty() && request.search.scope != SearchScope::OneLevel) {
     DirectoryEntry dse = rootDse();
@@ -204,6 +209,9 @@ bool Session::handleSearch(const LdapMessage &request) {
   }
   int sent = 0;
   for (const auto &entry : matches) {
+    if (!maySearch(entry.dn)) {
+      continue;
+    }
     if (request.search.size_limit > 0 && sent >= request.search.size_limit) {
       return send(makeSearchDone(request.message_id, ResultCode::SizeLimitExceeded));
     }
@@ -232,8 +240,12 @@ DirectoryEntry Session::rootDse() const {
   return entry;
 }
 
-bool Session::mayWrite() const {
-  return bound_ && !bind_dn_.empty() && dnEquals(bind_dn_, config_.root_dn);
+bool Session::maySearch(const std::string &entry_dn) const {
+  return AccessControl(config_).maySearch(bind_dn_, entry_dn, backend_);
+}
+
+bool Session::mayWrite(const std::string &entry_dn) const {
+  return bound_ && AccessControl(config_).mayWrite(bind_dn_, entry_dn, backend_);
 }
 
 ResultCode Session::checkSchema(const DirectoryEntry &entry, std::string &diagnostic) const {
@@ -244,9 +256,9 @@ ResultCode Session::checkSchema(const DirectoryEntry &entry, std::string &diagno
 }
 
 LdapMessage Session::handleAdd(const LdapMessage &request) {
-  if (!mayWrite()) {
+  if (!mayWrite(request.add.dn)) {
     return makeLdapResult(request.message_id, ProtocolOp::AddResponse,
-                          ResultCode::InsufficientAccessRights, "root bind required");
+                          ResultCode::InsufficientAccessRights, "insufficient access");
   }
   if (request.add.dn.empty()) {
     return makeLdapResult(request.message_id, ProtocolOp::AddResponse,
@@ -276,9 +288,9 @@ LdapMessage Session::handleAdd(const LdapMessage &request) {
 }
 
 LdapMessage Session::handleModify(const LdapMessage &request) {
-  if (!mayWrite()) {
+  if (!mayWrite(request.modify.dn)) {
     return makeLdapResult(request.message_id, ProtocolOp::ModifyResponse,
-                          ResultCode::InsufficientAccessRights, "root bind required");
+                          ResultCode::InsufficientAccessRights, "insufficient access");
   }
   auto entry = backend_.lookup(request.modify.dn);
   if (!entry) {
@@ -304,9 +316,9 @@ LdapMessage Session::handleModify(const LdapMessage &request) {
 }
 
 LdapMessage Session::handleDelete(const LdapMessage &request) {
-  if (!mayWrite()) {
+  if (!mayWrite(request.delete_dn)) {
     return makeLdapResult(request.message_id, ProtocolOp::DelResponse,
-                          ResultCode::InsufficientAccessRights, "root bind required");
+                          ResultCode::InsufficientAccessRights, "insufficient access");
   }
   if (!backend_.lookup(request.delete_dn)) {
     return makeLdapResult(request.message_id, ProtocolOp::DelResponse,
@@ -325,15 +337,6 @@ LdapMessage Session::handleDelete(const LdapMessage &request) {
 }
 
 LdapMessage Session::handleModifyDn(const LdapMessage &request) {
-  if (!mayWrite()) {
-    return makeLdapResult(request.message_id, ProtocolOp::ModifyDNResponse,
-                          ResultCode::InsufficientAccessRights, "root bind required");
-  }
-  auto entry = backend_.lookup(request.modify_dn.dn);
-  if (!entry) {
-    return makeLdapResult(request.message_id, ProtocolOp::ModifyDNResponse,
-                          ResultCode::NoSuchObject, "no such object");
-  }
   if (request.modify_dn.new_rdn.empty()) {
     return makeLdapResult(request.message_id, ProtocolOp::ModifyDNResponse,
                           ResultCode::InvalidDnSyntax, "empty new RDN");
@@ -341,11 +344,20 @@ LdapMessage Session::handleModifyDn(const LdapMessage &request) {
   const std::string parent = request.modify_dn.new_superior.empty()
                                  ? dnParent(request.modify_dn.dn)
                                  : request.modify_dn.new_superior;
+  const std::string new_dn = composeDn(request.modify_dn.new_rdn, parent);
+  if (!mayWrite(request.modify_dn.dn) || !mayWrite(new_dn)) {
+    return makeLdapResult(request.message_id, ProtocolOp::ModifyDNResponse,
+                          ResultCode::InsufficientAccessRights, "insufficient access");
+  }
+  auto entry = backend_.lookup(request.modify_dn.dn);
+  if (!entry) {
+    return makeLdapResult(request.message_id, ProtocolOp::ModifyDNResponse,
+                          ResultCode::NoSuchObject, "no such object");
+  }
   if (!parent.empty() && !backend_.lookup(parent)) {
     return makeLdapResult(request.message_id, ProtocolOp::ModifyDNResponse,
                           ResultCode::NamingViolation, "new parent does not exist");
   }
-  const std::string new_dn = composeDn(request.modify_dn.new_rdn, parent);
   if (!dnEquals(new_dn, request.modify_dn.dn) && backend_.lookup(new_dn)) {
     return makeLdapResult(request.message_id, ProtocolOp::ModifyDNResponse,
                           ResultCode::EntryAlreadyExists, "target DN exists");
@@ -422,7 +434,7 @@ LdapMessage Session::handlePasswordModify(const LdapMessage &request) {
   }
   const bool as_root = !config_.root_dn.empty() && dnEquals(bind_dn_, config_.root_dn);
   const bool as_self = dnEquals(bind_dn_, *target);
-  if (!as_root && !as_self) {
+  if (!as_root && !as_self && !mayWrite(*target)) {
     return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse,
                           ResultCode::InsufficientAccessRights, "cannot change another password");
   }
