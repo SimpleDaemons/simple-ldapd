@@ -31,14 +31,18 @@ flowchart TB
   Seed[ldif_file seed]
   Mem[In-memory map of DN to DirectoryEntry]
   Persist[persist to ldif_file]
+  Sqlite[(sqlite_file WAL)]
 
   Seed --> Mem
+  Seed -->|empty database| Sqlite
   Mem -->|search match filter| Results[Entry copies]
   Mem -->|add modify delete rename| Mem
   Mem -->|LdifBackend| Persist
+  Sqlite -->|search match filter| Results
+  Sqlite -->|add modify delete rename| Sqlite
 ```
 
-DNs are compared case-insensitively on attribute types. The memory backend scopes search with base / one / subtree. The LDIF backend uses the same in-memory tree and writes the whole tree back on successful writes.
+DNs are compared case-insensitively. The memory, LDIF, and SQLite backends share the same C++ filter match. The LDIF backend uses an in-memory tree and writes the whole tree back on successful writes. SQLite commits each write; `ldif_file` seeds only when the database is empty.
 
 ## Config and schema at startup
 
@@ -53,7 +57,7 @@ flowchart TD
   File --> Cfg --> Daemon
   Schemas --> Reg --> Daemon
   Daemon --> Listen[TCP listen]
-  Daemon --> Backend[memory or ldif]
+  Daemon --> Backend[memory, ldif, or sqlite]
 ```
 
 Writes (add, modify, modrdn) fail with a schema result code when MUST/MAY/SYNTAX do not hold. Search does not re-validate existing entries.

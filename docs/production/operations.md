@@ -32,20 +32,20 @@ ldapsearch -H ldaps://127.0.0.1:636 --ca-file /etc/simple-ldapd/tls/ca.crt -x \
 
 ## Backup
 
-The directory is the LDIF file when `backend = ldif`:
+The directory is the SQLite file when `backend = sqlite`:
 
 ```bash
 sudo systemctl stop simple-ldapd
-sudo cp -a /var/lib/simple-ldapd/directory.ldif /var/backups/directory-$(date +%Y%m%d).ldif
+sudo cp -a /var/lib/simple-ldapd/directory.sqlite /var/backups/directory-$(date +%Y%m%d).sqlite
 sudo tar -czf /var/backups/simple-ldapd-config-$(date +%Y%m%d).tar.gz /etc/simple-ldapd/
 sudo systemctl start simple-ldapd
 ```
 
-Stopping first avoids copying a file mid-`persist()`. A daemon with no `ldif_file` uses the memory backend and loses the tree on restart.
+Stopping first avoids copying a WAL file mid-write. Copy `-wal` / `-shm` sidecars if they exist, or checkpoint first. When `backend = ldif`, back up `directory.ldif` the same way. A daemon with no `sqlite_file` or `ldif_file` uses the memory backend and loses the tree on restart.
 
 ## Restore
 
-Stop the service, restore `directory.ldif` and config, start, then `--test-config` and a bind/search.
+Stop the service, restore `directory.sqlite` (and WAL sidecars if present) and config, start, then `--test-config` and a bind/search.
 
 ## Updates
 

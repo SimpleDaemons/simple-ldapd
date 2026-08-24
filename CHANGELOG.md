@@ -4,6 +4,17 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.14.0] — 2026-08-24
+
+Milestone 14 — SQLite backend.
+
+### Added
+
+- `backend = sqlite` with required `sqlite_file` (WAL `entries` / `attributes` tables)
+- Optional `ldif_file` seeds an empty SQLite database only; writes do not rewrite that file
+- Production and high-security templates use SQLite; LDIF remains the lab and backup format
+- `ENABLE_SQLITE` (default ON); missing SQLite3 disables the backend at validate time
+
 ## [0.13.0] — 2026-08-24
 
 Milestone 13 — Remaining LDAP ops.

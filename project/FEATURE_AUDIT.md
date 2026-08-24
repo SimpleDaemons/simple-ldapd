@@ -7,7 +7,8 @@
 | Build / packaging / CI | Implemented |
 | Config load/validate | Implemented (key=value) |
 | Memory backend | Implemented (in-process, scoped search, rename) |
-| LDIF import/export | Implemented (seed + persist; change records in CLI) |
+| SQLite backend | Implemented (WAL persist; optional LDIF seed when empty) |
+| LDIF import/export | Implemented (lab seed + persist; change records in CLI; backup export) |
 | Schema registry | Implemented (OpenLDAP attributetype/objectclass) |
 | Daemon listen | Implemented (concurrent session threads, port 0 for tests) |
 | LDAPv3 BER codec | Implemented (bind/search/unbind/add/modify/delete/modrdn/compare) |

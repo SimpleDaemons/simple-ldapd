@@ -6,7 +6,7 @@ Unit files and Docker examples live in [deployment/](../../deployment/README.md)
 
 1. Install the binary and copy `deployment/systemd/simple-ldapd.service` to `/etc/systemd/system/`.
 2. Create a system user (`simple-ldapd`) and directories for config, data, and logs.
-3. Install schemas, TLS material, and an LDIF (or empty) directory file with correct ownership.
+3. Install schemas, TLS material, and a SQLite (or empty) directory file with correct ownership.
 4. `systemctl daemon-reload && systemctl enable --now simple-ldapd`
 5. `systemctl status simple-ldapd` and `journalctl -u simple-ldapd -f`
 
@@ -18,7 +18,7 @@ Copy `deployment/launchd/com.simpledaemons.simple-ldapd.plist` to `/Library/Laun
 
 ## Windows
 
-`deployment/windows/simple-ldapd.service.bat` installs, starts, stops, and removes a service. Run it as Administrator. Point the service at a config with Windows paths for TLS and the LDIF file.
+`deployment/windows/simple-ldapd.service.bat` installs, starts, stops, and removes a service. Run it as Administrator. Point the service at a config with Windows paths for TLS and the SQLite file.
 
 ## Docker
 

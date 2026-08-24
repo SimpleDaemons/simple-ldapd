@@ -14,8 +14,9 @@ Key/value syntax (`name = value`). Comments start with `#`.
 | tls_cert_file | | Server certificate |
 | tls_key_file | | Server private key |
 | tls_ca_file | | Optional CA / client trust |
-| backend | memory | `memory` or `ldif` |
-| ldif_file | | Seed file for the LDIF backend |
+| backend | memory | `memory`, `ldif`, or `sqlite` |
+| ldif_file | | LDIF seed; persist for the LDIF backend; seed-only when sqlite is empty |
+| sqlite_file | | Required when `backend = sqlite` |
 | schema_dir | schemas | Directory of `*.schema` files |
 | base_dn | dc=example,dc=com | Naming context |
 | root_dn | cn=admin,dc=example,dc=com | Directory manager DN |

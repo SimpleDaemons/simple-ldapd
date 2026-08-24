@@ -7,7 +7,7 @@ Shipped files:
 | Path | Use |
 |------|-----|
 | `config/templates/development.conf` | Lab: 127.0.0.1:3389, memory + LDIF seed |
-| `config/templates/production.conf` | 389/636, LDIF persist, TLS on |
+| `config/templates/production.conf` | 389/636, SQLite persist, TLS on |
 | `config/templates/high-security.conf` | Production plus `require_confidentiality` and `acl = users search *` |
 | `config/examples/simple/example.ldif` | Seed tree (alice, developers group) |
 | `config/examples/simple/lab.keytab` | Text lab GSSAPI keytab |
@@ -26,8 +26,9 @@ Canonical key list: [config/README.md](../../../config/README.md). Production no
 | `tls_cert_file` | | Server certificate |
 | `tls_key_file` | | Server private key |
 | `tls_ca_file` | | Optional CA file |
-| `backend` | `memory` | `memory` or `ldif`. A non-empty `ldif_file` selects `LdifBackend` even if `backend` is `memory` |
-| `ldif_file` | | Seed at start; successful writes persist back to this path |
+| `backend` | `memory` | `memory`, `ldif`, or `sqlite`. `backend = sqlite` wins even if `ldif_file` is set. Otherwise a non-empty `ldif_file` selects `LdifBackend` even if `backend` is `memory` |
+| `ldif_file` | | LDIF seed. For `ldif`, successful writes persist back to this path. For `sqlite`, seed only when the database is empty |
+| `sqlite_file` | | Required when `backend = sqlite` |
 | `schema_dir` | `schemas` | Directory of `*.schema` files; relative to cwd |
 | `base_dn` | `dc=example,dc=com` | Naming context advertised on the Root DSE |
 | `root_dn` | `cn=admin,dc=example,dc=com` | Directory manager |
@@ -69,8 +70,10 @@ Every `*.schema` file in `schema_dir` is loaded at start. Packs shipped in [sche
 
 ## Backends
 
-`LdapDaemon` constructs `LdifBackend` when `ldif_file` is non-empty **or** `backend = ldif`. Otherwise it uses `MemoryBackend` (in-process tree, no persist).
+`LdapDaemon` constructs `SqliteBackend` when `backend = sqlite` (requires `sqlite_file`; fails validation if SQLite was not built). Otherwise it constructs `LdifBackend` when `ldif_file` is non-empty **or** `backend = ldif`. Otherwise it uses `MemoryBackend` (in-process tree, no persist).
+
+`SqliteBackend` stores entries in WAL SQLite. Each successful add/modify/delete/modrdn/password-modify is committed immediately (`persist()` is a no-op). Optional `ldif_file` imports content records only when the database has zero entries. Writes never rewrite `ldif_file`; use `exportFile` (or a stopped-process copy of `sqlite_file`) for backups.
 
 `LdifBackend` is a memory tree that imports `ldif_file` at start and writes the whole file on successful add/modify/delete/modrdn/password-modify. The development template sets `backend = memory` and `ldif_file = config/examples/simple/example.ldif`, so it still persists — do not commit a mutated seed.
 
-Keep `schema_dir` and `ldif_file` readable by the process user. Relative paths follow the current working directory.
+Keep `schema_dir`, `ldif_file`, and `sqlite_file` readable (and writable, for persist) by the process user. Relative paths follow the current working directory.

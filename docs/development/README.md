@@ -24,7 +24,7 @@ Namespaces use `simple_ldapd`. Headers use `#pragma once`.
 ## Conventions
 
 - C++17 only (see `CMAKE_CXX_STANDARD` in `CMakeLists.txt`)
-- RAII for sockets, TLS, threads, and file-backed backends
+- RAII for sockets, TLS, threads, SQLite, and file-backed backends
 - Protocol codec is RFC 4511 BER; do not pass a temporary `std::vector` into `BerReader` (it stores a pointer)
 
 ## Tests

@@ -22,7 +22,7 @@ flowchart LR
   PConf --> P636
 ```
 
-Development binds unprivileged ports so the daemon can run without root. Production templates expect 389/636, TLS files under `/etc/simple-ldapd/tls/`, and an LDIF file under `/var/lib/simple-ldapd/`.
+Development binds unprivileged ports so the daemon can run without root. Production templates expect 389/636, TLS files under `/etc/simple-ldapd/tls/`, and a SQLite file under `/var/lib/simple-ldapd/`.
 
 ## Host layout
 
@@ -31,7 +31,7 @@ flowchart TB
   subgraph os [Host]
     Bin["/usr/sbin/simple-ldapd"]
     Conf["/etc/simple-ldapd/"]
-    Data["/var/lib/simple-ldapd/directory.ldif"]
+    Data["/var/lib/simple-ldapd/directory.sqlite"]
     Logs["/var/log/simple-ldapd/"]
     Unit[systemd / launchd / Windows service]
   end

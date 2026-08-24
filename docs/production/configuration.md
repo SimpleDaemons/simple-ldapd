@@ -4,7 +4,7 @@ Start from the shipped templates; do not use `development.conf` on a public inte
 
 | Template | Ports | TLS | Extra |
 |----------|-------|-----|--------|
-| `config/templates/production.conf` | 389 / 636 | LDAPS + StartTLS | LDIF persist, `log_level = info` |
+| `config/templates/production.conf` | 389 / 636 | LDAPS + StartTLS | SQLite persist, `log_level = info` |
 | `config/templates/high-security.conf` | 389 / 636 | LDAPS + StartTLS | `require_confidentiality = true`, `acl = users search *`, `log_level = warning` |
 
 Install paths assumed by those files:
@@ -12,7 +12,7 @@ Install paths assumed by those files:
 - Config: `/etc/simple-ldapd/` (copy a template to `simple-ldapd.conf`)
 - TLS: `/etc/simple-ldapd/tls/server.crt`, `server.key`, `ca.crt`
 - Schemas: `/etc/simple-ldapd/schemas`
-- Directory: `/var/lib/simple-ldapd/directory.ldif`
+- Directory: `/var/lib/simple-ldapd/directory.sqlite`
 - Log: `/var/log/simple-ldapd/simple-ldapd.log`
 
 `root_password` is commented out in the templates on purpose. Set it in a file mode `640` owned by `root:simple-ldapd` (or equivalent). It cannot be rotated with `ldappasswd`.
@@ -28,8 +28,8 @@ enable_starttls = true
 tls_cert_file = /etc/simple-ldapd/tls/server.crt
 tls_key_file = /etc/simple-ldapd/tls/server.key
 tls_ca_file = /etc/simple-ldapd/tls/ca.crt
-backend = ldif
-ldif_file = /var/lib/simple-ldapd/directory.ldif
+backend = sqlite
+sqlite_file = /var/lib/simple-ldapd/directory.sqlite
 schema_dir = /etc/simple-ldapd/schemas
 require_confidentiality = true
 foreground = true

@@ -25,6 +25,7 @@ flowchart TB
     BackendAPI[Backend]
     Mem[MemoryBackend]
     Ldif[LdifBackend]
+    Sqlite[SqliteBackend]
   end
 
   Apps --> LDAP
@@ -42,6 +43,7 @@ flowchart TB
   Session --> BackendAPI
   BackendAPI --> Mem
   BackendAPI --> Ldif
+  BackendAPI --> Sqlite
 ```
 
 ## Components
@@ -57,6 +59,7 @@ flowchart TB
 | `SchemaRegistry` | OpenLDAP-style `*.schema` files; MUST/MAY/SYNTAX on writes |
 | `MemoryBackend` | In-process tree; optional LDIF seed |
 | `LdifBackend` | Same tree plus persist back to `ldif_file` |
+| `SqliteBackend` | WAL SQLite at `sqlite_file`; optional LDIF seed when empty |
 
 SSO for v0.x is **LDAP bind** (simple or SASL). Kerberos KDCs, OIDC, and SAML are out of this daemon.
 
@@ -67,7 +70,7 @@ main/simple-ldapd.cpp          daemon CLI
 src/simple-ldapd/core/         daemon, session, connection
 src/simple-ldapd/protocol/     BER, messages, filters, LDIF
 src/simple-ldapd/auth/         simple bind, password hashes, SASL, lab GSSAPI
-src/simple-ldapd/backend/      memory and LDIF
+src/simple-ldapd/backend/      memory, LDIF, and SQLite
 src/simple-ldapd/schema/       schema parser and registry
 src/simple-ldapd/security/     TLS context, ACLs
 src/simple-ldapd/cli/          shared OpenLDAP-style flags

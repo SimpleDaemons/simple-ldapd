@@ -1,25 +1,25 @@
 # Build guide
 
-Requires CMake 3.16+, a C++17 compiler (Clang, GCC, or MSVC), and OpenSSL. jsoncpp is optional and unused by the current key/value config parser.
+Requires CMake 3.16+, a C++17 compiler (Clang, GCC, or MSVC), OpenSSL, and SQLite3. jsoncpp is optional and unused by the current key/value config parser.
 
 ## Prerequisites
 
 macOS (Homebrew):
 
 ```bash
-brew install cmake openssl jsoncpp
+brew install cmake openssl jsoncpp sqlite
 ```
 
 Debian/Ubuntu:
 
 ```bash
-sudo apt-get install build-essential cmake pkg-config libssl-dev libjsoncpp-dev
+sudo apt-get install build-essential cmake pkg-config libssl-dev libjsoncpp-dev libsqlite3-dev
 ```
 
 FreeBSD:
 
 ```bash
-pkg install cmake openssl jsoncpp gmake
+pkg install cmake openssl jsoncpp sqlite3 gmake
 gmake build
 ```
 
@@ -42,11 +42,12 @@ Binaries land in `build/`: `simple-ldapd`, `ldapsearch`, `ldapadd`, `ldapmodify`
 | `ENABLE_TESTS` | ON | Build `test_ldap_*` and register them with CTest |
 | `ENABLE_SSL` | ON | Link OpenSSL; required for LDAPS and StartTLS |
 | `ENABLE_JSON` | ON | Link jsoncpp if found (config is still key=value) |
+| `ENABLE_SQLITE` | ON | Link SQLite3; required for `backend = sqlite` |
 | `ENABLE_PACKAGING` | ON | CPack targets |
 | `ENABLE_STATIC_LINKING` | OFF | Self-contained binaries |
 | `BUILD_SHARED_LIBS` | OFF | Shared library (static `simple-ldapd_lib` is the default) |
 
-macOS looks for OpenSSL under Homebrew (`/opt/homebrew/opt/openssl@3`, `/usr/local/opt/openssl@3`).
+macOS looks for OpenSSL under Homebrew (`/opt/homebrew/opt/openssl@3`, `/usr/local/opt/openssl@3`) and SQLite under `/opt/homebrew/opt/sqlite` or `/usr/local/opt/sqlite`.
 
 Static binaries:
 
@@ -79,5 +80,6 @@ CPack and templates under `packaging/` produce DEB/RPM, macOS pkg/dmg, and Windo
 ## Troubleshooting the build
 
 - **OpenSSL not found on macOS:** install `openssl@3` and re-run CMake so `CMAKE_PREFIX_PATH` picks up Homebrew.
+- **SQLite3 warning:** install `sqlite` / `libsqlite3-dev` or set `-DENABLE_SQLITE=OFF` (then `backend = sqlite` fails validation).
 - **jsoncpp warning:** safe to ignore; set `-DENABLE_JSON=OFF` to silence it.
 - **FreeBSD `make`:** use `gmake`.

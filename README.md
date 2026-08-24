@@ -2,7 +2,7 @@
 
 Lightweight LDAPv3 directory daemon for SSO via LDAP bind, with an OpenLDAP-style CLI and Active Directory-friendly schema names.
 
-simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.13.0** implements simple bind, SASL, search, concurrent sessions, ACLs, hashed `userPassword`, Compare, Who Am I, paged results, directory writes, TLS, schema enforcement, GSSAPI lab tickets, and `ldappasswd`. Versions follow [VERSIONING.md](VERSIONING.md).
+simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.14.0** implements simple bind, SASL, search, concurrent sessions, ACLs, hashed `userPassword`, Compare, Who Am I, paged results, SQLite persist, directory writes, TLS, schema enforcement, GSSAPI lab tickets, and `ldappasswd`. Versions follow [VERSIONING.md](VERSIONING.md).
 
 ## Goals
 
@@ -23,7 +23,7 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 | Area | State |
 |------|--------|
 | Build, tests, CPack packaging | Implemented |
-| Config, schema registry, memory/LDIF backends | Implemented |
+| Config, schema registry, memory/LDIF/SQLite backends | Implemented |
 | LDAPv3 BER codec, simple bind, search | Implemented (equality, present, substring, and/or/not) |
 | Add / modify / delete / modrdn | Implemented (root DN or `acl` write) |
 | Schema enforcement on writes | Implemented |
@@ -33,6 +33,7 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 | `ldappasswd` | Implemented (RFC 3062; stores `{SSHA}`) |
 | Compare / Who Am I / paged results | Implemented (`ldapcompare`, `ldapwhoami`, `-E pr=N`) |
 | Password storage | `{SSHA}` / `{SHA}` / `{CLEARTEXT}`; `userAccountControl` disable bit |
+| SQLite persist | Implemented (`backend = sqlite`; optional LDIF seed) |
 
 ## Documentation
 
@@ -40,7 +41,7 @@ Guides, CLI reference, configuration, diagrams, and production notes: [docs/READ
 
 ## Build
 
-Requires CMake 3.16+, a C++17 compiler, and OpenSSL. jsoncpp is optional.
+Requires CMake 3.16+, a C++17 compiler, OpenSSL, and SQLite3. jsoncpp is optional.
 
 ```bash
 # GNU Make (use gmake on FreeBSD)

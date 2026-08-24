@@ -1,6 +1,6 @@
 # Production
 
-v0.13.0 can bind, search, write, encrypt, enforce schema, apply ACLs, hash passwords, compare, page results, and change passwords, and it serves more than one client at a time. It is still early: lab GSSAPI rather than MIT Kerberos, and no `stop`/`reload` commands.
+v0.14.0 can bind, search, write, persist to SQLite, encrypt, enforce schema, apply ACLs, hash passwords, compare, page results, and change passwords, and it serves more than one client at a time. It is still early: lab GSSAPI rather than MIT Kerberos, and no `stop`/`reload` commands.
 
 Use this section when exposing 389/636 on a host, not for the 3389 lab template.
 
@@ -19,6 +19,6 @@ Shared references: [configuration](../shared/configuration/README.md), [deployme
 - Set a strong `root_password` (leave it unset in the file until you do)
 - Enable LDAPS or StartTLS with a real certificate
 - Prefer `high-security.conf` (`require_confidentiality = true`, `acl = users search *`) if passwords must never cross cleartext and anonymous must not read the tree
-- Point `schema_dir` and `ldif_file` at absolute paths owned by the service user
+- Point `schema_dir` and `sqlite_file` at absolute paths owned by the service user
 - Run under systemd/launchd/a Windows service (`--daemon` does not fork)
 - Open firewall 389/tcp and/or 636/tcp only as needed

@@ -4,7 +4,7 @@ simple-ldapd is a C++17 daemon. Install from source for labs; use CPack or the s
 
 ## From source
 
-Prerequisites: CMake 3.16+, a C++17 compiler, OpenSSL. Details: [build guide](../../development/BUILD_GUIDE.md).
+Prerequisites: CMake 3.16+, a C++17 compiler, OpenSSL, SQLite3. Details: [build guide](../../development/BUILD_GUIDE.md).
 
 ```bash
 git clone https://github.com/SimpleDaemons/simple-ldapd.git

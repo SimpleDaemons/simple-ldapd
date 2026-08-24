@@ -1,6 +1,6 @@
 # Search
 
-Search is LDAPv3 `SearchRequest` with RFC 4511 filters. The memory and LDIF backends share the same match logic.
+Search is LDAPv3 `SearchRequest` with RFC 4511 filters. The memory, LDIF, and SQLite backends share the same match logic.
 
 ## Scope
 

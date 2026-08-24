@@ -27,6 +27,7 @@ Use `config/templates/development.conf`:
 
 - Listen **127.0.0.1:3389** (LDAP) and **6636** (LDAPS, off by default)
 - In-memory tree seeded from `config/examples/simple/example.ldif` (non-empty `ldif_file` uses the LDIF backend, so writes persist)
+- Production templates use `backend = sqlite` and `sqlite_file` instead of rewriting LDIF
 - Root DN `cn=admin,dc=example,dc=com` / password `secret`
 - Seeded user `uid=alice,ou=People,dc=example,dc=com` / password `alice-secret`
 - Lab GSSAPI keytab `config/examples/simple/lab.keytab`
