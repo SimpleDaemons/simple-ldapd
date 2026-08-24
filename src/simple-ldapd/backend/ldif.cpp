@@ -8,6 +8,7 @@
 
 #include "simple-ldapd/backend/ldif.hpp"
 
+#include "simple-ldapd/protocol/filter.hpp"
 #include "simple-ldapd/utils/logger.hpp"
 #include <fstream>
 
@@ -91,8 +92,26 @@ bool LdifBackend::exportFile(const std::string &path) const {
   if (!out) {
     return false;
   }
-  out << "# LDIF export is not implemented yet\n";
+  const auto entries = search({}, SearchScope::Subtree, SearchFilter::all());
+  for (const auto &entry : entries) {
+    out << "dn: " << entry.dn << "\n";
+    for (const auto &pair : entry.attributes) {
+      for (const auto &value : pair.second) {
+        out << pair.first << ": " << value << "\n";
+      }
+    }
+    out << "\n";
+  }
   return static_cast<bool>(out);
+}
+
+void LdifBackend::persist() {
+  if (path_.empty()) {
+    return;
+  }
+  if (!exportFile(path_)) {
+    Logger::instance().warning("LDIF persist failed: " + path_);
+  }
 }
 
 }  // namespace simple_ldapd

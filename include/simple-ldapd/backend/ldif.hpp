@@ -22,6 +22,7 @@ public:
 
   bool importFile(const std::string &path);
   bool exportFile(const std::string &path) const;
+  void persist() override;
 
 private:
   std::string path_;
