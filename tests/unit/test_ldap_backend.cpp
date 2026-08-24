@@ -8,6 +8,7 @@
 
 #include "simple-ldapd/auth/sasl.hpp"
 #include "simple-ldapd/backend/memory.hpp"
+#include "simple-ldapd/protocol/filter.hpp"
 #include "simple-ldapd/schema/registry.hpp"
 
 #include <fstream>
@@ -35,7 +36,8 @@ bool testMemoryBackend() {
   if (!found || found->attributes["uid"].empty()) {
     return false;
   }
-  auto matches = backend.search("dc=example,dc=com", "(objectClass=*)");
+  auto matches =
+      backend.search("dc=example,dc=com", SearchScope::Subtree, SearchFilter::present("uid"));
   return matches.size() == 1 && backend.remove(entry.dn);
 }
 

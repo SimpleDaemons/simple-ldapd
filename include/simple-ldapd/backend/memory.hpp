@@ -9,6 +9,7 @@
 #pragma once
 
 #include "simple-ldapd/backend/backend.hpp"
+#include <map>
 #include <mutex>
 
 namespace simple_ldapd {
@@ -19,8 +20,8 @@ public:
   std::string name() const override { return "memory"; }
 
   std::optional<DirectoryEntry> lookup(const std::string &dn) const override;
-  std::vector<DirectoryEntry> search(const std::string &base_dn,
-                                     const std::string &filter) const override;
+  std::vector<DirectoryEntry> search(const std::string &base_dn, SearchScope scope,
+                                     const SearchFilter &filter) const override;
   bool add(const DirectoryEntry &entry) override;
   bool modify(const DirectoryEntry &entry) override;
   bool remove(const std::string &dn) override;

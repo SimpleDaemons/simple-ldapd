@@ -20,6 +20,10 @@ struct DirectoryEntry {
   std::map<std::string, std::vector<std::string>> attributes;
 };
 
+enum class SearchScope { Base = 0, OneLevel = 1, Subtree = 2 };
+
+class SearchFilter;
+
 class Backend {
 public:
   virtual ~Backend() = default;
@@ -29,7 +33,8 @@ public:
 
   virtual std::optional<DirectoryEntry> lookup(const std::string &dn) const = 0;
   virtual std::vector<DirectoryEntry> search(const std::string &base_dn,
-                                             const std::string &filter) const = 0;
+                                             SearchScope scope,
+                                             const SearchFilter &filter) const = 0;
   virtual bool add(const DirectoryEntry &entry) = 0;
   virtual bool modify(const DirectoryEntry &entry) = 0;
   virtual bool remove(const std::string &dn) = 0;

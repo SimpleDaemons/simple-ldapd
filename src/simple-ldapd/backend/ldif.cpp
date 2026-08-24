@@ -1,6 +1,6 @@
 /**
  * @file ldif.cpp
- * @brief LDIF backend stub
+ * @brief LDIF import into the in-memory backend
  * @author SimpleDaemons
  * @copyright 2026 SimpleDaemons
  * @license Apache-2.0
@@ -12,6 +12,24 @@
 #include <fstream>
 
 namespace simple_ldapd {
+
+namespace {
+
+void trimInPlace(std::string &value) {
+  while (!value.empty() && (value.back() == '\r' || value.back() == ' ' ||
+                            value.back() == '\t')) {
+    value.pop_back();
+  }
+  size_t start = 0;
+  while (start < value.size() && (value[start] == ' ' || value[start] == '\t')) {
+    ++start;
+  }
+  if (start != 0) {
+    value.erase(0, start);
+  }
+}
+
+}  // namespace
 
 LdifBackend::LdifBackend(std::string path) : path_(std::move(path)) {}
 
@@ -40,16 +58,18 @@ bool LdifBackend::importFile(const std::string &path) {
     }
   };
   while (std::getline(in, line)) {
+    trimInPlace(line);
     if (line.empty()) {
       flush();
+      continue;
+    }
+    if (line.front() == '#') {
       continue;
     }
     if (line.rfind("dn:", 0) == 0) {
       flush();
       current.dn = line.substr(3);
-      while (!current.dn.empty() && current.dn.front() == ' ') {
-        current.dn.erase(current.dn.begin());
-      }
+      trimInPlace(current.dn);
     } else {
       auto colon = line.find(':');
       if (colon == std::string::npos) {
@@ -57,9 +77,8 @@ bool LdifBackend::importFile(const std::string &path) {
       }
       std::string name = line.substr(0, colon);
       std::string value = line.substr(colon + 1);
-      while (!value.empty() && value.front() == ' ') {
-        value.erase(value.begin());
-      }
+      trimInPlace(name);
+      trimInPlace(value);
       current.attributes[name].push_back(value);
     }
   }
@@ -72,7 +91,7 @@ bool LdifBackend::exportFile(const std::string &path) const {
   if (!out) {
     return false;
   }
-  out << "# LDIF export is a skeleton stub\n";
+  out << "# LDIF export is not implemented yet\n";
   return static_cast<bool>(out);
 }
 

@@ -8,27 +8,43 @@
 
 #include "simple-ldapd/backend/memory.hpp"
 
+#include "simple-ldapd/protocol/filter.hpp"
+#include "simple-ldapd/utils/dn.hpp"
+
 namespace simple_ldapd {
 
 bool MemoryBackend::initialize() { return true; }
 
 std::optional<DirectoryEntry> MemoryBackend::lookup(const std::string &dn) const {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto it = entries_.find(dn);
-  if (it == entries_.end()) {
-    return std::nullopt;
+  for (const auto &pair : entries_) {
+    if (dnEquals(pair.first, dn)) {
+      return pair.second;
+    }
   }
-  return it->second;
+  return std::nullopt;
 }
 
 std::vector<DirectoryEntry> MemoryBackend::search(const std::string &base_dn,
-                                                  const std::string & /*filter*/) const {
+                                                  SearchScope scope,
+                                                  const SearchFilter &filter) const {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<DirectoryEntry> matches;
   for (const auto &pair : entries_) {
-    if (pair.first.size() >= base_dn.size() &&
-        pair.first.compare(pair.first.size() - base_dn.size(), base_dn.size(),
-                           base_dn) == 0) {
+    const std::string &dn = pair.first;
+    bool in_scope = false;
+    switch (scope) {
+    case SearchScope::Base:
+      in_scope = dnEquals(dn, base_dn);
+      break;
+    case SearchScope::OneLevel:
+      in_scope = dnIsOneLevelChild(dn, base_dn);
+      break;
+    case SearchScope::Subtree:
+      in_scope = dnEndsWith(dn, base_dn);
+      break;
+    }
+    if (in_scope && filter.matches(pair.second)) {
       matches.push_back(pair.second);
     }
   }
@@ -40,8 +56,10 @@ bool MemoryBackend::add(const DirectoryEntry &entry) {
     return false;
   }
   std::lock_guard<std::mutex> lock(mutex_);
-  if (entries_.count(entry.dn) != 0) {
-    return false;
+  for (const auto &pair : entries_) {
+    if (dnEquals(pair.first, entry.dn)) {
+      return false;
+    }
   }
   entries_[entry.dn] = entry;
   return true;
@@ -49,17 +67,25 @@ bool MemoryBackend::add(const DirectoryEntry &entry) {
 
 bool MemoryBackend::modify(const DirectoryEntry &entry) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto it = entries_.find(entry.dn);
-  if (it == entries_.end()) {
-    return false;
+  for (auto &pair : entries_) {
+    if (dnEquals(pair.first, entry.dn)) {
+      pair.second = entry;
+      pair.second.dn = entry.dn;
+      return true;
+    }
   }
-  it->second = entry;
-  return true;
+  return false;
 }
 
 bool MemoryBackend::remove(const std::string &dn) {
   std::lock_guard<std::mutex> lock(mutex_);
-  return entries_.erase(dn) > 0;
+  for (auto it = entries_.begin(); it != entries_.end(); ++it) {
+    if (dnEquals(it->first, dn)) {
+      entries_.erase(it);
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace simple_ldapd
