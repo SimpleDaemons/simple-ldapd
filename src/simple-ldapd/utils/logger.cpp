@@ -8,6 +8,8 @@
 
 #include "simple-ldapd/utils/logger.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <fstream>
 #include <iomanip>
@@ -36,14 +38,47 @@ const char *levelName(LogLevel level) {
 
 }  // namespace
 
+bool parseLogLevel(const std::string &name, LogLevel &level) {
+  std::string lower = name;
+  std::transform(lower.begin(), lower.end(), lower.begin(),
+                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+  if (lower == "debug") {
+    level = LogLevel::Debug;
+    return true;
+  }
+  if (lower == "info") {
+    level = LogLevel::Info;
+    return true;
+  }
+  if (lower == "warning" || lower == "warn") {
+    level = LogLevel::Warning;
+    return true;
+  }
+  if (lower == "error") {
+    level = LogLevel::Error;
+    return true;
+  }
+  if (lower == "fatal") {
+    level = LogLevel::Fatal;
+    return true;
+  }
+  return false;
+}
+
 Logger &Logger::instance() {
   static Logger logger;
   return logger;
 }
 
-void Logger::setLevel(LogLevel level) { level_ = level; }
+void Logger::setLevel(LogLevel level) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  level_ = level;
+}
 
-LogLevel Logger::level() const { return level_; }
+LogLevel Logger::level() const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return level_;
+}
 
 void Logger::setLogFile(const std::string &path) { log_file_ = path; }
 
@@ -54,10 +89,10 @@ void Logger::error(const std::string &message) { log(LogLevel::Error, message); 
 void Logger::fatal(const std::string &message) { log(LogLevel::Fatal, message); }
 
 void Logger::log(LogLevel level, const std::string &message) {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (level < level_) {
     return;
   }
-  std::lock_guard<std::mutex> lock(mutex_);
   auto now = std::chrono::system_clock::now();
   auto time = std::chrono::system_clock::to_time_t(now);
   std::ostringstream line;

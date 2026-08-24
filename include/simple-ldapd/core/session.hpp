@@ -20,12 +20,14 @@ namespace simple_ldapd {
 class TlsContext;
 class SchemaRegistry;
 class SaslAuthenticator;
+class RateLimiter;
 
 class Session {
 public:
   Session(TcpConnection connection, Backend &backend, const LdapConfig &config,
           std::atomic<bool> &running, TlsContext *tls = nullptr,
-          SchemaRegistry *schema = nullptr, SaslAuthenticator *sasl = nullptr);
+          SchemaRegistry *schema = nullptr, SaslAuthenticator *sasl = nullptr,
+          RateLimiter *rate_limiter = nullptr);
 
   bool bound() const { return bound_; }
   const std::string &bindDn() const { return bind_dn_; }
@@ -56,6 +58,7 @@ private:
   TlsContext *tls_{nullptr};
   SchemaRegistry *schema_{nullptr};
   SaslAuthenticator *sasl_{nullptr};
+  RateLimiter *rate_limiter_{nullptr};
   bool bound_{false};
   std::string bind_dn_;
   std::string sasl_digest_nonce_;

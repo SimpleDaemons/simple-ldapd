@@ -15,6 +15,8 @@ namespace simple_ldapd {
 
 enum class LogLevel { Debug = 0, Info = 1, Warning = 2, Error = 3, Fatal = 4 };
 
+bool parseLogLevel(const std::string &name, LogLevel &level);
+
 class Logger {
 public:
   static Logger &instance();

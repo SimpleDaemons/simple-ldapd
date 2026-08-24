@@ -11,6 +11,7 @@
 #ifdef SIMPLE_LDAPD_SSL
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <openssl/x509.h>
 #endif
 
 namespace simple_ldapd {
@@ -91,14 +92,35 @@ bool TlsContext::loadCa(const std::string &ca_file) {
   if (impl_->ctx == nullptr) {
     return false;
   }
-  return SSL_CTX_load_verify_locations(impl_->ctx, ca_file.c_str(), nullptr) == 1;
+  if (SSL_CTX_load_verify_locations(impl_->ctx, ca_file.c_str(), nullptr) != 1) {
+    return false;
+  }
+  SSL_CTX_set_verify(impl_->ctx, SSL_VERIFY_PEER, nullptr);
+  STACK_OF(X509_NAME) *names = SSL_load_client_CA_file(ca_file.c_str());
+  if (names != nullptr) {
+    SSL_CTX_set_client_CA_list(impl_->ctx, names);
+  }
+  return true;
 #else
   (void)ca_file;
   return false;
 #endif
 }
 
-bool TlsContext::initClient(const std::string &ca_file) {
+bool TlsContext::requireClientCertificate() {
+#ifdef SIMPLE_LDAPD_SSL
+  if (impl_->ctx == nullptr) {
+    return false;
+  }
+  SSL_CTX_set_verify(impl_->ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, nullptr);
+  return true;
+#else
+  return false;
+#endif
+}
+
+bool TlsContext::initClient(const std::string &ca_file, const std::string &cert_file,
+                            const std::string &key_file) {
 #ifdef SIMPLE_LDAPD_SSL
   if (impl_->ctx != nullptr) {
     SSL_CTX_free(impl_->ctx);
@@ -117,10 +139,20 @@ bool TlsContext::initClient(const std::string &ca_file) {
   } else {
     SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, nullptr);
   }
+  if (!cert_file.empty()) {
+    if (SSL_CTX_use_certificate_file(ctx, cert_file.c_str(), SSL_FILETYPE_PEM) != 1 ||
+        SSL_CTX_use_PrivateKey_file(ctx, key_file.c_str(), SSL_FILETYPE_PEM) != 1 ||
+        SSL_CTX_check_private_key(ctx) != 1) {
+      SSL_CTX_free(ctx);
+      return false;
+    }
+  }
   impl_->ctx = ctx;
   return true;
 #else
   (void)ca_file;
+  (void)cert_file;
+  (void)key_file;
   return false;
 #endif
 }

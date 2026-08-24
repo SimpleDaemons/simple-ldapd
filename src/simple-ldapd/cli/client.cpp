@@ -31,7 +31,7 @@ std::optional<TcpConnection> connectLdap(const ClientOptions &options, std::stri
     return connection;
   }
   TlsContext tls;
-  if (!tls.initClient(options.ca_file)) {
+  if (!tls.initClient(options.ca_file, options.tls_cert_file, options.tls_key_file)) {
     error = "TLS client initialization failed";
     return std::nullopt;
   }

@@ -31,6 +31,10 @@ bool LdapDaemon::initialize() {
     Logger::instance().error("invalid configuration");
     return false;
   }
+  LogLevel level = LogLevel::Info;
+  if (parseLogLevel(config_.log_level, level)) {
+    Logger::instance().setLevel(level);
+  }
   if (!config_.log_file.empty()) {
     Logger::instance().setLogFile(config_.log_file);
   }
@@ -61,7 +65,12 @@ bool LdapDaemon::initialize() {
     if (!config_.tls_ca_file.empty() && !tls_.loadCa(config_.tls_ca_file)) {
       Logger::instance().warning("failed to load TLS CA file");
     }
+    if (config_.tls_verify_client && !tls_.requireClientCertificate()) {
+      Logger::instance().error("failed to require TLS client certificates");
+      return false;
+    }
   }
+  rate_limiter_.setMaxPerMinute(config_.bind_rate_limit);
   initialized_ = true;
   return true;
 }
@@ -126,7 +135,7 @@ void LdapDaemon::serveConnection(TcpConnection connection, bool ldaps) {
     return;
   }
   Session session(std::move(connection), *backend_, config_, running_, &tls_, &schema_,
-                  &sasl_);
+                  &sasl_, &rate_limiter_);
   session.serve();
 }
 

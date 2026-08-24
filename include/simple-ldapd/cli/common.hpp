@@ -23,6 +23,8 @@ struct ClientOptions {
   bool ldaps{false};
   bool starttls{false};
   std::string ca_file;
+  std::string tls_cert_file;
+  std::string tls_key_file;
   std::string bind_dn;
   std::string password;
   std::string base_dn;

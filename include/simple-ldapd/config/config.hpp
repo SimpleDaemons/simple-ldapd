@@ -10,6 +10,7 @@
 
 #include "simple-ldapd/utils/platform.hpp"
 #include "simple-ldapd/security/acl.hpp"
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -31,6 +32,7 @@ public:
   std::string tls_cert_file;
   std::string tls_key_file;
   std::string tls_ca_file;
+  bool tls_verify_client{false};
   std::string backend{"memory"};
   std::string ldif_file;
   std::string sqlite_file;
@@ -40,6 +42,7 @@ public:
   std::string root_password;
   std::string log_file;
   std::string log_level{"info"};
+  std::uint32_t bind_rate_limit{0};
   bool foreground{true};
   bool require_confidentiality{false};
   std::string krb_realm;

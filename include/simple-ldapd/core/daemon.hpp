@@ -13,6 +13,7 @@
 #include "simple-ldapd/config/config.hpp"
 #include "simple-ldapd/core/listener.hpp"
 #include "simple-ldapd/schema/registry.hpp"
+#include "simple-ldapd/security/rate_limiter.hpp"
 #include "simple-ldapd/security/tls.hpp"
 #include <atomic>
 #include <memory>
@@ -58,6 +59,7 @@ private:
   SchemaRegistry schema_;
   TlsContext tls_;
   SaslAuthenticator sasl_;
+  RateLimiter rate_limiter_;
   Listener listener_;
   Listener ldaps_listener_;
   std::unique_ptr<Backend> backend_;

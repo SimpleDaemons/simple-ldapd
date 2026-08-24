@@ -13,6 +13,7 @@
 #include "simple-ldapd/auth/sasl.hpp"
 #include "simple-ldapd/schema/registry.hpp"
 #include "simple-ldapd/security/acl.hpp"
+#include "simple-ldapd/security/rate_limiter.hpp"
 #include "simple-ldapd/security/tls.hpp"
 #include "simple-ldapd/utils/dn.hpp"
 #include "simple-ldapd/version.hpp"
@@ -57,9 +58,10 @@ bool attributeRequested(const std::vector<std::string> &names,
 
 Session::Session(TcpConnection connection, Backend &backend, const LdapConfig &config,
                  std::atomic<bool> &running, TlsContext *tls, SchemaRegistry *schema,
-                 SaslAuthenticator *sasl)
+                 SaslAuthenticator *sasl, RateLimiter *rate_limiter)
     : connection_(std::move(connection)), backend_(backend), config_(config),
-      running_(running), tls_(tls), schema_(schema), sasl_(sasl) {}
+      running_(running), tls_(tls), schema_(schema), sasl_(sasl),
+      rate_limiter_(rate_limiter) {}
 
 void Session::serve() {
   while (running_.load()) {
@@ -156,13 +158,17 @@ LdapMessage Session::handleBind(const LdapMessage &request) {
     return makeBindResponse(request.message_id, ResultCode::ProtocolError,
                             "only LDAPv3 is supported");
   }
+  if (rate_limiter_ != nullptr && !rate_limiter_->allow(connection_.peer())) {
+    return makeBindResponse(request.message_id, ResultCode::Busy, "bind rate limit exceeded");
+  }
   if (!request.bind.simple) {
     if (sasl_ == nullptr) {
       return makeBindResponse(request.message_id, ResultCode::AuthMethodNotSupported,
                               "SASL bind is not implemented");
     }
-    const auto outcome =
-        sasl_->bind(backend_, config_, request.bind, connection_.tls(), sasl_digest_nonce_);
+    const auto outcome = sasl_->bind(backend_, config_, request.bind, connection_.tls(),
+                                     connection_.tlsPeerVerified(),
+                                     connection_.tlsPeerIdentity(), sasl_digest_nonce_);
     if (outcome.result == ResultCode::Success) {
       bound_ = true;
       bind_dn_ = outcome.bind_dn;

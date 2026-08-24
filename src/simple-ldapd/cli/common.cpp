@@ -69,6 +69,8 @@ void printClientUsage(const std::string &tool, const std::string &summary) {
             << "  -p PORT        LDAP port\n"
             << "  -Z             StartTLS after connect\n"
             << "  --ca-file FILE Trust CA (or server cert) for TLS\n"
+            << "  --cert FILE    Client certificate for SASL EXTERNAL\n"
+            << "  --key FILE     Client private key for SASL EXTERNAL\n"
             << "  -x             Simple authentication\n"
             << "  -Y MECH        SASL mechanism (PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI)\n"
             << "  -U AUTHCID     SASL authentication identity\n"
@@ -162,6 +164,10 @@ ClientOptions parseClientArgs(int argc, char *argv[], bool passwd) {
       options.starttls = true;
     } else if (arg == "--ca-file") {
       options.ca_file = next();
+    } else if (arg == "--cert") {
+      options.tls_cert_file = next();
+    } else if (arg == "--key") {
+      options.tls_key_file = next();
     } else if (arg == "-a") {
       if (passwd) {
         options.old_password = next();

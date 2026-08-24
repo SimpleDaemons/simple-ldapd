@@ -261,6 +261,8 @@ ResultCode SaslAuthenticator::step(SaslMechanism mechanism, const std::string & 
 
 SaslBindResult SaslAuthenticator::bind(Backend &backend, const LdapConfig &config,
                                        const BindRequestData &request, bool tls,
+                                       bool tls_client_verified,
+                                       const std::string &tls_client_identity,
                                        std::string &digest_nonce) const {
   SaslMechanism mechanism = SaslMechanism::Anonymous;
   if (!parseSaslMechanism(request.sasl_mechanism, mechanism) || !supports(mechanism)) {
@@ -361,18 +363,28 @@ SaslBindResult SaslAuthenticator::bind(Backend &backend, const LdapConfig &confi
     if (!tls) {
       return fail(ResultCode::ConfidentialityRequired, "EXTERNAL requires TLS");
     }
-    const std::string identity =
-        !request.sasl_credentials.empty() ? request.sasl_credentials : request.dn;
-    const auto dn = authenticator.resolveName(identity);
-    if (!dn) {
+    if (!tls_client_verified || tls_client_identity.empty()) {
+      return fail(ResultCode::InvalidCredentials,
+                  "EXTERNAL requires a verified client certificate");
+    }
+    const auto cert_dn = authenticator.resolveName(tls_client_identity);
+    if (!cert_dn) {
       return fail(ResultCode::InvalidCredentials, "EXTERNAL identity is unknown");
     }
-    if (authenticator.isAccountDisabled(*dn)) {
+    const std::string requested =
+        !request.sasl_credentials.empty() ? request.sasl_credentials : request.dn;
+    if (!requested.empty()) {
+      const auto requested_dn = authenticator.resolveName(requested);
+      if (!requested_dn || !dnEquals(*requested_dn, *cert_dn)) {
+        return fail(ResultCode::InvalidCredentials, "EXTERNAL identity does not match certificate");
+      }
+    }
+    if (authenticator.isAccountDisabled(*cert_dn)) {
       return fail(ResultCode::InvalidCredentials, "invalid credentials");
     }
     SaslBindResult result;
     result.result = ResultCode::Success;
-    result.bind_dn = *dn;
+    result.bind_dn = *cert_dn;
     return result;
   }
   case SaslMechanism::Gssapi: {

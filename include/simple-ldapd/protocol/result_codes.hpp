@@ -73,6 +73,8 @@ inline const char *toString(ResultCode code) {
     return "compareTrue";
   case ResultCode::UnavailableCriticalExtension:
     return "unavailableCriticalExtension";
+  case ResultCode::Busy:
+    return "busy";
   case ResultCode::Unavailable:
     return "unavailable";
   case ResultCode::UnwillingToPerform:

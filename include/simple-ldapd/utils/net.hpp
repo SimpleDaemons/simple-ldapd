@@ -39,6 +39,8 @@ public:
   bool tls() const { return ssl_ != nullptr; }
 
   bool handshakeTls(const TlsContext &ctx, bool server, const std::string &sni = {});
+  bool tlsPeerVerified() const;
+  std::string tlsPeerIdentity() const;
   bool sendAll(const std::vector<uint8_t> &data);
   bool recvExact(uint8_t *data, size_t size);
   bool recvPdu(std::vector<uint8_t> &pdu);

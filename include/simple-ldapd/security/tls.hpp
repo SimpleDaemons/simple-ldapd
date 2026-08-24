@@ -26,7 +26,9 @@ public:
 
   bool loadCertificate(const std::string &cert_file, const std::string &key_file);
   bool loadCa(const std::string &ca_file);
-  bool initClient(const std::string &ca_file = {});
+  bool requireClientCertificate();
+  bool initClient(const std::string &ca_file = {}, const std::string &cert_file = {},
+                  const std::string &key_file = {});
   bool enabled() const;
   bool startTlsSupported() const { return enabled(); }
   void *native() const;

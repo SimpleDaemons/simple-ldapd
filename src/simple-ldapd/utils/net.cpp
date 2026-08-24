@@ -13,6 +13,7 @@
 
 #ifdef SIMPLE_LDAPD_SSL
 #include <openssl/ssl.h>
+#include <openssl/x509.h>
 #endif
 
 #ifndef SIMPLE_LDAPD_WINDOWS
@@ -221,6 +222,40 @@ bool TcpConnection::handshakeTls(const TlsContext &ctx, bool server, const std::
   (void)server;
   (void)sni;
   return false;
+#endif
+}
+
+bool TcpConnection::tlsPeerVerified() const {
+#ifdef SIMPLE_LDAPD_SSL
+  if (ssl_ == nullptr || (SSL_get_verify_mode(ssl_) & SSL_VERIFY_PEER) == 0) {
+    return false;
+  }
+  X509 *cert = SSL_get_peer_certificate(ssl_);
+  if (cert == nullptr) {
+    return false;
+  }
+  X509_free(cert);
+  return SSL_get_verify_result(ssl_) == X509_V_OK;
+#else
+  return false;
+#endif
+}
+
+std::string TcpConnection::tlsPeerIdentity() const {
+#ifdef SIMPLE_LDAPD_SSL
+  if (ssl_ == nullptr) {
+    return {};
+  }
+  X509 *cert = SSL_get_peer_certificate(ssl_);
+  if (cert == nullptr) {
+    return {};
+  }
+  char cn[256] = {0};
+  X509_NAME_get_text_by_NID(X509_get_subject_name(cert), NID_commonName, cn, sizeof(cn));
+  X509_free(cert);
+  return cn;
+#else
+  return {};
 #endif
 }
 

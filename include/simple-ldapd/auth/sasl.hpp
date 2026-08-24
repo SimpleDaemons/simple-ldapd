@@ -42,8 +42,8 @@ public:
   ResultCode step(SaslMechanism mechanism, const std::string &input,
                   std::string &output) const;
   SaslBindResult bind(Backend &backend, const LdapConfig &config,
-                      const BindRequestData &request, bool tls,
-                      std::string &digest_nonce) const;
+                      const BindRequestData &request, bool tls, bool tls_client_verified,
+                      const std::string &tls_client_identity, std::string &digest_nonce) const;
 
 private:
   std::vector<SaslMechanism> enabled_;

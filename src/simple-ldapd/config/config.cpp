@@ -8,6 +8,7 @@
 
 #include "simple-ldapd/config/config.hpp"
 
+#include "simple-ldapd/utils/logger.hpp"
 #include <algorithm>
 #include <cctype>
 #include <fstream>
@@ -73,6 +74,8 @@ bool LdapConfig::loadFromFile(const std::string &path) {
       tls_key_file = value;
     } else if (key == "tls_ca_file") {
       tls_ca_file = value;
+    } else if (key == "tls_verify_client") {
+      tls_verify_client = parseBool(value);
     } else if (key == "backend") {
       backend = value;
     } else if (key == "ldif_file") {
@@ -91,6 +94,8 @@ bool LdapConfig::loadFromFile(const std::string &path) {
       log_file = value;
     } else if (key == "log_level") {
       log_level = value;
+    } else if (key == "bind_rate_limit") {
+      bind_rate_limit = static_cast<std::uint32_t>(std::stoul(value));
     } else if (key == "foreground") {
       foreground = parseBool(value);
     } else if (key == "require_confidentiality") {
@@ -125,6 +130,13 @@ bool LdapConfig::validateDetailed(std::vector<std::string> &errors) const {
       (tls_cert_file.empty() || tls_key_file.empty())) {
     errors.emplace_back(
         "tls_cert_file and tls_key_file are required when TLS is enabled");
+  }
+  if (tls_verify_client && tls_ca_file.empty()) {
+    errors.emplace_back("tls_ca_file is required when tls_verify_client is true");
+  }
+  LogLevel parsed_level = LogLevel::Info;
+  if (!parseLogLevel(log_level, parsed_level)) {
+    errors.emplace_back("log_level must be debug, info, warning, error, or fatal");
   }
   if (backend != "memory" && backend != "ldif" && backend != "sqlite") {
     errors.emplace_back("backend must be memory, ldif, or sqlite");
