@@ -62,9 +62,22 @@ int main() {
   };
   auto sasl_options =
       cli::parseClientArgs(static_cast<int>(sasl_args.size()), sasl_args.data());
-  if (sasl_options.simple_auth || sasl_options.sasl_mechanism != "PLAIN" ||
-      sasl_options.sasl_authcid != "alice") {
-    std::cout << "FAIL parseSaslArgs" << std::endl;
+  std::vector<char *> gssapi_args{
+      const_cast<char *>("ldapsearch"),
+      const_cast<char *>("-H"),
+      const_cast<char *>("ldap://127.0.0.1:3389"),
+      const_cast<char *>("-Y"),
+      const_cast<char *>("GSSAPI"),
+      const_cast<char *>("-U"),
+      const_cast<char *>("alice"),
+      const_cast<char *>("--keytab"),
+      const_cast<char *>("lab.keytab"),
+  };
+  auto gssapi_options =
+      cli::parseClientArgs(static_cast<int>(gssapi_args.size()), gssapi_args.data());
+  if (gssapi_options.simple_auth || gssapi_options.sasl_mechanism != "GSSAPI" ||
+      gssapi_options.sasl_authcid != "alice" || gssapi_options.keytab != "lab.keytab") {
+    std::cout << "FAIL parseGssapiArgs" << std::endl;
     return 1;
   }
 

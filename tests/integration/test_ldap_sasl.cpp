@@ -14,6 +14,7 @@
 #include "simple-ldapd/protocol/message.hpp"
 #include "simple-ldapd/utils/net.hpp"
 
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -45,6 +46,23 @@ LdapConfig testConfig() {
   config.base_dn = "dc=example,dc=com";
   config.root_dn = "cn=admin,dc=example,dc=com";
   config.root_password = "secret";
+  return config;
+}
+
+std::string writeLabKeytab() {
+  const std::string path = "test-simple-ldapd-sasl.keytab";
+  std::ofstream out(path);
+  out << "realm = EXAMPLE.COM\n";
+  out << "service = ldap/localhost\n";
+  out << "key = lab-service-secret\n";
+  out.close();
+  return path;
+}
+
+LdapConfig gssapiConfig() {
+  auto config = testConfig();
+  config.krb_realm = "EXAMPLE.COM";
+  config.gssapi_keytab = writeLabKeytab();
   return config;
 }
 
@@ -138,7 +156,7 @@ bool testDigestMd5Bind() {
   return static_cast<bool>(client) && error.empty();
 }
 
-bool testGssapiHook() {
+bool testGssapiWithoutKeytab() {
   LdapDaemon daemon(testConfig());
   if (!seed(daemon) || !daemon.start()) {
     return false;
@@ -158,6 +176,42 @@ bool testGssapiHook() {
   auto response = decodeLdapMessage(pdu);
   daemon.stop();
   return response && response->result == ResultCode::AuthMethodNotSupported;
+}
+
+bool testGssapiTicketBind() {
+  auto config = gssapiConfig();
+  LdapDaemon daemon(config);
+  if (!seed(daemon) || !daemon.start()) {
+    return false;
+  }
+  cli::ClientOptions options;
+  options.host = "127.0.0.1";
+  options.port = daemon.boundPort();
+  options.sasl_mechanism = "GSSAPI";
+  options.sasl_authcid = "alice";
+  options.keytab = config.gssapi_keytab;
+  std::string error;
+  auto client = cli::LdapClient::openBound(options, error);
+  daemon.stop();
+  return static_cast<bool>(client) && error.empty();
+}
+
+bool testGssapiUnknownPrincipal() {
+  auto config = gssapiConfig();
+  LdapDaemon daemon(config);
+  if (!seed(daemon) || !daemon.start()) {
+    return false;
+  }
+  cli::ClientOptions options;
+  options.host = "127.0.0.1";
+  options.port = daemon.boundPort();
+  options.sasl_mechanism = "GSSAPI";
+  options.sasl_authcid = "mallory";
+  options.keytab = config.gssapi_keytab;
+  std::string error;
+  auto client = cli::LdapClient::openBound(options, error);
+  daemon.stop();
+  return !client && error == "invalidCredentials";
 }
 
 bool testExternalRequiresTls() {
@@ -218,7 +272,9 @@ int main() {
   run("testRootDseAdvertisesSasl", testRootDseAdvertisesSasl);
   run("testPlainBindByUid", testPlainBindByUid);
   run("testDigestMd5Bind", testDigestMd5Bind);
-  run("testGssapiHook", testGssapiHook);
+  run("testGssapiWithoutKeytab", testGssapiWithoutKeytab);
+  run("testGssapiTicketBind", testGssapiTicketBind);
+  run("testGssapiUnknownPrincipal", testGssapiUnknownPrincipal);
   run("testExternalRequiresTls", testExternalRequiresTls);
   run("testPlainConfidentiality", testPlainConfidentiality);
   std::cout << "SASL tests: " << passed << "/" << total << std::endl;
