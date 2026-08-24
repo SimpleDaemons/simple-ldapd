@@ -24,7 +24,7 @@ Lab host: `127.0.0.1:3389`, template `config/templates/development.conf`. Seeded
   -b dc=example,dc=com '(uid=alice)'
 ```
 
-## Writes (root DN)
+## Writes (root DN or `acl` write)
 
 ```bash
 ./build/ldapadd -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -f change.ldif

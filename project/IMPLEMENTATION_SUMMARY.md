@@ -6,11 +6,12 @@
 - Simple bind (anonymous, root DN + `root_password`, entry `userPassword`)
 - Search with equality / and / or / not / present / substring filters on the memory backend
 - Optional LDIF seed via `ldif_file`; writes persist back to that file
-- `userPassword` hidden unless bound as root DN; writes require a root DN bind
+- `userPassword` hidden unless bound as root DN; writes require `root_dn` or an `acl` write rule
 - Working `ldapsearch` / `ldapadd` / `ldapmodify` / `ldapdelete` / `ldappasswd` (including `ldaps://` and `-Z`)
 - Schema files for core, cosine, inetOrgPerson, posix, and AD-compat names; writes are checked against MUST/MAY/SYNTAX
 - LDAPS and StartTLS via OpenSSL; `require_confidentiality` blocks cleartext password binds
 - Schema packs: core, cosine, inetOrgPerson, nis, ad-compat (enforced on writes)
 - SASL PLAIN, DIGEST-MD5, EXTERNAL, and GSSAPI lab tickets from `gssapi_keytab`
-- RFC 3062 password modify: a bound user may change their own `userPassword`; the root DN may set another entry
+- RFC 3062 password modify: self-change, root-set, or `acl` write on the target
 - Concurrent sessions: one thread per accepted LDAP or LDAPS connection
+- Access control: repeatable `acl` lines; empty list keeps anonymous search and root-only writes

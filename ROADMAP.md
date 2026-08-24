@@ -64,7 +64,7 @@
 
 - Configured ACLs for search vs write on a subtree (bind DN or group)
 - Root DN remains the superuser
-- Anonymous search can be limited (today any anonymous bind can read the tree)
+- Anonymous search can be limited (`acl = users search *` in the high-security template)
 
 ## Milestone 12 — Password storage — v0.12.0
 

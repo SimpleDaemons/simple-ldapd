@@ -71,7 +71,7 @@ ldapsearch -H ldap://127.0.0.1:3389 -Y PLAIN -U alice -w alice-secret -b dc=exam
 
 ### ldapadd / ldapmodify / ldapdelete
 
-Writes require the root DN.
+Writes require the root DN or an `acl` write rule covering the target.
 
 ```bash
 ldapadd -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -f change.ldif

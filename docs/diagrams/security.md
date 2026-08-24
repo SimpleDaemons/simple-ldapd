@@ -7,9 +7,9 @@ flowchart TD
   Conf{require_confidentiality?}
   Bind[Bind simple or SASL]
   Who{Who is bound?}
-  Anon[Anonymous: search without userPassword]
-  User[Entry: search; self password modify]
-  Root[Root DN: search including userPassword; all writes]
+  Anon[Anonymous: search if ACL allows]
+  User[Entry: search/write per ACL; self password modify]
+  Root[Root DN: superuser]
 
   Conn --> TLS
   TLS -->|no| Conf
@@ -35,14 +35,14 @@ flowchart TD
 
 ## Authorization
 
-- Directory writes (add, modify, delete, modrdn) require a bind as `root_dn`.
-- RFC 3062 password modify: the bound user may change their own `userPassword`; the root DN may set another entry's. `root_password` itself is not an entry attribute.
-- `userPassword` is stripped from search results unless the session is bound as the root DN.
+- With no `acl` lines: anyone may search; only `root_dn` may write
+- With `acl` lines: unmatched search/write is denied (`anonymous` / `users` / `dn:` / `group:` on a subtree)
+- `root_dn` is always superuser
+- RFC 3062 password modify: self-change, root-set, or `acl` write on the target. `root_password` is not an entry attribute
+- `userPassword` is stripped from search results unless the session is bound as the root DN
 
 ## TLS
 
 - LDAPS: separate listener, handshake before LDAP.
 - StartTLS: OID `1.3.6.1.4.1.1466.20037` on the LDAP port when `enable_starttls` is true.
 - `require_confidentiality` refuses simple binds that send a password on cleartext.
-
-There are no per-entry ACLs yet. Treat the root DN password as full directory control.

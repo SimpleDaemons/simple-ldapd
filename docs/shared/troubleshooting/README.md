@@ -26,9 +26,11 @@
 
 `require_confidentiality` is on and the bind sent a password on a cleartext connection. Use `ldaps://`, `-Z`, or turn the setting off in the lab.
 
-## insufficientAccessRights on writes
+## insufficientAccessRights
 
-Add/modify/delete/modrdn require the configured `root_dn`. Ordinary users can only change their own password via RFC 3062 / `ldappasswd`.
+Search: an `acl` line is configured and this bind is not allowed to read that base (high-security template uses `acl = users search *`). Bind as a user or the root DN.
+
+Writes: need `root_dn` or an `acl` write rule covering the target DN. Ordinary users can still change their own password via RFC 3062 / `ldappasswd`.
 
 ## Schema errors on add/modify
 

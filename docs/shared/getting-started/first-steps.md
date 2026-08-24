@@ -32,7 +32,7 @@ Equality, present, substring, and/or/not. See [search](../user-guide/search.md).
 
 ## Writes
 
-Add, modify, delete, and modrdn require a **root DN** bind.
+Add, modify, delete, and modrdn require the **root DN** or an `acl` write rule covering the target. Development templates have no `acl` lines, so only the root DN can write.
 
 ```bash
 ./build/ldapadd -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -f change.ldif

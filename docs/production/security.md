@@ -20,7 +20,7 @@ This is a bind-centric directory, not an AD DC. Treat `root_dn` as superuser.
 
 | Bind | Production note |
 |------|-----------------|
-| Anonymous | Search without `userPassword`. Disable at the network layer if you do not want anonymous reads (the daemon always allows empty DN + empty password). |
+| Anonymous | Empty DN + empty password always binds. Search is allowed with no `acl` lines; `acl = users search *` denies anonymous reads. |
 | Simple | Use TLS. Bind DN resolution accepts uid / sAMAccountName. |
 | SASL PLAIN / DIGEST-MD5 | Same identities as simple bind. PLAIN still needs TLS. |
 | SASL EXTERNAL | Trusts the authzid DN; **does not verify a client certificate**. |
@@ -28,7 +28,7 @@ This is a bind-centric directory, not an AD DC. Treat `root_dn` as superuser.
 
 ## Authorization
 
-Writes require the configured root DN. There are no per-entry ACLs. Password Modify allows self-change or root-set. Schema is enforced on add/modify/modrdn, not on search.
+Writes require `root_dn` or an `acl` write rule covering the target DN. Password Modify allows self-change, root-set, or write ACL. Schema is enforced on add/modify/modrdn, not on search. The high-security template uses `acl = users search *` so anonymous cannot read the tree.
 
 ## Operational hygiene
 

@@ -4,6 +4,17 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.11.0] — 2026-08-24
+
+Milestone 11 — Access control.
+
+### Added
+
+- Repeatable `acl = WHO PERM [subtree]` rules (`anonymous`, `users`, `*`, `dn:…`, `group:…`; `search` or `write`)
+- Default unchanged when no `acl` lines: anyone may search; only `root_dn` may write
+- High-security template: `acl = users search *` (anonymous cannot read the tree)
+- Root DN remains superuser; Root DSE stays searchable; self `ldappasswd` still works
+
 ## [0.10.0] — 2026-08-24
 
 Milestone 10 — Concurrent connections.

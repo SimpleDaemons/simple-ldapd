@@ -27,3 +27,4 @@ Key/value syntax (`name = value`). Comments start with `#`.
 | krb_realm | from `base_dn` | Lab GSSAPI realm (e.g. EXAMPLE.COM) |
 | gssapi_service | ldap/localhost | Service name inside lab tickets |
 | gssapi_keytab | | Text lab keytab (`realm` / `service` / `key`) |
+| acl | (none) | Repeatable. `WHO PERM [subtree]`. Empty list: anyone may search; only root writes |

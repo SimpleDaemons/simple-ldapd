@@ -5,7 +5,7 @@ Start from the shipped templates; do not use `development.conf` on a public inte
 | Template | Ports | TLS | Extra |
 |----------|-------|-----|--------|
 | `config/templates/production.conf` | 389 / 636 | LDAPS + StartTLS | LDIF persist, `log_level = info` |
-| `config/templates/high-security.conf` | 389 / 636 | LDAPS + StartTLS | `require_confidentiality = true`, `log_level = warning` |
+| `config/templates/high-security.conf` | 389 / 636 | LDAPS + StartTLS | `require_confidentiality = true`, `acl = users search *`, `log_level = warning` |
 
 Install paths assumed by those files:
 

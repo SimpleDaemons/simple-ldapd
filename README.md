@@ -2,7 +2,7 @@
 
 Lightweight LDAPv3 directory daemon for SSO via LDAP bind, with an OpenLDAP-style CLI and Active Directory-friendly schema names.
 
-simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.10.0** implements simple bind, SASL, search (including substring filters), concurrent sessions, directory writes, TLS, schema enforcement, GSSAPI lab tickets, and `ldappasswd`. Versions follow [VERSIONING.md](VERSIONING.md).
+simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.11.0** implements simple bind, SASL, search, concurrent sessions, ACLs, directory writes, TLS, schema enforcement, GSSAPI lab tickets, and `ldappasswd`. Versions follow [VERSIONING.md](VERSIONING.md).
 
 ## Goals
 
@@ -25,10 +25,11 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 | Build, tests, CPack packaging | Implemented |
 | Config, schema registry, memory/LDIF backends | Implemented |
 | LDAPv3 BER codec, simple bind, search | Implemented (equality, present, substring, and/or/not) |
-| Add / modify / delete / modrdn | Implemented (root DN bind) |
+| Add / modify / delete / modrdn | Implemented (root DN or `acl` write) |
 | Schema enforcement on writes | Implemented |
 | LDAPS / StartTLS | Implemented |
 | SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |
+| Access control | Implemented (`acl` lines; root DN is superuser) |
 | `ldappasswd` | Implemented (RFC 3062) |
 
 ## Documentation
@@ -88,7 +89,7 @@ Search the seeded tree (anonymous or simple bind):
 ./build/ldappasswd -H ldap://127.0.0.1:3389 -x -D uid=alice,ou=People,dc=example,dc=com -w alice-secret -s alice-newer
 ```
 
-Writes (add/modify/delete/modrdn) require a root DN bind. `ldappasswd` can also be used by a bound user to change their own `userPassword`. Simple bind accepts the entry DN, a uid / sAMAccountName, or a DN whose RDN matches that account (so `uid=alice,dc=example,dc=com` still finds `uid=alice,ou=People,dc=example,dc=com`). LDAPS and StartTLS need `enable_ldaps` / `enable_starttls` plus `tls_cert_file` and `tls_key_file`; the high-security template also sets `require_confidentiality` so password binds are refused on cleartext. SASL GSSAPI needs `gssapi_keytab` (a text lab keytab, not MIT krb5 binary format).
+Writes (add/modify/delete/modrdn) require the root DN unless an `acl` line grants `write` on that subtree. `ldappasswd` can also be used by a bound user to change their own `userPassword`. Simple bind accepts the entry DN, a uid / sAMAccountName, or a DN whose RDN matches that account (so `uid=alice,dc=example,dc=com` still finds `uid=alice,ou=People,dc=example,dc=com`). LDAPS and StartTLS need `enable_ldaps` / `enable_starttls` plus `tls_cert_file` and `tls_key_file`; the high-security template also sets `require_confidentiality` so password binds are refused on cleartext, and `acl = users search *` so anonymous cannot read the tree. SASL GSSAPI needs `gssapi_keytab` (a text lab keytab, not MIT krb5 binary format).
 
 ## Layout
 

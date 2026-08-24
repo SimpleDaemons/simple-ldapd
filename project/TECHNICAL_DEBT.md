@@ -2,7 +2,6 @@
 
 Tracked as [roadmap](../ROADMAP.md) milestones where they are product work.
 
-- Writes are allowed only for the configured root DN (no per-entry ACLs) — milestone 11
 - `userPassword` is compared as cleartext (`{CLEARTEXT}` prefix only) — milestone 12
 - `userAccountControl` is schema-only (not enforced on bind) — milestone 12
 - No Compare, Who Am I, or paged results — milestone 13

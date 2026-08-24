@@ -14,9 +14,10 @@
 | Simple bind | Implemented (anonymous, root DN, `userPassword`) |
 | Search filters | Implemented (`equality`, `and`/`or`/`not`, `present`, substring) |
 | `ldapsearch` | Implemented |
-| Add / modify / delete / modrdn | Implemented (root DN bind) |
+| Add / modify / delete / modrdn | Implemented (root DN or `acl` write) |
 | SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |
 | LDAPS / StartTLS | Implemented |
+| Access control | Implemented (`acl` WHO/PERM/subtree) |
 | CLI help/version | Implemented |
 | `ldapadd` / `ldapmodify` / `ldapdelete` | Implemented |
 | `ldappasswd` | Implemented (RFC 3062) |

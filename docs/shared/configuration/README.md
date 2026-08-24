@@ -8,7 +8,7 @@ Shipped files:
 |------|-----|
 | `config/templates/development.conf` | Lab: 127.0.0.1:3389, memory + LDIF seed |
 | `config/templates/production.conf` | 389/636, LDIF persist, TLS on |
-| `config/templates/high-security.conf` | Production plus `require_confidentiality` |
+| `config/templates/high-security.conf` | Production plus `require_confidentiality` and `acl = users search *` |
 | `config/examples/simple/example.ldif` | Seed tree (alice, developers group) |
 | `config/examples/simple/lab.keytab` | Text lab GSSAPI keytab |
 
@@ -39,6 +39,21 @@ Canonical key list: [config/README.md](../../../config/README.md). Production no
 | `krb_realm` | derived from `base_dn` | Lab GSSAPI realm (e.g. `EXAMPLE.COM`) |
 | `gssapi_service` | `ldap/localhost` | Service name inside lab tickets |
 | `gssapi_keytab` | | Text lab keytab (`realm` / `service` / `key`) |
+| `acl` | (none) | Repeatable `WHO PERM [subtree]` |
+
+## Access control
+
+Repeatable `acl` lines. WHO is `anonymous`, `users` (any non-empty bind DN), `*` / `anyone`, `dn:…`, or `group:…`. PERM is `search` or `write` (`write` includes search on that subtree). Subtree is a DN, or `*` / omitted for the whole tree.
+
+```
+acl = users search dc=example,dc=com
+acl = dn:uid=alice,ou=People,dc=example,dc=com write ou=People,dc=example,dc=com
+acl = group:cn=directory-admins,ou=Groups,dc=example,dc=com write dc=example,dc=com
+```
+
+Group membership uses `member` / `uniqueMember` DNs, `memberUid`, or the bound entry's `memberOf`.
+
+With **no** `acl` lines, anyone may search and only `root_dn` may write (previous behavior). With one or more lines, unmatched access is denied. `root_dn` is always superuser. The Root DSE (empty search base) stays searchable. Self-service `ldappasswd` does not need a write ACL.
 
 ## Validate
 

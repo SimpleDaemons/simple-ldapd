@@ -50,7 +50,7 @@ flowchart TB
 |-------|------|
 | `LdapDaemon` | Load config and schemas, start listeners, run `acceptLoop` |
 | `TcpListener` | Bind LDAP and optional LDAPS; `ldap_port = 0` uses an ephemeral port in tests |
-| `Session` | Read PDUs, dispatch bind/search/write/extended ops, hide `userPassword` unless bound as root |
+| `Session` | Read PDUs, dispatch bind/search/write/extended ops, apply ACLs, hide `userPassword` unless bound as root |
 | BER codec | Encode/decode messages and search filters |
 | `SimpleBindAuthenticator` | Anonymous, root DN + `root_password`, entry `userPassword`; resolve uid / sAMAccountName |
 | `SaslAuthenticator` | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |
@@ -69,6 +69,6 @@ src/simple-ldapd/protocol/     BER, messages, filters, LDIF
 src/simple-ldapd/auth/         simple bind, SASL, lab GSSAPI
 src/simple-ldapd/backend/      memory and LDIF
 src/simple-ldapd/schema/       schema parser and registry
-src/simple-ldapd/security/     TLS context
+src/simple-ldapd/security/     TLS context, ACLs
 src/simple-ldapd/cli/          shared OpenLDAP-style flags
 ```

@@ -13,7 +13,7 @@ flowchart TD
   Decode -->|Unbind| Close
   Decode -->|Search| Search[Search entries then SearchResultDone]
   Decode -->|Bind| Bind[BindResponse]
-  Decode -->|Add Modify Delete ModDN| Write[Result; root DN required]
+  Decode -->|Add Modify Delete ModDN| Write[Result; root DN or ACL write]
   Decode -->|StartTLS| STLS[ExtendedResponse then handshake]
   Decode -->|Password Modify| Pw[RFC 3062]
   Decode -->|other| Err[ProtocolError or UnwillingToPerform]
@@ -83,7 +83,7 @@ sequenceDiagram
   C->>S: Bind
   S-->>C: success
   C->>S: ExtendedRequest 1.3.6.1.4.1.4203.1.11.1
-  alt bound as target or root DN
+  alt bound as target, root DN, or ACL write
     S->>B: replace userPassword
     S-->>C: success
   else other identity
