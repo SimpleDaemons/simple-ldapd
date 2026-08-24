@@ -19,7 +19,8 @@
 
 - Alice's seeded DN is `uid=alice,ou=People,dc=example,dc=com`, password `alice-secret`.
 - `uid=alice,dc=example,dc=com` and bare `alice` should resolve; rebuild if you are on a tag older than v0.8.1.
-- `{CLEARTEXT}` prefix is 11 characters if you store hashed-looking values that way.
+- `{CLEARTEXT}` prefix is 11 characters if you store lab plaintext that way. `{SSHA}` values cannot be recovered for SASL DIGEST-MD5.
+- `userAccountControl` with bit `0x0002` set (typical `514`) fails bind with `invalidCredentials`.
 - Anonymous bind must use an empty password.
 
 ## confidentialityRequired

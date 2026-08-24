@@ -68,9 +68,10 @@
 
 ## Milestone 12 — Password storage — v0.12.0
 
-- Store `userPassword` hashed (`{SSHA}` or similar), still accept `{CLEARTEXT}` for labs
+- Store `userPassword` hashed (`{SSHA}`), still accept `{CLEARTEXT}` for labs
 - Honor `userAccountControl` disabled bit on bind
 - Keep `root_password` in config (not an entry)
+- SASL DIGEST-MD5 requires a recoverable password (`{CLEARTEXT}` or unprefixed)
 
 ## Milestone 13 — Remaining LDAP ops — v0.13.0
 
@@ -93,7 +94,7 @@
 
 ## Toward 1.0.0
 
-Bind, search, writes, and TLS already exist. **1.0.0** waits until concurrent accept, ACLs, and hashed passwords are in (milestones 10–12) so a small SSO deployment is not a single-client, root-or-nothing, cleartext-password directory.
+Milestones 10–12 (concurrent sessions, ACLs, hashed passwords) are released. **1.0.0** still waits on remaining LDAP ops and hardening (milestones 13–15) so a small SSO deployment is not missing Compare / Who Am I / paged results or bind rate limits.
 
 ## Later (not scheduled)
 

@@ -4,6 +4,17 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.12.0] — 2026-08-24
+
+Milestone 12 — Password storage.
+
+### Added
+
+- `{SSHA}` (and `{SHA}`) `userPassword` verify; writes and `ldappasswd` store unsalted plaintext as `{SSHA}`
+- `{CLEARTEXT}` and unprefixed values still bind for labs and LDIF seeds
+- `userAccountControl` disable bit (`0x0002`, e.g. `514`) fails bind with `invalidCredentials`
+- SASL DIGEST-MD5 still needs a recoverable password (`{CLEARTEXT}` or unprefixed)
+
 ## [0.11.0] — 2026-08-24
 
 Milestone 11 — Access control.

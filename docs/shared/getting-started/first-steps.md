@@ -45,7 +45,7 @@ Schema MUST/MAY/SYNTAX is enforced on those writes. The development template set
 
 ## Passwords
 
-RFC 3062 via `ldappasswd`. `-s` sets the new password without prompting. Success prints `Password Changed`.
+RFC 3062 via `ldappasswd`. `-s` sets the new password without prompting. Success prints `Password Changed`. The daemon stores the new value as `{SSHA}`. The development seed keeps plaintext `alice-secret` until you change it.
 
 ```bash
 # root sets alice

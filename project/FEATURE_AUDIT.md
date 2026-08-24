@@ -11,7 +11,7 @@
 | Schema registry | Implemented (OpenLDAP attributetype/objectclass) |
 | Daemon listen | Implemented (concurrent session threads, port 0 for tests) |
 | LDAPv3 BER codec | Implemented (bind/search/unbind/add/modify/delete/modrdn) |
-| Simple bind | Implemented (anonymous, root DN, `userPassword`) |
+| Simple bind | Implemented (anonymous, root DN, `{SSHA}` / `{CLEARTEXT}` `userPassword`) |
 | Search filters | Implemented (`equality`, `and`/`or`/`not`, `present`, substring) |
 | `ldapsearch` | Implemented |
 | Add / modify / delete / modrdn | Implemented (root DN or `acl` write) |
@@ -20,5 +20,6 @@
 | Access control | Implemented (`acl` WHO/PERM/subtree) |
 | CLI help/version | Implemented |
 | `ldapadd` / `ldapmodify` / `ldapdelete` | Implemented |
-| `ldappasswd` | Implemented (RFC 3062) |
+| `ldappasswd` | Implemented (RFC 3062; stores `{SSHA}`) |
+| Password storage | `{SSHA}` / `{SHA}` / `{CLEARTEXT}`; `userAccountControl` disable bit |
 | Kerberos KDC | Out of scope |

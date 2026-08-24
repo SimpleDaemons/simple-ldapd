@@ -12,7 +12,7 @@ This is a bind-centric directory, not an AD DC. Treat `root_dn` as superuser.
 ## Secrets
 
 - `root_password` in the config file is the directory manager password. Mode `640`, not world-readable.
-- Entry `userPassword` values are compared as given, or with a `{CLEARTEXT}` prefix stripped. There is no `{SSHA}` / `{CRYPT}` hashing yet.
+- Entry `userPassword` values: `{SSHA}` (salted SHA-1) on add/modify/`ldappasswd`. `{CLEARTEXT}` and unprefixed plaintext still bind (lab seeds). `{SHA}` verifies. SASL DIGEST-MD5 needs a recoverable password.
 - `ldappasswd` cannot change `root_password`.
 - Do not commit live LDIF after password changes.
 
@@ -22,7 +22,7 @@ This is a bind-centric directory, not an AD DC. Treat `root_dn` as superuser.
 |------|-----------------|
 | Anonymous | Empty DN + empty password always binds. Search is allowed with no `acl` lines; `acl = users search *` denies anonymous reads. |
 | Simple | Use TLS. Bind DN resolution accepts uid / sAMAccountName. |
-| SASL PLAIN / DIGEST-MD5 | Same identities as simple bind. PLAIN still needs TLS. |
+| SASL PLAIN / DIGEST-MD5 | Same identities as simple bind. PLAIN still needs TLS. DIGEST-MD5 needs `{CLEARTEXT}` or unprefixed `userPassword`. |
 | SASL EXTERNAL | Trusts the authzid DN; **does not verify a client certificate**. |
 | SASL GSSAPI | Lab HMAC tickets only. Not MIT Kerberos. |
 

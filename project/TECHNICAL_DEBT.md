@@ -2,8 +2,6 @@
 
 Tracked as [roadmap](../ROADMAP.md) milestones where they are product work.
 
-- `userPassword` is compared as cleartext (`{CLEARTEXT}` prefix only) — milestone 12
-- `userAccountControl` is schema-only (not enforced on bind) — milestone 12
 - No Compare, Who Am I, or paged results — milestone 13
 - Search `time_limit` is decoded and ignored — milestone 13
 - LDIF persist rewrites the whole file — milestone 14

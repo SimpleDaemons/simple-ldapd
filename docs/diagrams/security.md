@@ -27,7 +27,7 @@ flowchart TD
 | Method | Notes |
 |--------|--------|
 | Anonymous | Empty DN and empty password |
-| Simple bind | Root DN + `root_password`, or entry `userPassword` (optional `{CLEARTEXT}` prefix) |
+| Simple bind | Root DN + `root_password`, or entry `userPassword` (`{SSHA}` / `{SHA}` / `{CLEARTEXT}` / unprefixed) |
 | Name resolution | Full DN, uid / sAMAccountName, or a DN whose RDN value matches that account |
 | SASL PLAIN / DIGEST-MD5 | uid, sAMAccountName, or DN as authcid |
 | SASL EXTERNAL | Authzid DN over TLS; the client certificate is not verified |

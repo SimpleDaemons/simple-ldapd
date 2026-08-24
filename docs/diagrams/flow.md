@@ -84,7 +84,7 @@ sequenceDiagram
   S-->>C: success
   C->>S: ExtendedRequest 1.3.6.1.4.1.4203.1.11.1
   alt bound as target, root DN, or ACL write
-    S->>B: replace userPassword
+    S->>B: replace userPassword as {SSHA}
     S-->>C: success
   else other identity
     S-->>C: insufficientAccessRights

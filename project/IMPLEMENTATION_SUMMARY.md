@@ -15,3 +15,4 @@
 - RFC 3062 password modify: self-change, root-set, or `acl` write on the target
 - Concurrent sessions: one thread per accepted LDAP or LDAPS connection
 - Access control: repeatable `acl` lines; empty list keeps anonymous search and root-only writes
+- Password storage: `{SSHA}` on write; `{CLEARTEXT}` and unprefixed still bind; `userAccountControl` bit `0x0002` disables bind

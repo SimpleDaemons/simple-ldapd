@@ -1,6 +1,6 @@
 # simple-ldapd documentation
 
-Documentation for **simple-ldapd v0.11.0**, a lightweight LDAPv3 directory daemon for SSO via LDAP bind. OpenLDAP-style CLI tools and Active Directory–friendly schema names are included. This is not a domain controller and not a Kerberos KDC.
+Documentation for **simple-ldapd v0.12.0**, a lightweight LDAPv3 directory daemon for SSO via LDAP bind. OpenLDAP-style CLI tools and Active Directory–friendly schema names are included. This is not a domain controller and not a Kerberos KDC.
 
 License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 
@@ -25,20 +25,22 @@ License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 | Troubleshooting | [Troubleshooting](shared/troubleshooting/README.md) |
 | Building and tests | [Development](development/README.md) |
 
-## What works in v0.11.0
+## What works in v0.12.0
 
 - LDAPv3 bind (anonymous, simple, SASL PLAIN / DIGEST-MD5 / EXTERNAL / lab GSSAPI)
 - Search with equality, present, substring, and/or/not filters
 - Concurrent sessions (one thread per TCP connection)
 - Add, modify, delete, and modrdn (root DN or `acl` write)
 - Repeatable `acl` search/write rules (`anonymous`, `users`, `dn:`, `group:`)
-- RFC 3062 password modify (`ldappasswd`)
+- RFC 3062 password modify (`ldappasswd`); new passwords stored as `{SSHA}`
+- `{SSHA}` / `{SHA}` / `{CLEARTEXT}` `userPassword`; `userAccountControl` disable bit
 - LDAPS and StartTLS
 - Schema enforcement on writes
 - In-memory directory with optional LDIF seed and persist (`ldif_file`)
 
 ## Known limits
 
+- DIGEST-MD5 needs a recoverable `userPassword` (`{CLEARTEXT}` or unprefixed); `{SSHA}` is simple-bind only
 - GSSAPI tickets are HMAC lab tickets, not MIT Kerberos / RFC 4120
 - `stop` / `status` / `reload` and `--daemon` fork are not implemented
 - Extensible match and approximate filters are not implemented
