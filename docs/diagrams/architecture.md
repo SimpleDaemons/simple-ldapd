@@ -1,21 +1,74 @@
-# Architecture (skeleton)
+# Architecture
+
+simple-ldapd is a single-process LDAPv3 server. One accept thread serializes connections: each client is served to completion before the next accept. That is a known limit, not a cluster.
+
+```mermaid
+flowchart TB
+  subgraph clients [Clients]
+    Apps[Applications and SSO]
+    CLI["ldapsearch / ldapadd / ldapmodify / ldapdelete / ldappasswd"]
+  end
+
+  subgraph net [Network]
+    LDAP["TCP LDAP port"]
+    LDAPS["TCP LDAPS port"]
+    STLS[StartTLS on LDAP]
+  end
+
+  subgraph daemon [simple-ldapd]
+    Listener[TcpListener]
+    Session[Session]
+    Codec[RFC 4511 BER codec]
+    Auth[Simple bind and SASL]
+    Schema[SchemaRegistry]
+    TLS[TlsContext]
+    BackendAPI[Backend]
+    Mem[MemoryBackend]
+    Ldif[LdifBackend]
+  end
+
+  Apps --> LDAP
+  Apps --> LDAPS
+  CLI --> LDAP
+  CLI --> LDAPS
+  LDAP --> Listener
+  LDAPS --> Listener
+  STLS --> Session
+  Listener --> Session
+  Session --> Codec
+  Session --> Auth
+  Session --> Schema
+  Session --> TLS
+  Session --> BackendAPI
+  BackendAPI --> Mem
+  BackendAPI --> Ldif
+```
+
+## Components
+
+| Piece | Role |
+|-------|------|
+| `LdapDaemon` | Load config and schemas, start listeners, run `acceptLoop` |
+| `TcpListener` | Bind LDAP and optional LDAPS; `ldap_port = 0` uses an ephemeral port in tests |
+| `Session` | Read PDUs, dispatch bind/search/write/extended ops, hide `userPassword` unless bound as root |
+| BER codec | Encode/decode messages and search filters |
+| `SimpleBindAuthenticator` | Anonymous, root DN + `root_password`, entry `userPassword`; resolve uid / sAMAccountName |
+| `SaslAuthenticator` | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |
+| `SchemaRegistry` | OpenLDAP-style `*.schema` files; MUST/MAY/SYNTAX on writes |
+| `MemoryBackend` | In-process tree; optional LDIF seed |
+| `LdifBackend` | Same tree plus persist back to `ldif_file` |
+
+SSO for v0.x is **LDAP bind** (simple or SASL). Kerberos KDCs, OIDC, and SAML are out of this daemon.
+
+## Source map
 
 ```
-LDAP clients and CLI tools
-        |
-        v
- TLS / StartTLS (stub) ---- TcpListener (optional bind)
-        |
-        v
-     Session ---- Bind / SASL stubs
-        |
-        v
-  LDAPv3 codec (stub) ---- SchemaRegistry
-        |
-        v
-     Backend API
-      /        \
-MemoryBackend  LdifBackend
+main/simple-ldapd.cpp          daemon CLI
+src/simple-ldapd/core/         daemon, session, connection
+src/simple-ldapd/protocol/     BER, messages, filters, LDIF
+src/simple-ldapd/auth/         simple bind, SASL, lab GSSAPI
+src/simple-ldapd/backend/      memory and LDIF
+src/simple-ldapd/schema/       schema parser and registry
+src/simple-ldapd/security/     TLS context
+src/simple-ldapd/cli/          shared OpenLDAP-style flags
 ```
-
-SSO for v0.x is **LDAP simple bind**: applications present a DN (or later a mapped `sAMAccountName` / `uid`) and password. Kerberos, OIDC, and SAML are out of this daemon.

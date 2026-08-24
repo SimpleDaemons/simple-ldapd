@@ -1,10 +1,24 @@
-# Production notes
+# Production
 
-v0.1.0 is not production-ready. Use the development template on an unprivileged port (3389) until the LDAPv3 codec lands.
+v0.9.0 can bind, search, write, encrypt, enforce schema, and change passwords. It is still early: one connection at a time, root-DN-only writes, lab GSSAPI rather than MIT Kerberos, and no `stop`/`reload` commands.
 
-When the daemon is functional, prefer:
+Use this section when exposing 389/636 on a host, not for the 3389 lab template.
 
-- `config/templates/production.conf` or `high-security.conf`
-- systemd (`deployment/systemd/simple-ldapd.service`)
-- launchd (`deployment/launchd/com.simpledaemons.simple-ldapd.plist`)
-- LDAPS on 636 with a real certificate
+| Document | Contents |
+|----------|----------|
+| [Configuration](configuration.md) | Production and high-security templates |
+| [Deployment](deployment.md) | systemd, launchd, Windows, Docker, packages |
+| [Security](security.md) | TLS, bind, SASL, secrets |
+| [Operations](operations.md) | Start/stop, backup, updates |
+| [Performance](performance.md) | Accept-loop limit and practical sizing |
+
+Shared references: [configuration](../shared/configuration/README.md), [deployment diagrams](../diagrams/deployment.md), [deployment/](../../deployment/README.md).
+
+## Checklist before listen on 389
+
+- Set a strong `root_password` (leave it unset in the file until you do)
+- Enable LDAPS or StartTLS with a real certificate
+- Prefer `high-security.conf` (`require_confidentiality = true`) if passwords must never cross cleartext
+- Point `schema_dir` and `ldif_file` at absolute paths owned by the service user
+- Run under systemd/launchd/a Windows service (`--daemon` does not fork)
+- Open firewall 389/tcp and/or 636/tcp only as needed

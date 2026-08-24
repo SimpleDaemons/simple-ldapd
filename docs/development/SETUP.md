@@ -1,9 +1,51 @@
-# Setup
+# Development setup
 
-1. Clone the repository (or use the SimpleDaemons submodule at `projects/simple-ldapd`).
-2. Install dependencies from [BUILD_GUIDE.md](BUILD_GUIDE.md).
-3. `cmake -B build -DENABLE_TESTS=ON && cmake --build build`
-4. Validate a template: `./build/simple-ldapd --test-config -c config/templates/development.conf`
-5. Optional: copy `config/templates/development.conf` and point `schema_dir` at `schemas/`.
+## Clone
 
-Default lab ports are **3389** (LDAP) and **6636** (LDAPS) so the daemon can bind without root. Production templates use 389/636.
+Standalone:
+
+```bash
+git clone https://github.com/SimpleDaemons/simple-ldapd.git
+cd simple-ldapd
+```
+
+Or from the SimpleDaemons monorepo submodule at `projects/simple-ldapd`.
+
+## Dependencies and build
+
+Install compilers and OpenSSL from the [build guide](BUILD_GUIDE.md), then:
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTS=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+## Lab configuration
+
+Use `config/templates/development.conf`:
+
+- Listen **127.0.0.1:3389** (LDAP) and **6636** (LDAPS, off by default)
+- In-memory tree seeded from `config/examples/simple/example.ldif` (non-empty `ldif_file` uses the LDIF backend, so writes persist)
+- Root DN `cn=admin,dc=example,dc=com` / password `secret`
+- Seeded user `uid=alice,ou=People,dc=example,dc=com` / password `alice-secret`
+- Lab GSSAPI keytab `config/examples/simple/lab.keytab`
+
+Validate, then run in the foreground:
+
+```bash
+./build/simple-ldapd --test-config --config config/templates/development.conf
+./build/simple-ldapd --foreground --config config/templates/development.conf
+```
+
+`--daemon` / `foreground = false` only logs that daemonize is not implemented; the process stays in the foreground. Stop with SIGINT or SIGTERM.
+
+Production templates use ports **389** / **636** and need root (or `CAP_NET_BIND_SERVICE`) plus TLS files. See [production](../production/README.md).
+
+## Schema path
+
+`schema_dir` must point at the `schemas/` tree (or a copy). Relative paths are resolved from the working directory, so start the daemon from the repo root during development.
+
+## TLS in the lab
+
+Uncomment `tls_cert_file` / `tls_key_file` and set `enable_ldaps` or `enable_starttls` after generating a cert. The client needs `--ca-file` (or the server cert) to trust it. The high-security template also sets `require_confidentiality`.

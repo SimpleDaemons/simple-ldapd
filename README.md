@@ -31,6 +31,10 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 | SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |
 | `ldappasswd` | Implemented (RFC 3062) |
 
+## Documentation
+
+Guides, CLI reference, configuration, diagrams, and production notes: [docs/README.md](docs/README.md).
+
 ## Build
 
 Requires CMake 3.16+, a C++17 compiler, and OpenSSL. jsoncpp is optional.
@@ -94,6 +98,7 @@ src/simple-ldapd/       library sources
 main/                   simple-ldapd + OpenLDAP-style CLI tools
 schemas/                core, cosine, inetOrgPerson, nis/posix, ad-compat
 config/                 examples and templates
+docs/                   getting started, CLI, architecture, production
 packaging/              linux, macos, windows, freebsd
 deployment/             systemd, launchd, Windows service, Docker
 ```

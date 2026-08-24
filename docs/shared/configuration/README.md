@@ -1,0 +1,61 @@
+# Configuration
+
+simple-ldapd reads a **key = value** file. Comments start with `#`. There is no JSON/YAML parser in the daemon today (`ENABLE_JSON` only links jsoncpp if present).
+
+Shipped files:
+
+| Path | Use |
+|------|-----|
+| `config/templates/development.conf` | Lab: 127.0.0.1:3389, memory + LDIF seed |
+| `config/templates/production.conf` | 389/636, LDIF persist, TLS on |
+| `config/templates/high-security.conf` | Production plus `require_confidentiality` |
+| `config/examples/simple/example.ldif` | Seed tree (alice, developers group) |
+| `config/examples/simple/lab.keytab` | Text lab GSSAPI keytab |
+
+Canonical key list: [config/README.md](../../../config/README.md). Production notes: [production configuration](../../production/configuration.md).
+
+## Keys
+
+| Key | Default | Notes |
+|-----|---------|-------|
+| `listen_address` | `0.0.0.0` | Bind address |
+| `ldap_port` | `389` | LDAP. Use `3389` in development; `0` in tests (ephemeral) |
+| `ldaps_port` | `636` | LDAPS when `enable_ldaps` is true |
+| `enable_ldaps` | `false` | Requires `tls_cert_file` and `tls_key_file` |
+| `enable_starttls` | `false` | StartTLS on the LDAP port |
+| `tls_cert_file` | | Server certificate |
+| `tls_key_file` | | Server private key |
+| `tls_ca_file` | | Optional CA file |
+| `backend` | `memory` | `memory` or `ldif`. A non-empty `ldif_file` selects `LdifBackend` even if `backend` is `memory` |
+| `ldif_file` | | Seed at start; successful writes persist back to this path |
+| `schema_dir` | `schemas` | Directory of `*.schema` files; relative to cwd |
+| `base_dn` | `dc=example,dc=com` | Naming context advertised on the Root DSE |
+| `root_dn` | `cn=admin,dc=example,dc=com` | Directory manager |
+| `root_password` | | Root bind password (not changeable via `ldappasswd`) |
+| `log_file` | | Optional log path; otherwise stderr |
+| `log_level` | `info` | Parsed but not yet applied; the logger stays at info |
+| `foreground` | `true` | `--daemon` sets this false but does not fork |
+| `require_confidentiality` | `false` | Refuse cleartext password binds |
+| `krb_realm` | derived from `base_dn` | Lab GSSAPI realm (e.g. `EXAMPLE.COM`) |
+| `gssapi_service` | `ldap/localhost` | Service name inside lab tickets |
+| `gssapi_keytab` | | Text lab keytab (`realm` / `service` / `key`) |
+
+## Validate
+
+```bash
+./build/simple-ldapd --test-config --config config/templates/development.conf
+```
+
+`--test-config` (or command `test`) runs `validateDetailed` and exits. TLS enabled without cert/key fails validation.
+
+## Schema
+
+Every `*.schema` file in `schema_dir` is loaded at start. Packs shipped in [schemas/](../../../schemas/README.md): core, cosine, inetOrgPerson, nis/posix, ad-compat. Writes are checked against MUST/MAY/SYNTAX; search is not.
+
+## Backends
+
+`LdapDaemon` constructs `LdifBackend` when `ldif_file` is non-empty **or** `backend = ldif`. Otherwise it uses `MemoryBackend` (in-process tree, no persist).
+
+`LdifBackend` is a memory tree that imports `ldif_file` at start and writes the whole file on successful add/modify/delete/modrdn/password-modify. The development template sets `backend = memory` and `ldif_file = config/examples/simple/example.ldif`, so it still persists — do not commit a mutated seed.
+
+Keep `schema_dir` and `ldif_file` readable by the process user. Relative paths follow the current working directory.
