@@ -11,6 +11,8 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 - CPack DEB/RPM run maintainer scripts (user, ownership, `daemon-reload`) and no longer prompt for a license or start the service
 - Ansible build playbooks install `libsqlite3-dev` / `sqlite-devel`, create `/var/lib/simple-ldapd` and `/var/log/simple-ldapd`, and configure CMake with `ENABLE_SQLITE` and `/usr` as the install prefix
 - CMake links SQLite with `SQLite3_LIBRARIES` so Debian's `SQLite::SQLite3` find-module target configures
+- `make package-all` reads the version from CMake `project()` (currently 0.15.0) and lists binary (`.deb`/`.rpm`) and source (`-src.tar.gz`/`-src.zip`) artifacts separately
+- Linux packages install `/etc/simple-ldapd/templates`, `/etc/simple-ldapd/examples`, schemas, and `/usr/share/doc/simple-ldapd/` (docs were previously omitted; configs were landing under `${prefix}/etc`)
 
 
 ## [0.15.0] — 2026-08-24

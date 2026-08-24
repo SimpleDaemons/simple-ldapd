@@ -6,9 +6,25 @@ bin/ldapdelete
 bin/ldappasswd
 bin/ldapcompare
 bin/ldapwhoami
+etc/simple-ldapd/README.md
 etc/simple-ldapd/templates/development.conf
 etc/simple-ldapd/templates/production.conf
 etc/simple-ldapd/templates/high-security.conf
+etc/simple-ldapd/examples/simple/simple-ldapd.conf.example
+etc/simple-ldapd/examples/simple/example.ldif
+etc/simple-ldapd/examples/simple/lab.keytab
+etc/simple-ldapd/examples/advanced/simple-ldapd.conf.example
+etc/simple-ldapd/examples/security/simple-ldapd.conf.example
+etc/simple-ldapd/examples/production/simple-ldapd.conf.example
+etc/simple-ldapd/schemas/README.md
+etc/simple-ldapd/schemas/core.schema
+etc/simple-ldapd/schemas/cosine.schema
+etc/simple-ldapd/schemas/inetorgperson.schema
+etc/simple-ldapd/schemas/nis.schema
+etc/simple-ldapd/schemas/ad-compat.schema
 @dir etc/simple-ldapd/tls
 @dir var/lib/simple-ldapd
 @dir var/log/simple-ldapd
+share/doc/simple-ldapd/LICENSE
+share/doc/simple-ldapd/README.md
+share/doc/simple-ldapd/CHANGELOG.md

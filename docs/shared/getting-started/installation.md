@@ -48,14 +48,15 @@ Templates for DEB, RPM, macOS pkg/dmg, and Windows MSI/NSIS live in [packaging/]
 Linux packages:
 
 - Install the systemd unit with `ExecStart=/usr/bin/simple-ldapd --config /etc/simple-ldapd/simple-ldapd.conf --foreground`
+- Install templates and examples under `/etc/simple-ldapd/` (`templates/`, `examples/`, `schemas/`) and docs under `/usr/share/doc/simple-ldapd/`
 - Create the `simple-ldapd` user and `/var/lib/simple-ldapd`, `/var/log/simple-ldapd`, `/etc/simple-ldapd/tls`
 - Copy `templates/production.conf` to `/etc/simple-ldapd/simple-ldapd.conf` when that file is missing
 - Reload systemd; they do **not** enable or start the service (TLS and `root_password` are still unset)
 
 ## After install
 
-1. Copy a template from `config/templates/` to `/etc/simple-ldapd/simple-ldapd.conf` if needed.
-2. Copy `schemas/` to the `schema_dir` you configured (packages already install schemas next to the config).
+1. Copy a template from `/etc/simple-ldapd/templates/` to `/etc/simple-ldapd/simple-ldapd.conf` if needed.
+2. Point `schema_dir` at `/etc/simple-ldapd/schemas` (packages already install schemas there).
 3. Set `root_password` and TLS files before exposing 389/636.
 4. Enable a supervisor from [deployment/](../../../deployment/README.md).
 

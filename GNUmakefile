@@ -19,7 +19,11 @@ endif
 
 # Variables
 PROJECT_NAME = simple-ldapd
-VERSION = 0.1.0
+# Single source of truth: project(... VERSION ...) in CMakeLists.txt
+VERSION := $(shell grep -oE 'VERSION [0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt | head -1 | cut -d' ' -f2)
+ifeq ($(strip $(VERSION)),)
+$(error Could not read project VERSION from CMakeLists.txt)
+endif
 BUILD_DIR = build
 DIST_DIR = dist
 PACKAGE_DIR = packaging
@@ -743,9 +747,20 @@ endif
 package-all: package package-source
 	@echo "All packages created successfully"
 	@echo "Binary packages:"
-	@ls -la $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-*.* 2>/dev/null || echo "No binary packages found"
+	@found=0; \
+	for f in $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-*.deb \
+	         $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-*.rpm \
+	         $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-*.pkg \
+	         $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-*.dmg \
+	         $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-*.msi \
+	         $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-*.exe; do \
+	  if [ -f "$$f" ]; then ls -la "$$f"; found=1; fi; \
+	done; \
+	[ "$$found" -eq 1 ] || echo "No binary packages found"
 	@echo "Source packages:"
-	@ls -la $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-src.* 2>/dev/null || echo "No source packages found"
+	@ls -la $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-src.tar.gz \
+	        $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-src.zip \
+	        2>/dev/null || echo "No source packages found"
 
 # Individual package targets for each format
 package-deb: build
@@ -753,7 +768,7 @@ ifeq ($(PLATFORM),linux)
 	@echo "Building DEB package..."
 	@mkdir -p $(DIST_DIR)
 	cd $(BUILD_DIR) && cpack -G DEB
-	mv $(BUILD_DIR)/$(PROJECT_NAME)-$(VERSION)-*.deb $(DIST_DIR)/
+	mv $(BUILD_DIR)/$(PROJECT_NAME)-*.deb $(DIST_DIR)/
 	@echo "DEB package created: $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-*.deb"
 else
 	@echo "DEB packages are only supported on Linux"
@@ -764,7 +779,7 @@ ifeq ($(PLATFORM),linux)
 	@echo "Building RPM package..."
 	@mkdir -p $(DIST_DIR)
 	cd $(BUILD_DIR) && cpack -G RPM
-	mv $(BUILD_DIR)/$(PROJECT_NAME)-$(VERSION)-*.rpm $(DIST_DIR)/
+	mv $(BUILD_DIR)/$(PROJECT_NAME)-*.rpm $(DIST_DIR)/
 	@echo "RPM package created: $(DIST_DIR)/$(PROJECT_NAME)-$(VERSION)-*.rpm"
 else
 	@echo "RPM packages are only supported on Linux"

@@ -78,7 +78,7 @@ Platform scripts also exist: `scripts/build-linux.sh`, `scripts/build-macos.sh`,
 
 CPack and templates under `packaging/` produce DEB/RPM, macOS pkg/dmg, and Windows MSI/NSIS/ZIP. See [packaging/README.md](../../packaging/README.md).
 
-Linux packages install the systemd unit (`/usr/bin/simple-ldapd --config /etc/simple-ldapd/simple-ldapd.conf --foreground`), sysusers/tmpfiles, and logrotate. They create `/var/lib/simple-ldapd` and `/var/log/simple-ldapd` owned by `simple-ldapd`. They do not start the service.
+Linux packages install the systemd unit (`/usr/bin/simple-ldapd --config /etc/simple-ldapd/simple-ldapd.conf --foreground`), sysusers/tmpfiles, logrotate, `/etc/simple-ldapd/{templates,examples,schemas}`, and `/usr/share/doc/simple-ldapd/`. They create `/var/lib/simple-ldapd` and `/var/log/simple-ldapd` owned by `simple-ldapd`. They do not start the service.
 
 To keep OpenLDAP's `ldapsearch` on `PATH`:
 

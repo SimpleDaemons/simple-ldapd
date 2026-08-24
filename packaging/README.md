@@ -12,7 +12,7 @@ CPack in the top-level `CMakeLists.txt` is the supported package path (`make pac
 | macOS | `/usr/local/bin/simple-ldapd` | `/etc/simple-ldapd/simple-ldapd.conf` | `/var/lib/simple-ldapd` | `/var/log/simple-ldapd` |
 | Windows | `%PROGRAMFILES%\simple-ldapd\simple-ldapd.exe` | `%PROGRAMDATA%\simple-ldapd\simple-ldapd.conf` | `%PROGRAMDATA%\simple-ldapd` | `%PROGRAMDATA%\simple-ldapd\logs` |
 
-Linux units start `--config` then `--foreground` at those paths so the flag wins over `foreground = false` in the production templates. Packages create the data/log directories and the `simple-ldapd` service user; they do not enable or start the daemon (TLS and `root_password` are still unset).
+Linux units start `--config` then `--foreground` at those paths so the flag wins over `foreground = false` in the production templates. Packages install templates, examples, and schemas under `/etc/simple-ldapd/`, documentation under `/usr/share/doc/simple-ldapd/`, and create the data/log directories and the `simple-ldapd` service user; they do not enable or start the daemon (TLS and `root_password` are still unset).
 
 Default CLI names match OpenLDAP (`ldapsearch`, …). Rebuild with `-DLDAP_CLI_PREFIX=simple-` or a private `-DCMAKE_INSTALL_PREFIX` if both must share `PATH`.
 

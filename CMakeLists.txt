@@ -7,12 +7,12 @@ project(simple-ldapd VERSION 0.15.0 LANGUAGES CXX)
 
 set(PROJECT_DESCRIPTION "Simple LDAP Daemon - A lightweight directory service")
 
-include(GNUInstallDirs)
 if(UNIX AND NOT APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
         set(CMAKE_INSTALL_PREFIX "/usr" CACHE PATH "Installation prefix")
     endif()
 endif()
+include(GNUInstallDirs)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -184,20 +184,11 @@ if(APPLE)
         DESTINATION include
         FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
     )
-    install(DIRECTORY config/
-        DESTINATION /etc/${PROJECT_NAME}
-        FILES_MATCHING PATTERN "*.conf" PATTERN "*.example" PATTERN "*.ldif"
-    )
-    install(DIRECTORY schemas/
-        DESTINATION /etc/${PROJECT_NAME}/schemas
-        FILES_MATCHING PATTERN "*.schema"
-    )
     install(FILES deployment/launchd/com.simpledaemons.${PROJECT_NAME}.plist
         DESTINATION /Library/LaunchDaemons
     )
     install(DIRECTORY DESTINATION /var/lib/${PROJECT_NAME})
     install(DIRECTORY DESTINATION /var/log/${PROJECT_NAME})
-    install(DIRECTORY DESTINATION /etc/${PROJECT_NAME}/tls)
 else()
     install(TARGETS ${LDAP_RUNTIME_TARGETS}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -208,17 +199,8 @@ else()
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
     )
-    install(DIRECTORY config/
-        DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/${PROJECT_NAME}
-        FILES_MATCHING PATTERN "*.conf" PATTERN "*.example" PATTERN "*.ldif"
-    )
-    install(DIRECTORY schemas/
-        DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/${PROJECT_NAME}/schemas
-        FILES_MATCHING PATTERN "*.schema"
-    )
     install(DIRECTORY DESTINATION /var/lib/${PROJECT_NAME})
     install(DIRECTORY DESTINATION /var/log/${PROJECT_NAME})
-    install(DIRECTORY DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/${PROJECT_NAME}/tls)
     if(UNIX AND NOT APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
         install(FILES deployment/systemd/${PROJECT_NAME}.service
             DESTINATION lib/systemd/system
@@ -232,9 +214,35 @@ else()
             RENAME ${PROJECT_NAME}.conf
         )
         install(FILES deployment/logrotate.d/${PROJECT_NAME}
-            DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/logrotate.d
+            DESTINATION /etc/logrotate.d
         )
     endif()
+endif()
+
+if(NOT WIN32)
+    # FHS /etc, not ${prefix}/etc (CMAKE_INSTALL_SYSCONFDIR is relative).
+    set(_ldap_confdir "/etc/${PROJECT_NAME}")
+    install(DIRECTORY config/templates/
+        DESTINATION ${_ldap_confdir}/templates
+        FILES_MATCHING PATTERN "*.conf"
+    )
+    install(DIRECTORY config/examples/
+        DESTINATION ${_ldap_confdir}/examples
+    )
+    install(FILES config/README.md
+        DESTINATION ${_ldap_confdir}
+    )
+    install(DIRECTORY schemas/
+        DESTINATION ${_ldap_confdir}/schemas
+    )
+    install(DIRECTORY DESTINATION ${_ldap_confdir}/tls)
+    install(FILES LICENSE README.md CHANGELOG.md
+        DESTINATION ${CMAKE_INSTALL_DOCDIR}
+    )
+    install(DIRECTORY docs/
+        DESTINATION ${CMAKE_INSTALL_DOCDIR}/docs
+        FILES_MATCHING PATTERN "*.md"
+    )
 endif()
 
 if(ENABLE_TESTS)
@@ -398,8 +406,8 @@ if(ENABLE_PACKAGING)
     elseif(UNIX)
         set(PLATFORM_ID "linux-generic")
         set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-${PLATFORM_ID}-${PACKAGE_ARCH}")
-        set(CPACK_DEBIAN_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-${PLATFORM_ID}-${PACKAGE_ARCH}")
-        set(CPACK_RPM_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-${PLATFORM_ID}-${PACKAGE_ARCH}")
+        set(CPACK_DEBIAN_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-${PLATFORM_ID}-${PACKAGE_ARCH}.deb")
+        set(CPACK_RPM_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-${PLATFORM_ID}-${PACKAGE_ARCH}.rpm")
     else()
         set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}-${PROJECT_VERSION}-${PLATFORM_NAME}-${PACKAGE_ARCH}")
     endif()
