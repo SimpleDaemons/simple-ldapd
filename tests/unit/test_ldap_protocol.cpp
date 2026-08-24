@@ -152,6 +152,18 @@ bool testSimpleBind() {
          auth.bind("uid=missing,dc=example,dc=com", "x") == ResultCode::InvalidCredentials;
 }
 
+bool testExtendedRequestRoundtrip() {
+  const auto wire =
+      encodeLdapMessage(makeExtendedRequest(9, "1.3.6.1.4.1.1466.20037"));
+  const auto decoded = decodeLdapMessage(wire);
+  const auto result =
+      decodeLdapMessage(encodeLdapMessage(makeLdapResult(
+          9, ProtocolOp::ExtendedResponse, ResultCode::Success)));
+  return decoded && decoded->op == ProtocolOp::ExtendedRequest && decoded->message_id == 9 &&
+         decoded->extended_oid == "1.3.6.1.4.1.1466.20037" && result &&
+         result->op == ProtocolOp::ExtendedResponse && result->result == ResultCode::Success;
+}
+
 }  // namespace
 
 int main() {
@@ -175,6 +187,7 @@ int main() {
   run("testSimpleBind", testSimpleBind);
   run("testAddModifyMessages", testAddModifyMessages);
   run("testApplyModifications", testApplyModifications);
+  run("testExtendedRequestRoundtrip", testExtendedRequestRoundtrip);
   std::cout << "Protocol tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }

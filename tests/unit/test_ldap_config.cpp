@@ -51,6 +51,35 @@ bool testEphemeralPortAllowed() {
   return config.validate();
 }
 
+bool testEphemeralLdapsPortAllowed() {
+  LdapConfig config;
+  config.enable_ldaps = true;
+  config.ldaps_port = 0;
+  config.tls_cert_file = "server.crt";
+  config.tls_key_file = "server.key";
+  return config.validate();
+}
+
+bool testTlsRequiresCertificate() {
+  LdapConfig config;
+  config.enable_starttls = true;
+  return !config.validate();
+}
+
+bool testRequireConfidentialityParse() {
+  const std::string path = "test-simple-ldapd-tls.conf";
+  std::ofstream out(path);
+  out << "base_dn = dc=example,dc=com\n";
+  out << "require_confidentiality = true\n";
+  out << "enable_ldaps = true\n";
+  out << "tls_cert_file = server.crt\n";
+  out << "tls_key_file = server.key\n";
+  out.close();
+  LdapConfig config;
+  return config.loadFromFile(path) && config.require_confidentiality && config.enable_ldaps &&
+         config.validate();
+}
+
 bool testFileLoad() {
   const auto path = writeTempConfig();
   LdapConfig config;
@@ -88,6 +117,9 @@ int main() {
   run("testDefaultConfig", testDefaultConfig);
   run("testInvalidBaseDn", testInvalidBaseDn);
   run("testEphemeralPortAllowed", testEphemeralPortAllowed);
+  run("testEphemeralLdapsPortAllowed", testEphemeralLdapsPortAllowed);
+  run("testTlsRequiresCertificate", testTlsRequiresCertificate);
+  run("testRequireConfidentialityParse", testRequireConfidentialityParse);
   run("testFileLoad", testFileLoad);
   run("testFilterParse", testFilterParse);
   run("testResultCodes", testResultCodes);
