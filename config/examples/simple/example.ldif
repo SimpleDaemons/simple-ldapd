@@ -1,0 +1,38 @@
+dn: dc=example,dc=com
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+dc: example
+o: Example Org
+
+dn: ou=People,dc=example,dc=com
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Groups,dc=example,dc=com
+objectClass: organizationalUnit
+ou: Groups
+
+dn: uid=alice,ou=People,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+cn: Alice Example
+sn: Example
+uid: alice
+sAMAccountName: alice
+userPrincipalName: alice@example.com
+mail: alice@example.com
+uidNumber: 1001
+gidNumber: 1001
+homeDirectory: /home/alice
+loginShell: /bin/bash
+memberOf: cn=developers,ou=Groups,dc=example,dc=com
+
+dn: cn=developers,ou=Groups,dc=example,dc=com
+objectClass: posixGroup
+objectClass: group
+cn: developers
+gidNumber: 1001
+memberUid: alice
+sAMAccountName: developers

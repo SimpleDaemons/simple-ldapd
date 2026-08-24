@@ -1,0 +1,10 @@
+# Minimal in-memory directory for labs and local SSO experiments.
+
+listen_address = 127.0.0.1
+ldap_port = 3389
+backend = memory
+schema_dir = schemas
+base_dn = dc=example,dc=com
+root_dn = cn=admin,dc=example,dc=com
+log_level = info
+foreground = true

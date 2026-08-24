@@ -1,0 +1,19 @@
+# Active Directory compatibility attributes (placeholder)
+# Enough names for apps that bind/search with sAMAccountName / memberOf.
+# This is not a domain controller and does not implement SMB, GPO, or a KDC.
+
+attributetype ( 1.2.840.113556.1.4.221 NAME 'sAMAccountName' )
+attributetype ( 1.2.840.113556.1.2.102 NAME 'memberOf' )
+attributetype ( 1.2.840.113556.1.4.8 NAME 'userAccountControl' )
+attributetype ( 1.2.840.113556.1.4.146 NAME 'objectSid' )
+attributetype ( 1.2.840.113556.1.4.656 NAME 'userPrincipalName' )
+attributetype ( 1.2.840.113556.1.4.44 NAME 'objectGUID' )
+attributetype ( 1.2.840.113556.1.4.194 NAME 'objectCategory' )
+attributetype ( 1.2.840.113556.1.4.141 NAME 'lastLogon' )
+attributetype ( 1.2.840.113556.1.4.96 NAME 'pwdLastSet' )
+attributetype ( 1.2.840.113556.1.4.261 NAME 'unicodePwd' )
+
+objectclass ( 1.2.840.113556.1.5.9 NAME 'user' )
+objectclass ( 1.2.840.113556.1.5.8 NAME 'group' )
+objectclass ( 1.2.840.113556.1.5.1 NAME 'computer' )
+objectclass ( 1.2.840.113556.1.5.7 NAME 'organizationalPerson' )

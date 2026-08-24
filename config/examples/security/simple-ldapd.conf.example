@@ -1,0 +1,12 @@
+listen_address = 127.0.0.1
+ldap_port = 3389
+ldaps_port = 6636
+enable_ldaps = true
+enable_starttls = true
+backend = ldif
+ldif_file = /var/lib/simple-ldapd/directory.ldif
+schema_dir = /etc/simple-ldapd/schemas
+base_dn = dc=example,dc=com
+root_dn = cn=admin,dc=example,dc=com
+log_level = warning
+foreground = true
