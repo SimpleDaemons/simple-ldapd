@@ -72,5 +72,6 @@ int main(int argc, char *argv[]) {
     std::cerr << "ldappasswd: " << toString(result) << std::endl;
     return static_cast<int>(result);
   }
+  std::cout << "Password Changed" << std::endl;
   return 0;
 }
