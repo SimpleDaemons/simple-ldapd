@@ -1,7 +1,7 @@
 # simple-ldapd project status
 
-**Version:** 0.1.0  
-**Status:** Early development (bind/search)  
+**Version:** 0.2.0  
+**Status:** Early development (bind/search; writes in progress toward 0.3.0)  
 **Progress:** ~25%  
 **Last updated:** August 2026
 
