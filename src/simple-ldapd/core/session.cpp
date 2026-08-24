@@ -113,6 +113,10 @@ void Session::serve() {
         }
         continue;
       }
+      if (request->extended_oid == kPasswordModifyOid) {
+        response = handlePasswordModify(*request);
+        break;
+      }
       response =
           makeLdapResult(request->message_id, ProtocolOp::ExtendedResponse,
                          ResultCode::UnwillingToPerform, "extended operations not implemented");
@@ -214,6 +218,7 @@ DirectoryEntry Session::rootDse() const {
   entry.attributes["supportedLDAPVersion"].push_back("3");
   entry.attributes["vendorName"].push_back("SimpleDaemons");
   entry.attributes["vendorVersion"].push_back(kVersion);
+  entry.attributes["supportedExtension"].push_back(kPasswordModifyOid);
   if (config_.enable_starttls) {
     entry.attributes["supportedExtension"].push_back(kStartTlsOid);
   }
@@ -378,6 +383,72 @@ LdapMessage Session::handleModifyDn(const LdapMessage &request) {
   }
   backend_.persist();
   return makeLdapResult(request.message_id, ProtocolOp::ModifyDNResponse, ResultCode::Success);
+}
+
+LdapMessage Session::handlePasswordModify(const LdapMessage &request) {
+  if (!bound_ || bind_dn_.empty()) {
+    return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse,
+                          ResultCode::InsufficientAccessRights, "bind required");
+  }
+  if (config_.require_confidentiality && !connection_.tls()) {
+    return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse,
+                          ResultCode::ConfidentialityRequired, "confidentiality required");
+  }
+  PasswordModifyRequest change;
+  if (!decodePasswordModifyValue(request.extended_value, change)) {
+    return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse,
+                          ResultCode::ProtocolError, "invalid password modify request");
+  }
+  if (!change.new_password || change.new_password->empty()) {
+    return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse,
+                          ResultCode::UnwillingToPerform, "new password is required");
+  }
+  SimpleBindAuthenticator authenticator(backend_, config_);
+  const std::string identity =
+      change.user_identity.empty() ? bind_dn_ : change.user_identity;
+  const auto target = authenticator.resolveName(identity);
+  if (!target) {
+    return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse,
+                          ResultCode::NoSuchObject, "no such object");
+  }
+  if (!config_.root_dn.empty() && dnEquals(*target, config_.root_dn)) {
+    return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse,
+                          ResultCode::UnwillingToPerform,
+                          "root_password is configured, not an entry");
+  }
+  const bool as_root = !config_.root_dn.empty() && dnEquals(bind_dn_, config_.root_dn);
+  const bool as_self = dnEquals(bind_dn_, *target);
+  if (!as_root && !as_self) {
+    return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse,
+                          ResultCode::InsufficientAccessRights, "cannot change another password");
+  }
+  if (change.old_password &&
+      authenticator.bind(*target, *change.old_password) != ResultCode::Success) {
+    return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse,
+                          ResultCode::InvalidCredentials, "invalid credentials");
+  }
+  auto entry = backend_.lookup(*target);
+  if (!entry) {
+    return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse,
+                          ResultCode::NoSuchObject, "no such object");
+  }
+  const ResultCode applied =
+      applyModifications(*entry, {{ModifyOp::Replace, "userPassword", {*change.new_password}}});
+  if (applied != ResultCode::Success) {
+    return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse, applied,
+                          toString(applied));
+  }
+  std::string diagnostic;
+  const ResultCode schema = checkSchema(*entry, diagnostic);
+  if (schema != ResultCode::Success) {
+    return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse, schema, diagnostic);
+  }
+  if (!backend_.modify(*entry)) {
+    return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse,
+                          ResultCode::OperationsError, "password modify failed");
+  }
+  backend_.persist();
+  return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse, ResultCode::Success);
 }
 
 SearchEntryData Session::toSearchEntry(const DirectoryEntry &entry,
