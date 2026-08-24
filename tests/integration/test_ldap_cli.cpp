@@ -109,6 +109,26 @@ int main() {
     return 1;
   }
 
+  std::vector<char *> search_limit_args{
+      const_cast<char *>("ldapsearch"),
+      const_cast<char *>("-H"),
+      const_cast<char *>("ldap://127.0.0.1:3389"),
+      const_cast<char *>("-A"),
+      const_cast<char *>("-l"),
+      const_cast<char *>("5"),
+      const_cast<char *>("-z"),
+      const_cast<char *>("10"),
+      const_cast<char *>("-E"),
+      const_cast<char *>("pr=2/noprompt"),
+  };
+  auto search_limit_options = cli::parseClientArgs(
+      static_cast<int>(search_limit_args.size()), search_limit_args.data());
+  if (!search_limit_options.types_only || search_limit_options.time_limit != 5 ||
+      search_limit_options.size_limit != 10 || search_limit_options.page_size != 2) {
+    std::cout << "FAIL parseSearchLimitArgs" << std::endl;
+    return 1;
+  }
+
   LdapConfig config;
   config.ldap_port = 3389;
   LdapDaemon daemon(config);

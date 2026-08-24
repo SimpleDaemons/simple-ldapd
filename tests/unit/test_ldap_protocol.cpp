@@ -196,6 +196,30 @@ bool testPasswordModifyRoundtrip() {
          parsed.new_password == "new-secret";
 }
 
+bool testCompareAndPagedRoundtrip() {
+  CompareRequestData compare;
+  compare.dn = "uid=alice,dc=example,dc=com";
+  compare.attribute = "uid";
+  compare.value = "alice";
+  const auto compared = decodeLdapMessage(encodeLdapMessage(makeCompareRequest(5, compare)));
+  LdapMessage search = makeSearchRequest(6, SearchRequestData{});
+  search.controls.push_back(makePagedResultsControl(2, "3"));
+  const auto paged = decodeLdapMessage(encodeLdapMessage(search));
+  int size = 0;
+  std::string cookie;
+  LdapMessage who = makeLdapResult(7, ProtocolOp::ExtendedResponse, ResultCode::Success);
+  who.extended_oid = kWhoAmIOid;
+  who.extended_value = "dn:uid=alice,dc=example,dc=com";
+  const auto who_decoded = decodeLdapMessage(encodeLdapMessage(who));
+  return compared && compared->op == ProtocolOp::CompareRequest &&
+         compared->compare.dn == compare.dn && compared->compare.attribute == "uid" &&
+         compared->compare.value == "alice" && paged && paged->controls.size() == 1 &&
+         paged->controls.front().oid == kPagedResultsOid &&
+         decodePagedResultsValue(paged->controls.front().value, size, cookie) && size == 2 &&
+         cookie == "3" && who_decoded && who_decoded->extended_oid == kWhoAmIOid &&
+         who_decoded->extended_value == "dn:uid=alice,dc=example,dc=com";
+}
+
 bool testSaslBindRoundtrip() {
   const std::string creds = std::string(1, '\0') + "alice" + std::string(1, '\0') + "secret";
   const auto request = decodeLdapMessage(
@@ -233,6 +257,7 @@ int main() {
   run("testApplyModifications", testApplyModifications);
   run("testExtendedRequestRoundtrip", testExtendedRequestRoundtrip);
   run("testPasswordModifyRoundtrip", testPasswordModifyRoundtrip);
+  run("testCompareAndPagedRoundtrip", testCompareAndPagedRoundtrip);
   run("testSaslBindRoundtrip", testSaslBindRoundtrip);
   std::cout << "Protocol tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
