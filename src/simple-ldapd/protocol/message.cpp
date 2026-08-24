@@ -31,6 +31,12 @@ bool decodeResult(BerReader &reader, LdapMessage &message) {
   }
   message.result = static_cast<ResultCode>(code);
   while (!reader.atEnd()) {
+    if (reader.peekTag() == kBerServerSaslCreds) {
+      if (!reader.readOctetString(kBerServerSaslCreds, message.server_sasl_creds)) {
+        return false;
+      }
+      continue;
+    }
     if (!reader.skip()) {
       return false;
     }
@@ -42,7 +48,16 @@ std::vector<uint8_t> encodeBindRequest(const BindRequestData &bind) {
   BerWriter inner;
   inner.writeInteger(bind.version);
   inner.writeOctetString(bind.dn);
-  inner.writeOctetString(kBerSimpleAuth, bind.password);
+  if (bind.simple) {
+    inner.writeOctetString(kBerSimpleAuth, bind.password);
+  } else {
+    BerWriter sasl;
+    sasl.writeOctetString(bind.sasl_mechanism);
+    if (!bind.sasl_credentials.empty()) {
+      sasl.writeOctetString(bind.sasl_credentials);
+    }
+    inner.writeConstructed(kBerSaslAuth, sasl.bytes());
+  }
   BerWriter outer;
   outer.writeConstructed(kBerBindRequest, inner.bytes());
   return outer.take();
@@ -58,7 +73,30 @@ bool decodeBindRequest(BerReader &reader, BindRequestData &bind) {
   if (bind.simple) {
     return reader.readOctetString(kBerSimpleAuth, bind.password);
   }
-  return reader.skip();
+  if (reader.peekTag() != kBerSaslAuth) {
+    return reader.skip();
+  }
+  BerReader sasl;
+  if (!reader.readConstructed(kBerSaslAuth, sasl) || !sasl.readOctetString(bind.sasl_mechanism)) {
+    return false;
+  }
+  if (!sasl.atEnd() && !sasl.readOctetString(bind.sasl_credentials)) {
+    return false;
+  }
+  return sasl.ok();
+}
+
+std::vector<uint8_t> encodeBindResponse(const LdapMessage &message) {
+  BerWriter inner;
+  inner.writeEnumerated(static_cast<int>(message.result));
+  inner.writeOctetString(message.matched_dn);
+  inner.writeOctetString(message.diagnostic);
+  if (!message.server_sasl_creds.empty()) {
+    inner.writeOctetString(kBerServerSaslCreds, message.server_sasl_creds);
+  }
+  BerWriter outer;
+  outer.writeConstructed(kBerBindResponse, inner.bytes());
+  return outer.take();
 }
 
 std::vector<uint8_t> encodeSearchRequest(const SearchRequestData &search) {
@@ -440,7 +478,7 @@ std::vector<uint8_t> encodeLdapMessage(const LdapMessage &message) {
     protocol_op = encodeBindRequest(message.bind);
     break;
   case ProtocolOp::BindResponse:
-    protocol_op = resultOp(kBerBindResponse);
+    protocol_op = encodeBindResponse(message);
     break;
   case ProtocolOp::UnbindRequest: {
     BerWriter writer;
@@ -513,13 +551,28 @@ LdapMessage makeBindRequest(int message_id, const std::string &dn,
   return message;
 }
 
+LdapMessage makeSaslBindRequest(int message_id, const std::string &dn,
+                                const std::string &mechanism,
+                                const std::string &credentials) {
+  LdapMessage message;
+  message.message_id = message_id;
+  message.op = ProtocolOp::BindRequest;
+  message.bind.dn = dn;
+  message.bind.simple = false;
+  message.bind.sasl_mechanism = mechanism;
+  message.bind.sasl_credentials = credentials;
+  return message;
+}
+
 LdapMessage makeBindResponse(int message_id, ResultCode result,
-                             const std::string &diagnostic) {
+                             const std::string &diagnostic,
+                             const std::string &server_sasl_creds) {
   LdapMessage message;
   message.message_id = message_id;
   message.op = ProtocolOp::BindResponse;
   message.result = result;
   message.diagnostic = diagnostic;
+  message.server_sasl_creds = server_sasl_creds;
   return message;
 }
 

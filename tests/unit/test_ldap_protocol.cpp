@@ -164,6 +164,18 @@ bool testExtendedRequestRoundtrip() {
          result->op == ProtocolOp::ExtendedResponse && result->result == ResultCode::Success;
 }
 
+bool testSaslBindRoundtrip() {
+  const std::string creds = std::string(1, '\0') + "alice" + std::string(1, '\0') + "secret";
+  const auto request = decodeLdapMessage(
+      encodeLdapMessage(makeSaslBindRequest(4, "", "PLAIN", creds)));
+  const auto response = decodeLdapMessage(
+      encodeLdapMessage(makeBindResponse(4, ResultCode::SaslBindInProgress, "", "nonce")));
+  return request && !request->bind.simple && request->bind.sasl_mechanism == "PLAIN" &&
+         request->bind.sasl_credentials == creds && response &&
+         response->result == ResultCode::SaslBindInProgress &&
+         response->server_sasl_creds == "nonce";
+}
+
 }  // namespace
 
 int main() {
@@ -188,6 +200,7 @@ int main() {
   run("testAddModifyMessages", testAddModifyMessages);
   run("testApplyModifications", testApplyModifications);
   run("testExtendedRequestRoundtrip", testExtendedRequestRoundtrip);
+  run("testSaslBindRoundtrip", testSaslBindRoundtrip);
   std::cout << "Protocol tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }

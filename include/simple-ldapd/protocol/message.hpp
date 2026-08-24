@@ -42,6 +42,8 @@ struct BindRequestData {
   std::string dn;
   std::string password;
   bool simple{true};
+  std::string sasl_mechanism;
+  std::string sasl_credentials;
 };
 
 struct SearchRequestData {
@@ -96,6 +98,7 @@ struct LdapMessage {
   ModifyDnRequestData modify_dn;
   std::string extended_oid;
   std::string extended_value;
+  std::string server_sasl_creds;
 };
 
 std::optional<LdapMessage> decodeLdapMessage(const std::vector<uint8_t> &wire);
@@ -103,8 +106,12 @@ std::vector<uint8_t> encodeLdapMessage(const LdapMessage &message);
 
 LdapMessage makeBindRequest(int message_id, const std::string &dn,
                             const std::string &password);
+LdapMessage makeSaslBindRequest(int message_id, const std::string &dn,
+                                const std::string &mechanism,
+                                const std::string &credentials = {});
 LdapMessage makeBindResponse(int message_id, ResultCode result,
-                             const std::string &diagnostic = {});
+                             const std::string &diagnostic = {},
+                             const std::string &server_sasl_creds = {});
 LdapMessage makeSearchRequest(int message_id, SearchRequestData search);
 LdapMessage makeSearchEntry(int message_id, SearchEntryData entry);
 LdapMessage makeSearchDone(int message_id, ResultCode result,
