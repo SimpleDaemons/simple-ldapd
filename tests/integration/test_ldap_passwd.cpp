@@ -6,6 +6,7 @@
  * @license Apache-2.0
  */
 
+#include "simple-ldapd/auth/password.hpp"
 #include "simple-ldapd/cli/client.hpp"
 #include "simple-ldapd/config/config.hpp"
 #include "simple-ldapd/core/daemon.hpp"
@@ -281,6 +282,36 @@ bool testPasswordModifyRequiresConfidentiality() {
   return changed == ResultCode::ConfidentialityRequired;
 }
 
+bool testPasswordModifyStoresSsha() {
+  LdapDaemon daemon(testConfig());
+  if (!seed(daemon) || !daemon.start()) {
+    return false;
+  }
+  std::string error;
+  auto client = cli::LdapClient::openBound(bound(daemon, "cn=admin,dc=example,dc=com", "secret"),
+                                           error);
+  if (!client) {
+    daemon.stop();
+    return false;
+  }
+  PasswordModifyRequest request;
+  request.user_identity = "alice";
+  request.new_password = "alice-hashed";
+  const ResultCode changed = client->passwordModify(request);
+  client->unbind();
+  const auto entry = daemon.backend()->lookup("uid=alice,dc=example,dc=com");
+  const bool bound_new = canBind(daemon.boundPort(), "uid=alice,dc=example,dc=com", "alice-hashed");
+  daemon.stop();
+  if (changed != ResultCode::Success || !entry || !bound_new) {
+    return false;
+  }
+  const auto it = entry->attributes.find("userPassword");
+  return it != entry->attributes.end() && !it->second.empty() &&
+         it->second.front().size() > 6 &&
+         (it->second.front().compare(0, 6, "{SSHA}") == 0 ||
+          it->second.front().compare(0, 6, "{ssha}") == 0);
+}
+
 }  // namespace
 
 int main() {
@@ -302,6 +333,7 @@ int main() {
   run("testCannotChangeAnotherPassword", testCannotChangeAnotherPassword);
   run("testWrongOldPassword", testWrongOldPassword);
   run("testPasswordModifyRequiresConfidentiality", testPasswordModifyRequiresConfidentiality);
+  run("testPasswordModifyStoresSsha", testPasswordModifyStoresSsha);
   std::cout << "Password tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }

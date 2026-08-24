@@ -6,6 +6,7 @@
  * @license Apache-2.0
  */
 
+#include "simple-ldapd/auth/password.hpp"
 #include "simple-ldapd/config/config.hpp"
 #include "simple-ldapd/core/daemon.hpp"
 #include "simple-ldapd/protocol/filter.hpp"
@@ -260,6 +261,58 @@ bool testAnonymousDeniedByAcl() {
          done->result == ResultCode::InsufficientAccessRights;
 }
 
+bool testHashedPasswordBind() {
+  LdapConfig config;
+  config.listen_address = "127.0.0.1";
+  config.ldap_port = 0;
+  LdapDaemon daemon(config);
+  DirectoryEntry alice = makeAlice();
+  alice.attributes["userPassword"].front() = encodeUserPassword("alice-secret");
+  if (!daemon.initialize() || daemon.backend() == nullptr || !daemon.backend()->add(makeBase()) ||
+      !daemon.backend()->add(alice) || !daemon.start()) {
+    return false;
+  }
+  auto connection = TcpConnection::connectTo("127.0.0.1", daemon.boundPort());
+  if (!connection ||
+      !sendMessage(*connection, makeBindRequest(1, alice.dn, "alice-secret"))) {
+    daemon.stop();
+    return false;
+  }
+  auto ok = recvMessage(*connection);
+  if (!ok || ok->result != ResultCode::Success ||
+      !sendMessage(*connection, makeBindRequest(2, alice.dn, "wrong"))) {
+    daemon.stop();
+    return false;
+  }
+  auto bad = recvMessage(*connection);
+  sendMessage(*connection, makeUnbindRequest(3));
+  daemon.stop();
+  return bad && bad->result == ResultCode::InvalidCredentials;
+}
+
+bool testDisabledAccountBind() {
+  LdapConfig config;
+  config.listen_address = "127.0.0.1";
+  config.ldap_port = 0;
+  LdapDaemon daemon(config);
+  DirectoryEntry alice = makeAlice();
+  alice.attributes["userAccountControl"].push_back("514");
+  if (!daemon.initialize() || daemon.backend() == nullptr || !daemon.backend()->add(makeBase()) ||
+      !daemon.backend()->add(alice) || !daemon.start()) {
+    return false;
+  }
+  auto connection = TcpConnection::connectTo("127.0.0.1", daemon.boundPort());
+  if (!connection ||
+      !sendMessage(*connection, makeBindRequest(1, alice.dn, "alice-secret"))) {
+    daemon.stop();
+    return false;
+  }
+  auto bind = recvMessage(*connection);
+  sendMessage(*connection, makeUnbindRequest(2));
+  daemon.stop();
+  return bind && bind->result == ResultCode::InvalidCredentials;
+}
+
 }  // namespace
 
 int main() {
@@ -279,6 +332,8 @@ int main() {
   run("testSubstringSearch", testSubstringSearch);
   run("testConcurrentClients", testConcurrentClients);
   run("testAnonymousDeniedByAcl", testAnonymousDeniedByAcl);
+  run("testHashedPasswordBind", testHashedPasswordBind);
+  run("testDisabledAccountBind", testDisabledAccountBind);
   std::cout << "Bind/search tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }
