@@ -29,6 +29,7 @@ public:
   static SearchFilter parse(const std::string &text);
   static SearchFilter present(const std::string &attribute);
   static SearchFilter equality(const std::string &attribute, const std::string &value);
+  static SearchFilter all();
 
   const std::string &text() const { return text_; }
   bool valid() const { return valid_; }

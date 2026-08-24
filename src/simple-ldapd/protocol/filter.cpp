@@ -279,6 +279,14 @@ SearchFilter SearchFilter::equality(const std::string &attribute,
   return filter;
 }
 
+SearchFilter SearchFilter::all() {
+  SearchFilter filter;
+  filter.text_ = "(objectClass=*)";
+  filter.valid_ = true;
+  filter.root_.type = FilterType::True;
+  return filter;
+}
+
 bool SearchFilter::matches(const DirectoryEntry &entry) const {
   return valid_ && nodeMatches(root_, entry);
 }

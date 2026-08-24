@@ -54,4 +54,40 @@ bool dnIsOneLevelChild(const std::string &dn, const std::string &base) {
   return rdn.find(',') == std::string::npos;
 }
 
+std::string dnParent(const std::string &dn) {
+  const auto comma = dn.find(',');
+  if (comma == std::string::npos) {
+    return {};
+  }
+  return dn.substr(comma + 1);
+}
+
+std::string dnRdn(const std::string &dn) {
+  const auto comma = dn.find(',');
+  if (comma == std::string::npos) {
+    return dn;
+  }
+  return dn.substr(0, comma);
+}
+
+std::string composeDn(const std::string &rdn, const std::string &parent) {
+  if (parent.empty()) {
+    return rdn;
+  }
+  if (rdn.empty()) {
+    return parent;
+  }
+  return rdn + "," + parent;
+}
+
+bool parseRdn(const std::string &rdn, std::string &type, std::string &value) {
+  const auto eq = rdn.find('=');
+  if (eq == std::string::npos || eq == 0 || eq + 1 >= rdn.size()) {
+    return false;
+  }
+  type = rdn.substr(0, eq);
+  value = rdn.substr(eq + 1);
+  return !type.empty() && !value.empty();
+}
+
 }  // namespace simple_ldapd
