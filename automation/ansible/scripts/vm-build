@@ -1,62 +1,67 @@
 #!/bin/bash
 # Build script for Vagrant VM
-# Usage: ./vm-build [vm_name] [clean|test|install]
+# Usage: ./vm-build [vm_name] [clean|test|install|status|logs|build]
 
 set -e
 
-# Get VM name from first argument or default to ubuntu_dev
 VM_NAME="${1:-ubuntu_dev}"
 VM_DIR="automation/vagrant/virtuals/$VM_NAME"
+PROJECT_DIR="/opt/simple-ldapd"
+BUILD_USER="simple-ldapd"
+CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DENABLE_TESTS=ON -DENABLE_SSL=ON -DENABLE_SQLITE=ON"
 
-# Check if VM directory exists
 if [ ! -d "$VM_DIR" ]; then
-    echo "❌ VM directory $VM_DIR not found"
+    echo "VM directory $VM_DIR not found"
     echo "Available VMs: ubuntu_dev, centos_dev"
     exit 1
 fi
 
-# Change to VM directory
 cd "$VM_DIR"
 
-# Check if Vagrant VM is running
 if ! vagrant status | grep -q "running"; then
     echo "Starting Vagrant VM..."
     vagrant up
 fi
 
-# Sync files to VM
 echo "Syncing files to VM..."
 vagrant rsync
 
-# Run build commands on VM
+remote() {
+    vagrant ssh -c "$1"
+}
+
 case "${2:-build}" in
-    "clean")
+    clean)
         echo "Cleaning build directory..."
-        vagrant ssh -c "cd /opt/simple-ldapd && sudo -u simple-ldapd rm -rf build && mkdir -p build"
+        remote "cd $PROJECT_DIR && sudo -u $BUILD_USER rm -rf build && sudo -u $BUILD_USER mkdir -p build"
         ;;
-    "test")
+    test)
         echo "Running tests..."
-        vagrant ssh -c "cd /opt/simple-ldapd/build && sudo -u simple-ldapd make test"
+        remote "cd $PROJECT_DIR/build && sudo -u $BUILD_USER ctest --output-on-failure"
         ;;
-    "install")
-        echo "Installing service..."
-        vagrant ssh -c "cd /opt/simple-ldapd && sudo systemctl enable simple-ldapd && sudo systemctl start simple-ldapd"
+    install)
+        echo "Installing service files (does not start)..."
+        remote "sudo cmake --install $PROJECT_DIR/build"
+        remote "sudo mkdir -p /etc/simple-ldapd/tls /var/lib/simple-ldapd /var/log/simple-ldapd"
+        remote "sudo cp $PROJECT_DIR/deployment/systemd/simple-ldapd.service /etc/systemd/system/simple-ldapd.service"
+        remote "if [ ! -f /etc/simple-ldapd/simple-ldapd.conf ]; then sudo cp $PROJECT_DIR/config/templates/production.conf /etc/simple-ldapd/simple-ldapd.conf; fi"
+        remote "sudo systemctl daemon-reload"
+        echo "Set root_password and TLS, then: vagrant ssh -c 'sudo systemctl enable --now simple-ldapd'"
         ;;
-    "status")
+    status)
         echo "Checking service status..."
-        vagrant ssh -c "sudo systemctl status simple-ldapd --no-pager"
+        remote "sudo systemctl status simple-ldapd --no-pager"
         ;;
-    "logs")
+    logs)
         echo "Showing service logs..."
-        vagrant ssh -c "sudo journalctl -u simple-ldapd -f"
+        remote "sudo journalctl -u simple-ldapd -n 50 --no-pager"
         ;;
-    "build")
+    build)
         echo "Building project..."
-        vagrant ssh -c "cd /opt/simple-ldapd/build && sudo -u simple-ldapd cmake .. && sudo -u simple-ldapd make -j\$(nproc)"
+        remote "mkdir -p $PROJECT_DIR/build && cd $PROJECT_DIR/build && sudo -u $BUILD_USER cmake .. $CMAKE_FLAGS && sudo -u $BUILD_USER make -j\$(nproc)"
         ;;
     *)
         echo "Usage: $0 [vm_name] [clean|test|install|status|logs|build]"
         exit 1
         ;;
 esac
-

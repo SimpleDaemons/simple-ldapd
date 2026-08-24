@@ -7,15 +7,17 @@
     <key>ProgramArguments</key>
     <array>
         <string>/usr/local/bin/simple-ldapd</string>
+        <string>--config</string>
+        <string>/etc/simple-ldapd/simple-ldapd.conf</string>
+        <string>--foreground</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/var/log/simple-ldapd.log</string>
+    <string>/var/log/simple-ldapd/simple-ldapd.out.log</string>
     <key>StandardErrorPath</key>
-    <string>/var/log/simple-ldapd.error.log</string>
+    <string>/var/log/simple-ldapd/simple-ldapd.error.log</string>
 </dict>
 </plist>
-

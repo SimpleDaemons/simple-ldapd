@@ -16,6 +16,9 @@ set "SERVICE_NAME=simple-ldapd"
 set "SERVICE_DISPLAY_NAME=Simple LDAP Daemon - A lightweight directory service"
 set "SERVICE_DESCRIPTION=Simple LDAP Daemon - A lightweight directory service"
 set "SERVICE_BINARY=%PROGRAMFILES%\simple-ldapd\simple-ldapd.exe"
+set "SERVICE_CONFIG=%PROGRAMDATA%\simple-ldapd\simple-ldapd.conf"
+set "SERVICE_DATA=%PROGRAMDATA%\simple-ldapd"
+set "SERVICE_LOGS=%PROGRAMDATA%\simple-ldapd\logs"
 set "SERVICE_USER=LocalSystem"
 set "SERVICE_STARTUP=auto"
 
@@ -69,12 +72,16 @@ if "%SERVICE_EXISTS%"=="true" (
     timeout /t 2 /nobreak >nul
 )
 
-REM Create service
+if not exist "%SERVICE_DATA%" mkdir "%SERVICE_DATA%"
+if not exist "%SERVICE_LOGS%" mkdir "%SERVICE_LOGS%"
+if not exist "%SERVICE_DATA%\tls" mkdir "%SERVICE_DATA%\tls"
+
+REM binPath must include --foreground --config; quote the exe when Program Files has spaces
 sc create "%SERVICE_NAME%" ^
-    binPath="%SERVICE_BINARY%" ^
-    DisplayName="%SERVICE_DISPLAY_NAME%" ^
-    start=%SERVICE_STARTUP% ^
-    obj="%SERVICE_USER%"
+    binPath= "\"%SERVICE_BINARY%\" --config \"%SERVICE_CONFIG%\" --foreground" ^
+    DisplayName= "%SERVICE_DISPLAY_NAME%" ^
+    start= %SERVICE_STARTUP% ^
+    obj= "%SERVICE_USER%"
 
 if %ERRORLEVEL% NEQ 0 (
     call :print_error "Failed to create service"

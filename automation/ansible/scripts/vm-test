@@ -19,7 +19,7 @@ if ! vagrant status | grep -q "running"; then
 fi
 
 if [ -z "$TEST_PATTERN" ]; then
-    vagrant ssh -c "cd /opt/simple-ldapd/build && sudo -u simple-ldapd make test"
+    vagrant ssh -c "cd /opt/simple-ldapd/build && sudo -u simple-ldapd ctest --output-on-failure"
 else
     vagrant ssh -c "cd /opt/simple-ldapd/build && sudo -u simple-ldapd ctest -R '$TEST_PATTERN' --output-on-failure"
 fi

@@ -10,7 +10,7 @@
 Name "simple-ldapd"
 OutFile "simple-ldapd-Setup-${VERSION}.exe"
 Unicode True
-InstallDir "$PROGRAMFILES\SimpleDaemons\simple-ldapd"
+InstallDir "$PROGRAMFILES\simple-ldapd"
 RequestExecutionLevel admin
 
 ; Version Information
@@ -56,9 +56,13 @@ VIAddVersionKey "LegalCopyright" "Copyright (C) 2024 SimpleDaemons"
 
 Section "Core Files" SecCore
     SectionIn RO
-    
+
     SetOutPath "$INSTDIR"
     File /r "simple-ldapd\*"
+
+    CreateDirectory "$PROGRAMDATA\simple-ldapd"
+    CreateDirectory "$PROGRAMDATA\simple-ldapd\logs"
+    CreateDirectory "$PROGRAMDATA\simple-ldapd\tls"
     
     ; Create uninstaller
     WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -85,8 +89,7 @@ Section "Start Menu Shortcuts" SecShortcuts
 SectionEnd
 
 Section "Windows Service" SecService
-    ; Install as Windows service
-    ExecWait '"$INSTDIR\simple-ldapd.exe" install'
+    ExecWait 'sc create simple-ldapd binPath= "\"$INSTDIR\simple-ldapd.exe\" --config \"$PROGRAMDATA\simple-ldapd\simple-ldapd.conf\" --foreground" DisplayName= "Simple LDAP Daemon" start= auto'
 SectionEnd
 
 ;--------------------------------
@@ -106,8 +109,8 @@ LangString DESC_SecService ${LANG_ENGLISH} "Install as Windows Service"
 ; Uninstaller
 
 Section "Uninstall"
-    ; Remove service
-    ExecWait '"$INSTDIR\simple-ldapd.exe" uninstall'
+    ExecWait 'sc stop simple-ldapd'
+    ExecWait 'sc delete simple-ldapd'
     
     ; Remove files
     RMDir /r "$INSTDIR"

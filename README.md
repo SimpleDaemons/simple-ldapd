@@ -51,6 +51,7 @@ make test
 
 # or
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=ON
+# Optional: -DLDAP_CLI_PREFIX=simple-  or  -DCMAKE_INSTALL_PREFIX=/opt/simple-ldapd
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```

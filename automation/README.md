@@ -7,7 +7,8 @@ This directory contains all automation scripts and configuration files for setti
 ```
 automation/
 ├── ansible/                  # Ansible automation
-│   ├── playbook.yml         # Ansible playbook for VM setup
+│   ├── playbook.yml         # Lab setup (SQLite, FHS dirs, optional unit install)
+│   ├── playbook-build.yml   # Remote CMake/CPack builds
 │   ├── inventory.ini        # Ansible inventory file
 │   ├── requirements.yml     # Ansible Galaxy requirements
 │   ├── Makefile.vm          # Makefile for VM operations
@@ -100,12 +101,40 @@ Vagrant configuration is in `automation/vagrant/`:
 
 ## Ansible
 
-Ansible automation is in `automation/ansible/`:
-- `playbook.yml` - Main playbook for environment setup
-- `inventory.ini` - Host inventory
-- `requirements.yml` - Ansible Galaxy dependencies
-- `scripts/` - Helper scripts for VM operations
-- `templates/` - Configuration templates
+Ansible lives in `automation/ansible/`. It follows the same layout as packaging: SQLite, `/usr` install prefix, FHS data/log dirs, and the shipped systemd unit (`--config` then `--foreground`). Packages and `install_service` do not start the daemon.
+
+```
+automation/ansible/
+├── ansible.cfg
+├── playbook.yml            # Vagrant / lab setup (cmake, ctest, optional install)
+├── playbook-build.yml      # Remote builders (optional CPack)
+├── inventory.ini
+├── requirements.yml
+├── Makefile.vm
+├── vagrant-boxes.yml
+└── scripts/
+    ├── vm-ssh
+    ├── vm-build            # cmake with ENABLE_SQLITE; install copies the unit
+    ├── vm-test             # ctest
+    ├── setup-remote.sh     # service user + /var/lib + /var/log + tls
+    ├── build.sh
+    ├── remote-build.sh     # ansible-playbook playbook-build.yml
+    └── organize-packages.sh
+```
+
+```bash
+# Lab VM (from the project root)
+ansible-playbook -i automation/ansible/inventory.ini automation/ansible/playbook.yml
+
+# Remote build + packages
+./automation/ansible/scripts/remote-build.sh --packages
+./automation/ansible/scripts/remote-build.sh --cli-prefix simple-
+
+# Optional: install the unit after a local VM build (does not start)
+./automation/ansible/scripts/vm-build ubuntu_dev install
+```
+
+CMake extras: `-e ldap_cli_prefix=simple-`, `-e install_prefix=/usr`, `-e install_service=true` (copies config/unit; you still set `root_password` and TLS before `systemctl enable --now`).
 
 ---
 

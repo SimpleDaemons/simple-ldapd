@@ -13,7 +13,7 @@ deployment/
 ├── logrotate.d/                # Linux log rotation configuration
 │   └── simple-ldapd
 ├── windows/                    # Windows service management
-│   └── simple-ldapd.service.bat
+│   └── simple-ldapd.service
 └── examples/                   # Deployment examples
     └── docker/                 # Docker deployment examples
         ├── docker-compose.yml
@@ -24,24 +24,34 @@ deployment/
 
 ### Linux (systemd)
 
-1. **Install the service file:**
+The unit starts `/usr/bin/simple-ldapd --config /etc/simple-ldapd/simple-ldapd.conf --foreground` as user `simple-ldapd` and creates `/var/lib/simple-ldapd` and `/var/log/simple-ldapd`.
+
+1. **Install the service file** (if you did not install the package):
    ```bash
    sudo cp deployment/systemd/simple-ldapd.service /etc/systemd/system/
    sudo systemctl daemon-reload
    ```
 
-2. **Create user and group:**
+2. **Create user and directories:**
    ```bash
-   sudo useradd --system --no-create-home --shell /bin/false simple-ldapd
+   sudo useradd --system --home-dir /var/lib/simple-ldapd --no-create-home \
+     --shell /usr/sbin/nologin simple-ldapd
+   sudo mkdir -p /etc/simple-ldapd/tls /var/lib/simple-ldapd /var/log/simple-ldapd
+   sudo chown root:simple-ldapd /etc/simple-ldapd /etc/simple-ldapd/tls
+   sudo chmod 0750 /etc/simple-ldapd /etc/simple-ldapd/tls
+   sudo chown simple-ldapd:simple-ldapd /var/lib/simple-ldapd /var/log/simple-ldapd
+   sudo chmod 0750 /var/lib/simple-ldapd /var/log/simple-ldapd
    ```
 
-3. **Enable and start the service:**
+3. **Install config** (`640` `root:simple-ldapd`), schemas, and TLS files. Copy `config/templates/production.conf` to `/etc/simple-ldapd/simple-ldapd.conf` and set `root_password`.
+
+4. **Enable and start the service:**
    ```bash
    sudo systemctl enable simple-ldapd
    sudo systemctl start simple-ldapd
    ```
 
-4. **Check status:**
+5. **Check status:**
    ```bash
    sudo systemctl status simple-ldapd
    sudo journalctl -u simple-ldapd -f
@@ -64,7 +74,7 @@ deployment/
 3. **Check status:**
    ```bash
    sudo launchctl list | grep simple-ldapd
-   tail -f /var/log/simple-ldapd.log
+   tail -f /var/log/simple-ldapd/simple-ldapd.out.log
    ```
 
 ### Windows
@@ -72,25 +82,25 @@ deployment/
 1. **Run as Administrator:**
    ```cmd
    # Install service
-   deployment\windows\simple-ldapd.service.bat install
+   deployment\windows\simple-ldapd.service install
    
    # Start service
-   deployment\windows\simple-ldapd.service.bat start
+   deployment\windows\simple-ldapd.service start
    
    # Check status
-   deployment\windows\simple-ldapd.service.bat status
+   deployment\windows\simple-ldapd.service status
    ```
 
 2. **Service management:**
    ```cmd
    # Stop service
-   deployment\windows\simple-ldapd.service.bat stop
+   deployment\windows\simple-ldapd.service stop
    
    # Restart service
-   deployment\windows\simple-ldapd.service.bat restart
+   deployment\windows\simple-ldapd.service restart
    
    # Uninstall service
-   deployment\windows\simple-ldapd.service.bat uninstall
+   deployment\windows\simple-ldapd.service uninstall
    ```
 
 ## Log Rotation (Linux)
@@ -132,15 +142,19 @@ docker-compose logs simple-ldapd
 
 Each platform has specific configuration requirements:
 
-- **Linux**: Edit `/etc/systemd/system/simple-ldapd.service`
-- **macOS**: Edit `/Library/LaunchDaemons/com.simpledaemons.simple-ldapd.plist`
-- **Windows**: Edit the service binary path in the batch file
+- **Linux**: shipped unit is `/usr/bin/simple-ldapd --config /etc/simple-ldapd/simple-ldapd.conf --foreground`
+- **macOS**: plist `ProgramArguments` use `/usr/local/bin/simple-ldapd` and `/etc/simple-ldapd/simple-ldapd.conf`
+- **Windows**: `%PROGRAMFILES%\simple-ldapd\simple-ldapd.exe --config %PROGRAMDATA%\simple-ldapd\simple-ldapd.conf --foreground`
 
 ### Application Configuration
 
 Place your application configuration in:
 - **Linux/macOS**: `/etc/simple-ldapd/simple-ldapd.conf`
-- **Windows**: `%PROGRAMFILES%\simple-ldapd\simple-ldapd.conf`
+- **Windows**: `%PROGRAMDATA%\simple-ldapd\simple-ldapd.conf`
+
+Data and logs:
+- **Linux/macOS**: `/var/lib/simple-ldapd`, `/var/log/simple-ldapd`
+- **Windows**: `%PROGRAMDATA%\simple-ldapd\` and `%PROGRAMDATA%\simple-ldapd\logs\`
 
 ## Security Considerations
 
@@ -266,7 +280,7 @@ Run the service in debug mode for troubleshooting:
 
 ```bash
 # Linux/macOS
-sudo -u simple-ldapd /usr/local/bin/simple-ldapd --debug
+sudo -u simple-ldapd /usr/bin/simple-ldapd --config /etc/simple-ldapd/simple-ldapd.conf --foreground
 
 # Windows
 simple-ldapd.exe --debug
@@ -320,13 +334,13 @@ sudo systemctl start simple-ldapd
 
 2. **Backup current version:**
    ```bash
-   sudo cp /usr/local/bin/simple-ldapd /usr/local/bin/simple-ldapd.backup
+   sudo cp /usr/bin/simple-ldapd /usr/bin/simple-ldapd.backup
    ```
 
 3. **Install new version:**
    ```bash
-   sudo cp simple-ldapd /usr/local/bin/
-   sudo chmod +x /usr/local/bin/simple-ldapd
+   sudo cp simple-ldapd /usr/bin/
+   sudo chmod +x /usr/bin/simple-ldapd
    ```
 
 4. **Start service:**

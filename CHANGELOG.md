@@ -4,6 +4,15 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+### Changed
+
+- systemd unit starts `/usr/bin/simple-ldapd --config /etc/simple-ldapd/simple-ldapd.conf --foreground` as `simple-ldapd` with `CAP_NET_BIND_SERVICE`
+- Install and packages create `/var/lib/simple-ldapd` and `/var/log/simple-ldapd` (and `/etc/simple-ldapd/tls`); launchd and the Windows service pass `--config` then `--foreground` so the flag wins over `foreground = false` in the production templates
+- CPack DEB/RPM run maintainer scripts (user, ownership, `daemon-reload`) and no longer prompt for a license or start the service
+- Ansible build playbooks install `libsqlite3-dev` / `sqlite-devel`, create `/var/lib/simple-ldapd` and `/var/log/simple-ldapd`, and configure CMake with `ENABLE_SQLITE` and `/usr` as the install prefix
+- CMake links SQLite with `SQLite3_LIBRARIES` so Debian's `SQLite::SQLite3` find-module target configures
+
+
 ## [0.15.0] — 2026-08-24
 
 Milestone 15 — Hardening.

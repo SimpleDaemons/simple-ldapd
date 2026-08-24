@@ -29,7 +29,7 @@ Development binds unprivileged ports so the daemon can run without root. Product
 ```mermaid
 flowchart TB
   subgraph os [Host]
-    Bin["/usr/sbin/simple-ldapd"]
+    Bin["/usr/bin/simple-ldapd"]
     Conf["/etc/simple-ldapd/"]
     Data["/var/lib/simple-ldapd/directory.sqlite"]
     Logs["/var/log/simple-ldapd/"]
@@ -46,7 +46,7 @@ Unit files live in [deployment/](../../deployment/README.md):
 
 - Linux: `deployment/systemd/simple-ldapd.service`
 - macOS: `deployment/launchd/com.simpledaemons.simple-ldapd.plist`
-- Windows: `deployment/windows/simple-ldapd.service.bat`
+- Windows: `deployment/windows/simple-ldapd.service`
 - Docker example: `deployment/examples/docker/`
 
 `--daemon` does not fork. Use the OS supervisor (systemd, launchd, a Windows service, or a container entrypoint) and keep `foreground = true` or pass `--foreground`.

@@ -1,10 +1,10 @@
-#!/bin/bash
-# Post-uninstallation script for simple-ldapd RPM
+#!/bin/sh
+# Post-uninstall for simple-ldapd RPM
 
 set -e
 
-# Reload systemd
-systemctl daemon-reload
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl daemon-reload >/dev/null 2>&1 || true
+fi
 
 exit 0
-

@@ -1,28 +1,28 @@
-#!/bin/bash
-# Pre-installation script for simple-ldapd RPM
-# License acceptance check
+#!/bin/sh
+# Pre-install for simple-ldapd RPM (CPack). Create the service user before files land.
 
 set -e
 
 PROJECT_NAME="simple-ldapd"
+SERVICE_USER="simple-ldapd"
+DATA_DIR="/var/lib/$PROJECT_NAME"
 
-# Display license and require acceptance
-echo "=========================================="
-echo "simple-ldapd License Agreement"
-echo "=========================================="
-echo ""
-cat /usr/share/doc/$PROJECT_NAME/LICENSE 2>/dev/null || \
-    cat /usr/share/$PROJECT_NAME/LICENSE.txt 2>/dev/null || \
-    echo "Please review the license at: https://github.com/simpledaemons/$PROJECT_NAME/blob/main/LICENSE"
-echo ""
-echo "By continuing, you agree to the terms of the license."
-echo ""
-read -p "Do you accept the license? [y/N]: " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "License not accepted. Installation cancelled."
-    exit 1
+nologin_shell() {
+    if [ -x /sbin/nologin ]; then
+        echo /sbin/nologin
+    elif [ -x /usr/sbin/nologin ]; then
+        echo /usr/sbin/nologin
+    else
+        echo /bin/false
+    fi
+}
+
+if ! getent group "$SERVICE_USER" >/dev/null 2>&1; then
+    groupadd -r "$SERVICE_USER"
+fi
+if ! getent passwd "$SERVICE_USER" >/dev/null 2>&1; then
+    useradd -r -M -d "$DATA_DIR" -s "$(nologin_shell)" -g "$SERVICE_USER" \
+        -c "$PROJECT_NAME service user" "$SERVICE_USER"
 fi
 
 exit 0
-

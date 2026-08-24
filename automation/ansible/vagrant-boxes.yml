@@ -6,7 +6,7 @@ ubuntu_dev: "ubuntu/jammy64"             # Ubuntu with dev tools
 centos_dev: "centos/8"                   # CentOS with dev tools
 
 # COMMENTED OUT - Additional distributions (uncomment as needed for expanded testing)
-# Ubuntu/Debian Family (Recommended for NFS development)
+# Ubuntu/Debian Family
 # ubuntu_22_04: "ubuntu/jammy64"           # Ubuntu 22.04 LTS (default)
 # ubuntu_20_04: "ubuntu/focal64"           # Ubuntu 20.04 LTS
 # ubuntu_18_04: "ubuntu/bionic64"          # Ubuntu 18.04 LTS

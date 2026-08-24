@@ -1,0 +1,312 @@
+---
+- name: Build simple-ldapd on remote VMs
+  hosts: build-vms:development
+  become: false
+  vars:
+    need_root: "{{ escalate | default(true) | bool }}"
+    project_dir: /opt/simple-ldapd
+    project_name: simple-ldapd
+    service_user: simple-ldapd
+    service_group: simple-ldapd
+    build_user: "{{ ansible_user | default('simple-ldapd') }}"
+    git_repo_url: https://github.com/SimpleDaemons/simple-ldapd.git
+    git_branch: main
+    build_type: Release
+    clean_build: false
+    run_tests: true
+    create_packages: false
+    ldap_cli_prefix: ""
+    install_prefix: /usr
+    config_dir: /etc/simple-ldapd
+    data_dir: /var/lib/simple-ldapd
+    log_dir: /var/log/simple-ldapd
+
+  tasks:
+    - name: Display build information
+      debug:
+        msg:
+          - "Building {{ project_name }} on {{ inventory_hostname }}"
+          - "Repository: {{ git_repo_url }}"
+          - "Branch: {{ git_branch }}"
+          - "Build type: {{ build_type }}"
+          - "Install prefix: {{ install_prefix }}"
+          - "CLI prefix: '{{ ldap_cli_prefix }}'"
+          - "SQLite: ON"
+          - "Create packages: {{ create_packages }}"
+
+    - name: Use a user-writable tree when sudo is disabled
+      set_fact:
+        project_dir: "{{ ansible_facts['env']['HOME'] | default('/tmp') }}/simple-ldapd"
+      when: not (need_root | bool)
+
+    - name: Update package cache (Debian)
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      become: "{{ need_root }}"
+      when:
+        - ansible_facts['os_family'] == "Debian"
+        - need_root | bool
+
+    - name: Install build dependencies (Debian)
+      apt:
+        name:
+          - build-essential
+          - cmake
+          - git
+          - pkg-config
+          - libssl-dev
+          - libsqlite3-dev
+          - libjsoncpp-dev
+          - python3
+          - zip
+          - dpkg-dev
+          - debhelper
+        state: present
+      become: "{{ need_root }}"
+      when:
+        - ansible_facts['os_family'] == "Debian"
+        - need_root | bool
+
+    - name: Install build dependencies (RedHat)
+      package:
+        name:
+          - gcc-c++
+          - cmake
+          - git
+          - pkgconfig
+          - openssl-devel
+          - sqlite-devel
+          - jsoncpp-devel
+          - python3
+          - zip
+          - rpm-build
+        state: present
+      become: "{{ need_root }}"
+      when:
+        - ansible_facts['os_family'] == "RedHat"
+        - need_root | bool
+
+    - name: Install build dependencies (macOS)
+      homebrew:
+        name:
+          - cmake
+          - openssl@3
+          - sqlite
+          - pkg-config
+          - git
+          - jsoncpp
+        state: present
+      become: false
+      when: ansible_facts['os_family'] == "Darwin"
+      ignore_errors: true
+
+    - name: Create service group
+      group:
+        name: "{{ service_group }}"
+        system: true
+        state: present
+      become: "{{ need_root }}"
+      when:
+        - ansible_facts['os_family'] != "Darwin"
+        - need_root | bool
+
+    - name: Create service user
+      user:
+        name: "{{ service_user }}"
+        group: "{{ service_group }}"
+        system: true
+        shell: /bin/bash
+        home: "{{ data_dir }}"
+        create_home: false
+        comment: simple-ldapd service user
+        state: present
+      become: "{{ need_root }}"
+      when:
+        - ansible_facts['os_family'] != "Darwin"
+        - need_root | bool
+
+    - name: Create runtime directories
+      file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
+        mode: "{{ item.mode }}"
+      become: "{{ need_root }}"
+      loop:
+        - { path: "{{ config_dir }}", owner: root, group: "{{ service_group }}", mode: "0750" }
+        - { path: "{{ config_dir }}/tls", owner: root, group: "{{ service_group }}", mode: "0750" }
+        - { path: "{{ data_dir }}", owner: "{{ service_user }}", group: "{{ service_group }}", mode: "0750" }
+        - { path: "{{ log_dir }}", owner: "{{ service_user }}", group: "{{ service_group }}", mode: "0750" }
+      when:
+        - ansible_facts['os_family'] != "Darwin"
+        - need_root | bool
+
+    - name: Create macOS runtime directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      become: "{{ need_root }}"
+      loop:
+        - "{{ config_dir }}"
+        - "{{ config_dir }}/tls"
+        - "{{ data_dir }}"
+        - "{{ log_dir }}"
+      when: ansible_facts['os_family'] == "Darwin"
+
+    - name: Create project directory
+      file:
+        path: "{{ project_dir }}"
+        state: directory
+        owner: "{{ build_user }}"
+        mode: "0755"
+      become: "{{ need_root }}"
+
+    - name: Clean build directory if requested
+      file:
+        path: "{{ project_dir }}/build"
+        state: absent
+      become: "{{ need_root }}"
+      when: clean_build | bool
+
+    - name: Clone or update repository
+      git:
+        repo: "{{ git_repo_url }}"
+        dest: "{{ project_dir }}"
+        version: "{{ git_branch }}"
+        force: true
+        update: true
+      become: "{{ need_root }}"
+      register: git_result
+
+    - name: Display current git commit
+      command: git rev-parse HEAD
+      args:
+        chdir: "{{ project_dir }}"
+      register: git_commit
+      changed_when: false
+      failed_when: false
+
+    - name: Show git commit info
+      debug:
+        msg: "Current commit: {{ git_commit.stdout }}"
+
+    - name: Create build directory
+      file:
+        path: "{{ project_dir }}/build"
+        state: directory
+        owner: "{{ build_user }}"
+        mode: "0755"
+      become: "{{ need_root }}"
+
+    - name: Configure CMake
+      shell: >
+        cmake ..
+        -DCMAKE_BUILD_TYPE={{ build_type }}
+        -DCMAKE_INSTALL_PREFIX={{ install_prefix }}
+        -DENABLE_TESTS={{ 'ON' if run_tests | bool else 'OFF' }}
+        -DENABLE_PACKAGING={{ 'ON' if create_packages | bool else 'OFF' }}
+        -DENABLE_SSL=ON
+        -DENABLE_SQLITE=ON
+        -DLDAP_CLI_PREFIX={{ ldap_cli_prefix }}
+      args:
+        chdir: "{{ project_dir }}/build"
+      environment:
+        PATH: "{{ ansible_facts['env']['PATH'] | default('/usr/bin:/bin:/usr/sbin:/sbin') }}:/opt/homebrew/bin:/usr/local/bin"
+      register: cmake_result
+
+    - name: Display CMake configuration
+      debug:
+        var: cmake_result.stdout_lines
+
+    - name: Build project
+      make:
+        chdir: "{{ project_dir }}/build"
+        target: all
+      environment:
+        PATH: "{{ ansible_facts['env']['PATH'] | default('/usr/bin:/bin:/usr/sbin:/sbin') }}:/opt/homebrew/bin:/usr/local/bin"
+      register: build_result
+
+    - name: Run tests
+      command: ctest --output-on-failure
+      args:
+        chdir: "{{ project_dir }}/build"
+      environment:
+        PATH: "{{ ansible_facts['env']['PATH'] | default('/usr/bin:/bin:/usr/sbin:/sbin') }}:/opt/homebrew/bin:/usr/local/bin"
+      register: test_result
+      failed_when: false
+      when: run_tests | bool
+
+    - name: Display test results
+      debug:
+        var: test_result.stdout_lines
+      when: run_tests | bool and test_result.stdout_lines is defined
+
+    - name: Create DEB package
+      command: make package-deb
+      args:
+        chdir: "{{ project_dir }}"
+      register: deb_package_result
+      failed_when: false
+      when: create_packages | bool and ansible_facts['os_family'] == "Debian"
+
+    - name: Create RPM package
+      command: make package-rpm
+      args:
+        chdir: "{{ project_dir }}"
+      register: rpm_package_result
+      failed_when: false
+      when: create_packages | bool and ansible_facts['os_family'] == "RedHat"
+
+    - name: Create macOS packages
+      command: make package
+      args:
+        chdir: "{{ project_dir }}"
+      environment:
+        PATH: "{{ ansible_facts['env']['PATH'] | default('/usr/bin:/bin:/usr/sbin:/sbin') }}:/opt/homebrew/bin:/usr/local/bin"
+      register: macos_package_result
+      failed_when: false
+      when: create_packages | bool and ansible_facts['os_family'] == "Darwin"
+
+    - name: Create source packages
+      command: make package-source
+      args:
+        chdir: "{{ project_dir }}"
+      register: source_package_result
+      failed_when: false
+      when: create_packages | bool
+
+    - name: Organize packages
+      command: "{{ project_dir }}/automation/ansible/scripts/organize-packages.sh"
+      args:
+        chdir: "{{ project_dir }}"
+      register: organize_result
+      failed_when: false
+      when: create_packages | bool
+
+    - name: Get build artifacts
+      stat:
+        path: "{{ item }}"
+      loop:
+        - "{{ project_dir }}/build/simple-ldapd"
+        - "{{ project_dir }}/build/ldapsearch"
+        - "{{ project_dir }}/build/ldapadd"
+        - "{{ project_dir }}/build/ldappasswd"
+      register: artifacts
+
+    - name: Display build artifacts
+      debug:
+        msg: "{{ item.stat.path }} exists={{ item.stat.exists }} size={{ item.stat.size | default('N/A') }}"
+      loop: "{{ artifacts.results }}"
+
+    - name: Build summary
+      debug:
+        msg:
+          - "=== Build Summary for {{ inventory_hostname }} ==="
+          - "Binary: {{ project_dir }}/build/simple-ldapd"
+          - "Unit: {{ project_dir }}/deployment/systemd/simple-ldapd.service"
+          - "ExecStart=/usr/bin/simple-ldapd --config /etc/simple-ldapd/simple-ldapd.conf --foreground"
+          - "Data: {{ data_dir }}  Logs: {{ log_dir }}"
+          - "Tests: {{ 'Passed' if (run_tests | bool and test_result.rc == 0) else 'Skipped or failed' }}"

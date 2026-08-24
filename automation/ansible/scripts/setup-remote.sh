@@ -1,36 +1,38 @@
 #!/bin/bash
-# Remote setup script for Ansible deployment
-# Usage: ./setup-remote.sh
+# Remote setup for Ansible / VM hosts. Creates the service user and FHS dirs.
 
 set -e
 
 PROJECT_NAME="simple-ldapd"
 PROJECT_USER="simple-ldapd"
 PROJECT_DIR="/opt/$PROJECT_NAME"
+CONFIG_DIR="/etc/$PROJECT_NAME"
+DATA_DIR="/var/lib/$PROJECT_NAME"
+LOG_DIR="/var/log/$PROJECT_NAME"
 
-echo "Setting up $PROJECT_NAME on remote host..."
+NOLOGIN=/usr/sbin/nologin
+[ -x "$NOLOGIN" ] || NOLOGIN=/sbin/nologin
+[ -x "$NOLOGIN" ] || NOLOGIN=/bin/bash
 
-# Create build user if it doesn't exist
-if ! id "$PROJECT_USER" &>/dev/null; then
-    echo "Creating user $PROJECT_USER..."
-    sudo useradd -m -s /bin/bash "$PROJECT_USER"
+echo "Setting up $PROJECT_NAME on $(hostname)..."
+
+if ! getent group "$PROJECT_USER" >/dev/null 2>&1; then
+    sudo groupadd --system "$PROJECT_USER" 2>/dev/null || sudo groupadd -r "$PROJECT_USER"
 fi
 
-# Create project directory
-sudo mkdir -p "$PROJECT_DIR"
-sudo chown "$PROJECT_USER:$PROJECT_USER" "$PROJECT_DIR"
+if ! getent passwd "$PROJECT_USER" >/dev/null 2>&1; then
+    echo "Creating user $PROJECT_USER..."
+    sudo useradd --system --no-create-home --home-dir "$DATA_DIR" \
+        --shell /bin/bash --gid "$PROJECT_USER" \
+        --comment "$PROJECT_NAME service user" "$PROJECT_USER" 2>/dev/null || \
+    sudo useradd -r -M -d "$DATA_DIR" -s /bin/bash -g "$PROJECT_USER" "$PROJECT_USER"
+fi
 
-# Create build directory
-sudo mkdir -p "$PROJECT_DIR/build"
-sudo chown "$PROJECT_USER:$PROJECT_USER" "$PROJECT_DIR/build"
+sudo mkdir -p "$PROJECT_DIR/build" "$CONFIG_DIR/tls" "$DATA_DIR" "$LOG_DIR"
+sudo chown "$PROJECT_USER:$PROJECT_USER" "$PROJECT_DIR" "$PROJECT_DIR/build"
+sudo chown root:"$PROJECT_USER" "$CONFIG_DIR" "$CONFIG_DIR/tls"
+sudo chmod 0750 "$CONFIG_DIR" "$CONFIG_DIR/tls"
+sudo chown "$PROJECT_USER:$PROJECT_USER" "$DATA_DIR" "$LOG_DIR"
+sudo chmod 0750 "$DATA_DIR" "$LOG_DIR"
 
-# Create log directory
-sudo mkdir -p "/var/log/$PROJECT_NAME"
-sudo chown "$PROJECT_USER:$PROJECT_USER" "/var/log/$PROJECT_NAME"
-
-# Create config directory
-sudo mkdir -p "/etc/$PROJECT_NAME"
-sudo chown "$PROJECT_USER:$PROJECT_USER" "/etc/$PROJECT_NAME"
-
-echo "Setup complete!"
-
+echo "Setup complete. Build with automation/ansible/scripts/build.sh"

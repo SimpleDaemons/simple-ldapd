@@ -1,15 +1,15 @@
-#!/bin/bash
-# Pre-removal script for simple-ldapd
+#!/bin/sh
+# Pre-removal for simple-ldapd
 
 set -e
 
 PROJECT_NAME="simple-ldapd"
 
 if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
-    # Stop service before removal
-    systemctl stop "$PROJECT_NAME" 2>/dev/null || true
-    systemctl disable "$PROJECT_NAME" 2>/dev/null || true
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl stop "$PROJECT_NAME" >/dev/null 2>&1 || true
+        systemctl disable "$PROJECT_NAME" >/dev/null 2>&1 || true
+    fi
 fi
 
 exit 0
-

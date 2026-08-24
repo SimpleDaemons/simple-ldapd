@@ -118,8 +118,9 @@ if(ENABLE_SQLITE)
         endforeach()
     endif()
     find_package(SQLite3)
-    if(SQLite3_FOUND)
-        target_link_libraries(${PROJECT_NAME}_lib PUBLIC SQLite3::SQLite3)
+    if(SQLite3_FOUND AND SQLite3_LIBRARIES)
+        target_include_directories(${PROJECT_NAME}_lib PUBLIC ${SQLite3_INCLUDE_DIRS})
+        target_link_libraries(${PROJECT_NAME}_lib PUBLIC ${SQLite3_LIBRARIES})
         target_compile_definitions(${PROJECT_NAME}_lib PUBLIC SIMPLE_LDAPD_SQLITE=1)
     else()
         message(WARNING "SQLite3 not found. sqlite backend will be unavailable.")
@@ -194,6 +195,9 @@ if(APPLE)
     install(FILES deployment/launchd/com.simpledaemons.${PROJECT_NAME}.plist
         DESTINATION /Library/LaunchDaemons
     )
+    install(DIRECTORY DESTINATION /var/lib/${PROJECT_NAME})
+    install(DIRECTORY DESTINATION /var/log/${PROJECT_NAME})
+    install(DIRECTORY DESTINATION /etc/${PROJECT_NAME}/tls)
 else()
     install(TARGETS ${LDAP_RUNTIME_TARGETS}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -212,9 +216,23 @@ else()
         DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/${PROJECT_NAME}/schemas
         FILES_MATCHING PATTERN "*.schema"
     )
+    install(DIRECTORY DESTINATION /var/lib/${PROJECT_NAME})
+    install(DIRECTORY DESTINATION /var/log/${PROJECT_NAME})
+    install(DIRECTORY DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/${PROJECT_NAME}/tls)
     if(UNIX AND NOT APPLE AND NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
         install(FILES deployment/systemd/${PROJECT_NAME}.service
             DESTINATION lib/systemd/system
+        )
+        install(FILES deployment/systemd/${PROJECT_NAME}.sysusers
+            DESTINATION lib/sysusers.d
+            RENAME ${PROJECT_NAME}.conf
+        )
+        install(FILES deployment/systemd/${PROJECT_NAME}.tmpfiles
+            DESTINATION lib/tmpfiles.d
+            RENAME ${PROJECT_NAME}.conf
+        )
+        install(FILES deployment/logrotate.d/${PROJECT_NAME}
+            DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/logrotate.d
         )
     endif()
 endif()
@@ -274,6 +292,10 @@ if(ENABLE_PACKAGING)
         set(CPACK_ZIP_COMPONENT_INSTALL ON)
         set(CPACK_NSIS_DISPLAY_NAME "Simple LDAP Daemon")
         set(CPACK_NSIS_PACKAGE_NAME "simple-ldapd")
+        set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
+            "CreateDirectory '$COMMON_APPDATA\\\\simple-ldapd'\\nCreateDirectory '$COMMON_APPDATA\\\\simple-ldapd\\\\logs'\\nCreateDirectory '$COMMON_APPDATA\\\\simple-ldapd\\\\tls'")
+        set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
+            "nsExec::ExecToLog 'sc stop simple-ldapd'\\nnsExec::ExecToLog 'sc delete simple-ldapd'")
     elseif(APPLE)
         set(CPACK_GENERATOR "DragNDrop;productbuild")
         set(CPACK_PACKAGING_INSTALL_PREFIX "/usr/local")
@@ -287,6 +309,8 @@ if(ENABLE_PACKAGING)
         set(CPACK_PRODUCTBUILD_IDENTIFIER "com.simpledaemons.${PROJECT_NAME}")
         set(CPACK_PRODUCTBUILD_PACKAGE_NAME "${PROJECT_NAME}")
         list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+        set(CPACK_POSTFLIGHT_Unspecified_SCRIPT
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/macos/pkg/scripts/postinstall")
     elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
         set(CPACK_GENERATOR "FREEBSD")
         set(CPACK_PACKAGING_INSTALL_PREFIX "/")
@@ -318,6 +342,11 @@ if(ENABLE_PACKAGING)
         set(CPACK_DEBIAN_PACKAGE_PROVIDES "${PROJECT_NAME}")
         set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/simpledaemons/${PROJECT_NAME}")
         set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "${PROJECT_DESCRIPTION}")
+        set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/deb/postinst"
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/deb/prerm"
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/deb/postrm"
+        )
         set(CPACK_RPM_PACKAGE_LICENSE "Apache-2.0")
         set(CPACK_RPM_PACKAGE_GROUP "Applications/System")
         set(CPACK_RPM_PACKAGE_URL "https://github.com/simpledaemons/${PROJECT_NAME}")
@@ -329,6 +358,14 @@ if(ENABLE_PACKAGING)
         endif()
         set(CPACK_RPM_PACKAGE_SUGGESTS "systemd")
         set(CPACK_RPM_PACKAGE_PROVIDES "${PROJECT_NAME}")
+        set(CPACK_RPM_PRE_INSTALL_SCRIPT_FILE
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/rpm/preinstall.sh")
+        set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/rpm/postinstall.sh")
+        set(CPACK_RPM_PRE_UNINSTALL_SCRIPT_FILE
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/rpm/preuninstall.sh")
+        set(CPACK_RPM_POST_UNINSTALL_SCRIPT_FILE
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/linux/rpm/postuninstall.sh")
     endif()
 
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64")
@@ -402,5 +439,6 @@ message(STATUS "  Packaging enabled: ${ENABLE_PACKAGING}")
 message(STATUS "  SSL support: ${ENABLE_SSL}")
 message(STATUS "  JSON support: ${ENABLE_JSON}")
 message(STATUS "  SQLite support: ${ENABLE_SQLITE}")
+message(STATUS "  Install prefix: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "  CLI prefix: ${LDAP_CLI_PREFIX}")
 message(STATUS "")

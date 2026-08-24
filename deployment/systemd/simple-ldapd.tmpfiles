@@ -1,0 +1,4 @@
+d /var/lib/simple-ldapd 0750 simple-ldapd simple-ldapd -
+d /var/log/simple-ldapd 0750 simple-ldapd simple-ldapd -
+d /etc/simple-ldapd 0750 root simple-ldapd -
+d /etc/simple-ldapd/tls 0750 root simple-ldapd -

@@ -5,10 +5,7 @@
     compress
     delaycompress
     notifempty
-    create 644 _simple-ldapd _simple-ldapd
-    postrotate
-        /bin/systemctl reload simple-ldapd > /dev/null 2>&1 || true
-    endscript
-    sharedscripts
-    su _simple-ldapd _simple-ldapd
+    copytruncate
+    create 640 simple-ldapd simple-ldapd
+    su simple-ldapd simple-ldapd
 }

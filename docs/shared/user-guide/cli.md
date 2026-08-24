@@ -33,7 +33,7 @@ SIGINT and SIGTERM stop the accept loop. There is no pidfile or `simple-ldapd st
 
 ## Client tools
 
-`ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldappasswd`, `ldapcompare`, and `ldapwhoami` share OpenLDAP-compatible flags. CMake `-DLDAP_CLI_PREFIX=simple-` installs them as `simple-ldapsearch` and so on.
+`ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldappasswd`, `ldapcompare`, and `ldapwhoami` share OpenLDAP-compatible flags. CMake `-DLDAP_CLI_PREFIX=simple-` installs them as `simple-ldapsearch` and so on. A private `-DCMAKE_INSTALL_PREFIX=/opt/simple-ldapd` keeps unprefixed names off the system `PATH`.
 
 | Flag | Meaning |
 |------|---------|

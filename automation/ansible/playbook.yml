@@ -1,37 +1,61 @@
 ---
+# Lab / builder setup. Do not become at play level — fact gathering would
+# require a sudo password on hosts like BUILD_PKG that are not NOPASSWD.
 - name: Setup simple-ldapd development environment
   hosts: all
-  become: yes
+  become: false
   vars:
     project_dir: /opt/simple-ldapd
-    build_user: simple-ldapd
-    build_group: simple-ldapd
     project_name: simple-ldapd
-    
+    service_user: simple-ldapd
+    service_group: simple-ldapd
+    need_root: "{{ escalate | default(true) | bool }}"
+    git_repo_url: https://github.com/SimpleDaemons/simple-ldapd.git
+    git_branch: main
+    build_type: Release
+    ldap_cli_prefix: ""
+    install_prefix: /usr
+    run_tests: true
+    install_service: false
+    config_dir: /etc/simple-ldapd
+    data_dir: /var/lib/simple-ldapd
+    log_dir: /var/log/simple-ldapd
+
   tasks:
-    - name: Update package cache
-      package:
-        update_cache: yes
-      when: ansible_os_family == "Debian"
-      
-    - name: Install build dependencies (Ubuntu/Debian)
-      package:
+    - name: Use a user-writable tree when sudo is disabled
+      set_fact:
+        project_dir: "{{ ansible_facts['env']['HOME'] | default('/tmp') }}/simple-ldapd"
+      when: not (need_root | bool)
+
+    - name: Update package cache (Debian)
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      become: "{{ need_root }}"
+      when:
+        - ansible_facts['os_family'] == "Debian"
+        - need_root | bool
+
+    - name: Install build dependencies (Debian)
+      apt:
         name:
           - build-essential
           - cmake
           - git
           - pkg-config
           - libssl-dev
+          - libsqlite3-dev
           - libjsoncpp-dev
-          - libyaml-cpp-dev
-          - libgtest-dev
-          - libgmock-dev
           - python3
           - python3-pip
+          - acl
         state: present
-      when: ansible_os_family == "Debian"
-      
-    - name: Install build dependencies (CentOS/RHEL)
+      become: "{{ need_root }}"
+      when:
+        - ansible_facts['os_family'] == "Debian"
+        - need_root | bool
+
+    - name: Install build dependencies (RedHat)
       package:
         name:
           - gcc-c++
@@ -39,73 +63,158 @@
           - git
           - pkgconfig
           - openssl-devel
+          - sqlite-devel
           - jsoncpp-devel
-          - yaml-cpp-devel
-          - gtest-devel
-          - gmock-devel
           - python3
           - python3-pip
+          - acl
         state: present
-      when: ansible_os_family == "RedHat"
-      
-    - name: Create build user
+      become: "{{ need_root }}"
+      when:
+        - ansible_facts['os_family'] == "RedHat"
+        - need_root | bool
+
+    - name: Create service group
+      group:
+        name: "{{ service_group }}"
+        system: true
+        state: present
+      become: "{{ need_root }}"
+      when: need_root | bool
+
+    - name: Create service user
       user:
-        name: "{{ build_user }}"
-        group: "{{ build_group }}"
+        name: "{{ service_user }}"
+        group: "{{ service_group }}"
+        system: true
         shell: /bin/bash
-        create_home: yes
+        home: "{{ data_dir }}"
+        create_home: false
+        comment: simple-ldapd service and build user
         state: present
-        
+      become: "{{ need_root }}"
+      when: need_root | bool
+
     - name: Create project directory
       file:
         path: "{{ project_dir }}"
         state: directory
-        owner: "{{ build_user }}"
-        group: "{{ build_group }}"
-        mode: '0755'
-        
-    - name: Clone repository
+        owner: "{{ service_user if (need_root | bool) else omit }}"
+        group: "{{ service_group if (need_root | bool) else omit }}"
+        mode: "0755"
+      become: "{{ need_root }}"
+
+    - name: Create runtime directories
+      file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: "{{ item.owner }}"
+        group: "{{ service_group }}"
+        mode: "{{ item.mode }}"
+      become: "{{ need_root }}"
+      when: need_root | bool
+      loop:
+        - { path: "{{ config_dir }}", owner: root, mode: "0750" }
+        - { path: "{{ config_dir }}/tls", owner: root, mode: "0750" }
+        - { path: "{{ data_dir }}", owner: "{{ service_user }}", mode: "0750" }
+        - { path: "{{ log_dir }}", owner: "{{ service_user }}", mode: "0750" }
+
+    - name: Clone or update repository
       git:
-        repo: "{{ git_repo_url | default('https://github.com/simpledaemons/' + project_name + '.git') }}"
+        repo: "{{ git_repo_url }}"
         dest: "{{ project_dir }}"
-        version: "{{ git_branch | default('main') }}"
-        force: yes
-      become_user: "{{ build_user }}"
-      
+        version: "{{ git_branch }}"
+        force: true
+        update: true
+      become: "{{ need_root }}"
+      register: git_result
+
     - name: Create build directory
       file:
         path: "{{ project_dir }}/build"
         state: directory
-        owner: "{{ build_user }}"
-        group: "{{ build_group }}"
-        mode: '0755'
-        
+        owner: "{{ service_user if (need_root | bool) else omit }}"
+        group: "{{ service_group if (need_root | bool) else omit }}"
+        mode: "0755"
+      become: "{{ need_root }}"
+
     - name: Configure CMake
-      command: cmake ..
+      command: >
+        cmake ..
+        -DCMAKE_BUILD_TYPE={{ build_type }}
+        -DCMAKE_INSTALL_PREFIX={{ install_prefix }}
+        -DENABLE_TESTS={{ 'ON' if run_tests | bool else 'OFF' }}
+        -DENABLE_SSL=ON
+        -DENABLE_SQLITE=ON
+        -DLDAP_CLI_PREFIX={{ ldap_cli_prefix }}
       args:
         chdir: "{{ project_dir }}/build"
-      become_user: "{{ build_user }}"
-      
+      become: "{{ need_root }}"
+      register: cmake_result
+      changed_when: true
+
+    - name: Display CMake configuration
+      debug:
+        var: cmake_result.stdout_lines
+
     - name: Build project
       make:
         chdir: "{{ project_dir }}/build"
         target: all
-      become_user: "{{ build_user }}"
-      
+      become: "{{ need_root }}"
+
     - name: Run tests
-      command: make test
+      command: ctest --output-on-failure
       args:
         chdir: "{{ project_dir }}/build"
-      become_user: "{{ build_user }}"
+      become: "{{ need_root }}"
       register: test_result
       failed_when: false
-      
+      when: run_tests | bool
+
     - name: Display test results
       debug:
         var: test_result.stdout_lines
-        
+      when: run_tests | bool
+
+    - name: Install binaries and unit files
+      command: cmake --install "{{ project_dir }}/build"
+      become: "{{ need_root }}"
+      when:
+        - install_service | bool
+        - need_root | bool
+      notify: reload systemd
+
+    - name: Install production config if missing
+      copy:
+        src: "{{ project_dir }}/config/templates/production.conf"
+        dest: "{{ config_dir }}/simple-ldapd.conf"
+        remote_src: true
+        owner: root
+        group: "{{ service_group }}"
+        mode: "0640"
+        force: false
+      become: "{{ need_root }}"
+      when:
+        - install_service | bool
+        - need_root | bool
+
+    - name: Install systemd unit from the tree
+      copy:
+        src: "{{ project_dir }}/deployment/systemd/simple-ldapd.service"
+        dest: /etc/systemd/system/simple-ldapd.service
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0644"
+      become: "{{ need_root }}"
+      when:
+        - install_service | bool
+        - need_root | bool
+      notify: reload systemd
+
   handlers:
     - name: reload systemd
       systemd:
-        daemon_reload: yes
-
+        daemon_reload: true
+      become: true

@@ -2,6 +2,20 @@
 
 This directory contains templates for creating installers and packages for simple-ldapd across different platforms.
 
+CPack in the top-level `CMakeLists.txt` is the supported package path (`make package`). These files are the maintainer scripts, spec, and installer sources that CPack and manual packaging use.
+
+## Installed layout (must match production templates)
+
+| Platform | Binary | Config | Data | Logs |
+|----------|--------|--------|------|------|
+| Linux (`CMAKE_INSTALL_PREFIX=/usr`) | `/usr/bin/simple-ldapd` | `/etc/simple-ldapd/simple-ldapd.conf` | `/var/lib/simple-ldapd` | `/var/log/simple-ldapd` |
+| macOS | `/usr/local/bin/simple-ldapd` | `/etc/simple-ldapd/simple-ldapd.conf` | `/var/lib/simple-ldapd` | `/var/log/simple-ldapd` |
+| Windows | `%PROGRAMFILES%\simple-ldapd\simple-ldapd.exe` | `%PROGRAMDATA%\simple-ldapd\simple-ldapd.conf` | `%PROGRAMDATA%\simple-ldapd` | `%PROGRAMDATA%\simple-ldapd\logs` |
+
+Linux units start `--config` then `--foreground` at those paths so the flag wins over `foreground = false` in the production templates. Packages create the data/log directories and the `simple-ldapd` service user; they do not enable or start the daemon (TLS and `root_password` are still unset).
+
+Default CLI names match OpenLDAP (`ldapsearch`, …). Rebuild with `-DLDAP_CLI_PREFIX=simple-` or a private `-DCMAKE_INSTALL_PREFIX` if both must share `PATH`.
+
 ## Directory Structure
 
 ```
@@ -22,9 +36,9 @@ packaging/
 ├── linux/
 │   ├── deb/                     # Debian/Ubuntu packages
 │   │   ├── control              # Debian control file
-│   │   └── postinst             # Post-installation script with license
+│   │   └── postinst             # User, dirs, ownership (non-interactive)
 │   └── rpm/                     # Red Hat/CentOS packages
-│       └── simple-ldapd.spec  # RPM spec file with license
+│       └── simple-ldapd.spec    # RPM spec (user, dirs, systemd unit)
 ├── assets/
 │   ├── icons/                   # Installer icons and graphics
 │   │   ├── simple-ldapd.ico   # Windows icon
@@ -46,7 +60,7 @@ packaging/
 ### License Acceptance
 - **macOS PKG**: License displayed and must be accepted
 - **Windows NSIS/MSI**: License page with acceptance required
-- **Linux DEB/RPM**: License displayed during installation with acceptance prompt
+- **Linux DEB/RPM**: Apache-2.0 is shipped with the package (`%license` / copyright). Maintainer scripts are non-interactive so unattended installs work.
 
 ### Custom Icons and Graphics
 - Windows: `.ico` files for application and installer
@@ -85,16 +99,14 @@ packaging/
 - Upgrade support
 
 #### Linux DEB
-- License acceptance during installation
-- Service user creation
-- Systemd integration
-- Configuration file installation
+- Non-interactive postinst (service user, `/var/lib` and `/var/log`, config mode `640`)
+- Systemd unit, sysusers, tmpfiles, logrotate
+- Configuration file installation (`templates/production.conf` → `simple-ldapd.conf` if missing)
 
 #### Linux RPM
-- License acceptance in %pre section
-- Service user creation
+- Non-interactive `%pre`/`%post` (service user, directories)
 - Systemd integration
-- Proper file placement
+- Proper file placement including empty data/log dirs
 
 ## Usage
 

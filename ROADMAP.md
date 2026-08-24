@@ -92,9 +92,32 @@
 - SASL EXTERNAL: require a verified client certificate before trusting authzid
 - Optional install prefix / binary names that do not collide with OpenLDAP
 
-## Toward 1.0.0
+## 1.0.0 cut — production-usable SSO directory
 
-Milestones 10–15 are released. **1.0.0** is the production-usable SSO directory cut on top of this series.
+Milestones 1–15 are released. **1.0.0** is a hygiene and contract cut on top of that series, not a new LDAP feature set. It means a small **single-host SSO directory via LDAP bind**, not OpenLDAP-at-scale and not an AD DC.
+
+### Contract (write this into README / docs / CHANGELOG at tag time)
+
+- Bind (anonymous, simple, SASL PLAIN / DIGEST-MD5 / EXTERNAL / lab GSSAPI), search, writes, TLS, ACLs, `{SSHA}` passwords, SQLite persist, `log_level`, `bind_rate_limit`
+- One process, one host; run under systemd / launchd / a Windows service (`--daemon` does not fork)
+- Known limits that stay: DIGEST-MD5 needs a recoverable password; `{SSHA}` is salted SHA-1; GSSAPI tickets are HMAC lab tickets, not MIT / RFC 4120; SQLite search still loads matching entries in-process; `memberOf` is a static attribute
+- Drop “early development” / “skeleton” language; refresh the `simple-ldapd` blurb in SimpleDaemons `docs/FUTURE_DAEMONS.md`
+
+### Packaging (must match production templates)
+
+- [x] Create `/var/lib/simple-ldapd` and `/var/log/simple-ldapd` (or platform equivalents) with the service user
+- [x] systemd / launchd / Windows unit: `ExecStart` path and `--foreground --config` must match the installed binary and `/etc/simple-ldapd/simple-ldapd.conf`
+- [x] Document `-DLDAP_CLI_PREFIX=simple-` (and a private `CMAKE_INSTALL_PREFIX`) so OpenLDAP tool names do not collide if both are on `PATH`
+
+### Optional polish (do not block 1.0 unless “safe on a public 389” is the bar)
+
+- Max LDAP PDU size so a BER length cannot grow without bound
+- Max concurrent sessions and/or idle timeout (today: one thread per connection, no cap)
+- A CI workflow that builds and runs `ctest` (the feature audit overstates this today)
+
+### Do not pull into 1.0
+
+Items under **Later** and **Out of scope**. A 1.1+ can add them without retconning 1.0.
 
 ## Later (not scheduled)
 
@@ -102,8 +125,9 @@ Milestones 10–15 are released. **1.0.0** is the production-usable SSO director
 - Computed `memberOf` (today it is a static attribute)
 - MIT Kerberos / RFC 4120 GSSAPI (lab HMAC tickets stay)
 - Replication, referrals, overlays, a KDC, or an AD DC
+- `--daemon` fork and `stop` / `status` / `reload` (use the OS supervisor)
 
-## Out of scope (v0.x)
+## Out of scope (1.0)
 
 - In-tree Kerberos KDC, SMB, Group Policy
 - OIDC or SAML (see `simple-oidcd`)

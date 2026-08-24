@@ -5,13 +5,8 @@ Priority: optional
 Architecture: amd64
 Depends: libssl3 (>= 3.0.0), libc6 (>= 2.31), libsqlite3-0
 Maintainer: SimpleDaemons <support@simpledaemons.com>
-Description: simple-ldapd - A lightweight and secure daemon
- simple-ldapd is a modern, secure implementation of the LDAP protocol.
- .
- Features:
-  * High performance
-  * Secure by default
-  * Easy configuration
-  * Systemd integration
-Homepage: https://github.com/simpledaemons/simple-ldapd
-
+Description: Lightweight LDAPv3 directory daemon
+ simple-ldapd is a single-host LDAPv3 directory for SSO via LDAP bind.
+ Default CLI names match OpenLDAP (ldapsearch, …). Rebuild with
+ -DLDAP_CLI_PREFIX=simple- if both must share PATH.
+Homepage: https://github.com/SimpleDaemons/simple-ldapd

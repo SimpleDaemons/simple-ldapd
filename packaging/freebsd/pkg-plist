@@ -4,3 +4,11 @@ bin/ldapadd
 bin/ldapmodify
 bin/ldapdelete
 bin/ldappasswd
+bin/ldapcompare
+bin/ldapwhoami
+etc/simple-ldapd/templates/development.conf
+etc/simple-ldapd/templates/production.conf
+etc/simple-ldapd/templates/high-security.conf
+@dir etc/simple-ldapd/tls
+@dir var/lib/simple-ldapd
+@dir var/log/simple-ldapd

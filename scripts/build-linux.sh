@@ -349,36 +349,25 @@ create_packages() {
 create_service() {
     if [ "$SERVICE" = "true" ]; then
         print_status "Creating systemd service..."
-        
-        # Create systemd service file
-        sudo tee /etc/systemd/system/simple-ldapd.service > /dev/null << EOF
-[Unit]
-Description=Simple LDAP Daemon - A lightweight directory service
-After=network.target
 
-[Service]
-Type=simple
-User=simple-ldapd
-Group=simple-ldapd
-ExecStart=/usr/local/bin/simple-ldapd --daemon
-Restart=always
-RestartSec=5
-StandardOutput=journal
-StandardError=journal
+        sudo cp "$PROJECT_ROOT/deployment/systemd/simple-ldapd.service" /etc/systemd/system/simple-ldapd.service
 
-[Install]
-WantedBy=multi-user.target
-EOF
-        
-        # Create user and group
-        sudo useradd --system --no-create-home --shell /bin/false simple-ldapd 2>/dev/null || true
-        
-        # Reload systemd and enable service
+        sudo getent group simple-ldapd >/dev/null 2>&1 || sudo groupadd --system simple-ldapd
+        sudo getent passwd simple-ldapd >/dev/null 2>&1 || \
+            sudo useradd --system --home-dir /var/lib/simple-ldapd --no-create-home \
+                --shell /usr/sbin/nologin --gid simple-ldapd simple-ldapd
+
+        sudo mkdir -p /etc/simple-ldapd/tls /var/lib/simple-ldapd /var/log/simple-ldapd
+        sudo chown root:simple-ldapd /etc/simple-ldapd /etc/simple-ldapd/tls
+        sudo chmod 0750 /etc/simple-ldapd /etc/simple-ldapd/tls
+        sudo chown simple-ldapd:simple-ldapd /var/lib/simple-ldapd /var/log/simple-ldapd
+        sudo chmod 0750 /var/lib/simple-ldapd /var/log/simple-ldapd
+
         sudo systemctl daemon-reload
         sudo systemctl enable simple-ldapd
-        
-        print_success "Systemd service created and enabled"
-        print_status "Use 'sudo systemctl start simple-ldapd' to start the service"
+
+        print_success "Systemd service installed and enabled"
+        print_status "Copy a production template to /etc/simple-ldapd/simple-ldapd.conf, then 'sudo systemctl start simple-ldapd'"
     fi
 }
 

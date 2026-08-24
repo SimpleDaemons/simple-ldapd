@@ -33,7 +33,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-Binaries land in `build/`: `simple-ldapd`, `ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldappasswd`, `ldapcompare`, `ldapwhoami`.
+Binaries land in `build/`: `simple-ldapd`, `ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldappasswd`, `ldapcompare`, `ldapwhoami`. On Linux the default `CMAKE_INSTALL_PREFIX` is `/usr`. `cmake --install` also creates `/var/lib/simple-ldapd` and `/var/log/simple-ldapd`.
 
 ### Options
 
@@ -45,7 +45,7 @@ Binaries land in `build/`: `simple-ldapd`, `ldapsearch`, `ldapadd`, `ldapmodify`
 | `ENABLE_SQLITE` | ON | Link SQLite3; required for `backend = sqlite` |
 | `ENABLE_PACKAGING` | ON | CPack targets |
 | `ENABLE_STATIC_LINKING` | OFF | Self-contained binaries |
-| `LDAP_CLI_PREFIX` | (empty) | Prefix OpenLDAP-style tool names (e.g. `simple-` → `simple-ldapsearch`) |
+| `LDAP_CLI_PREFIX` | (empty) | Prefix OpenLDAP-style tool names. `-DLDAP_CLI_PREFIX=simple-` installs `simple-ldapsearch` and so on; the daemon remains `simple-ldapd`. Use this (or a private `CMAKE_INSTALL_PREFIX`) if OpenLDAP clients must stay on `PATH`. |
 | `BUILD_SHARED_LIBS` | OFF | Shared library (static `simple-ldapd_lib` is the default) |
 
 macOS looks for OpenSSL under Homebrew (`/opt/homebrew/opt/openssl@3`, `/usr/local/opt/openssl@3`) and SQLite under `/opt/homebrew/opt/sqlite` or `/usr/local/opt/sqlite`.
@@ -77,6 +77,16 @@ Platform scripts also exist: `scripts/build-linux.sh`, `scripts/build-macos.sh`,
 ## Packaging
 
 CPack and templates under `packaging/` produce DEB/RPM, macOS pkg/dmg, and Windows MSI/NSIS/ZIP. See [packaging/README.md](../../packaging/README.md).
+
+Linux packages install the systemd unit (`/usr/bin/simple-ldapd --config /etc/simple-ldapd/simple-ldapd.conf --foreground`), sysusers/tmpfiles, and logrotate. They create `/var/lib/simple-ldapd` and `/var/log/simple-ldapd` owned by `simple-ldapd`. They do not start the service.
+
+To keep OpenLDAP's `ldapsearch` on `PATH`:
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DLDAP_CLI_PREFIX=simple-
+cmake --build build
+cpack --config build/CPackConfig.cmake
+```
 
 ## Troubleshooting the build
 
