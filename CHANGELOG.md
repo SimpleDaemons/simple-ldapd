@@ -4,9 +4,15 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-08-24
+
+Milestone 3 — Write ops + LDIF.
+
 ### Added
 
-- (milestone 3) Add / modify / delete / modrdn and write CLI — in progress
+- Add, modify, delete, and modrdn on the wire (root DN bind required)
+- LDIF export/persist for the file backend and change-record parsing
+- Working `ldapadd`, `ldapmodify`, and `ldapdelete`
 
 ## [0.2.0] — 2026-08-24
 

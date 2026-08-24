@@ -2,7 +2,7 @@
 
 Lightweight LDAPv3 directory daemon for SSO via LDAP bind, with an OpenLDAP-style CLI and Active Directory-friendly schema names.
 
-simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.2.0** implements simple bind and search over LDAPv3 (memory backend, optional LDIF seed). Write operations, LDAPS, and SASL are still ahead. Versions follow [VERSIONING.md](VERSIONING.md).
+simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.3.0** implements simple bind, search, and directory writes over LDAPv3 (memory backend, optional LDIF persist). LDAPS and SASL are still ahead. Versions follow [VERSIONING.md](VERSIONING.md).
 
 ## Goals
 
@@ -25,7 +25,7 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 | Build, tests, CPack packaging | Implemented |
 | Config, schema registry, memory/LDIF backends | Implemented |
 | LDAPv3 BER codec, simple bind, search | Implemented (filter subset) |
-| Add / modify / delete | Not implemented |
+| Add / modify / delete / modrdn | Implemented (root DN bind) |
 | LDAPS / StartTLS / SASL | Interfaces only |
 
 ## Build
@@ -68,9 +68,12 @@ Search the seeded tree (anonymous or simple bind):
 ```bash
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -x -b dc=example,dc=com '(uid=alice)'
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -b dc=example,dc=com '(objectClass=*)'
+./build/ldapadd -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -f change.ldif
+./build/ldapmodify -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -f change.ldif
+./build/ldapdelete -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret 'uid=bob,ou=People,dc=example,dc=com'
 ```
 
-`ldapadd` / `ldapmodify` / `ldapdelete` / `ldappasswd` still exit with a "not implemented" status.
+Writes require a root DN bind. `ldappasswd` is still a stub.
 
 ## Layout
 

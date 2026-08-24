@@ -6,17 +6,18 @@
 |---------|--------|
 | Build / packaging / CI | Implemented |
 | Config load/validate | Implemented (key=value) |
-| Memory backend | Implemented (in-process, scoped search) |
-| LDIF import | Partial (seed on startup) |
+| Memory backend | Implemented (in-process, scoped search, rename) |
+| LDIF import/export | Implemented (seed + persist; change records in CLI) |
 | Schema registry | Partial (NAME/OID lines) |
 | Daemon listen | Implemented (accept loop, port 0 for tests) |
-| LDAPv3 BER codec | Implemented (bind/search/unbind) |
+| LDAPv3 BER codec | Implemented (bind/search/unbind/add/modify/delete/modrdn) |
 | Simple bind | Implemented (anonymous, root DN, `userPassword`) |
 | Search filters | Implemented (`equality`, `and`/`or`/`not`, `present`) |
 | `ldapsearch` | Implemented |
-| Add / modify / delete | Stub (result: unwillingToPerform) |
+| Add / modify / delete / modrdn | Implemented (root DN bind) |
 | SASL | Stub |
 | LDAPS / StartTLS | Stub |
 | CLI help/version | Implemented |
-| `ldapadd` / `ldapmodify` / `ldapdelete` / `ldappasswd` | Stub (exit 2) |
+| `ldapadd` / `ldapmodify` / `ldapdelete` | Implemented |
+| `ldappasswd` | Stub (exit 2) |
 | Kerberos KDC | Out of scope |

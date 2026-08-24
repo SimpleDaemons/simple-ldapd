@@ -10,7 +10,7 @@ Git tags and GitHub Releases use the `vMAJOR.MINOR.PATCH` form and point at the 
 |---------|-----------|---------------|--------|
 | **0.1.0** | 1 — Skeleton | Build, packaging, CLI stubs, schema/config placeholders | Released (`v0.1.0`) |
 | **0.2.0** | 2 — BER + bind/search | Live LDAPv3 simple bind and search, `ldapsearch` | Released (`v0.2.0`) |
-| **0.3.0** | 3 — Write ops + LDIF | Add / modify / delete / modrdn, LDIF persist, write CLI | In progress |
+| **0.3.0** | 3 — Write ops + LDIF | Add / modify / delete / modrdn, LDIF persist, write CLI | Released (`v0.3.0`) |
 | **0.4.0** | 4 — TLS | LDAPS and StartTLS | Planned |
 | **0.5.0** | 5 — Schemas | Enforce core/cosine/inetOrgPerson/posix/AD-compat | Planned |
 | **0.6.0** | 6 — SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI hook | Planned |

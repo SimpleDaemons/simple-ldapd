@@ -16,13 +16,13 @@
 - Anonymous and root-DN binds for labs
 - `ldapsearch` talking to a live server
 
-## Milestone 3 — Write ops + LDIF — v0.3.0 (current)
+## Milestone 3 — Write ops + LDIF — v0.3.0
 
 - Add / modify / delete / modrdn
 - LDIF import/export used as the default file backend
 - `ldapadd` / `ldapmodify` / `ldapdelete` talking to a live server
 
-## Milestone 4 — TLS — v0.4.0
+## Milestone 4 — TLS — v0.4.0 (current)
 
 - LDAPS (636) and StartTLS
 - Certificate and CA configuration
