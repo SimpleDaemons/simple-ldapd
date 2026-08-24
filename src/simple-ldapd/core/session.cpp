@@ -9,6 +9,7 @@
 #include "simple-ldapd/core/session.hpp"
 
 #include "simple-ldapd/auth/bind.hpp"
+#include "simple-ldapd/schema/registry.hpp"
 #include "simple-ldapd/security/tls.hpp"
 #include "simple-ldapd/utils/dn.hpp"
 
@@ -47,9 +48,9 @@ bool attributeRequested(const std::vector<std::string> &names,
 }  // namespace
 
 Session::Session(TcpConnection connection, Backend &backend, const LdapConfig &config,
-                 std::atomic<bool> &running, TlsContext *tls)
+                 std::atomic<bool> &running, TlsContext *tls, SchemaRegistry *schema)
     : connection_(std::move(connection)), backend_(backend), config_(config),
-      running_(running), tls_(tls) {}
+      running_(running), tls_(tls), schema_(schema) {}
 
 void Session::serve() {
   while (running_.load()) {
@@ -182,6 +183,13 @@ bool Session::mayWrite() const {
   return bound_ && !bind_dn_.empty() && dnEquals(bind_dn_, config_.root_dn);
 }
 
+ResultCode Session::checkSchema(const DirectoryEntry &entry, std::string &diagnostic) const {
+  if (schema_ == nullptr) {
+    return ResultCode::Success;
+  }
+  return schema_->validateEntry(entry, diagnostic);
+}
+
 LdapMessage Session::handleAdd(const LdapMessage &request) {
   if (!mayWrite()) {
     return makeLdapResult(request.message_id, ProtocolOp::AddResponse,
@@ -200,7 +208,13 @@ LdapMessage Session::handleAdd(const LdapMessage &request) {
     return makeLdapResult(request.message_id, ProtocolOp::AddResponse,
                           ResultCode::NamingViolation, "parent does not exist");
   }
-  if (!backend_.add(toDirectoryEntry(request.add))) {
+  const DirectoryEntry entry = toDirectoryEntry(request.add);
+  std::string diagnostic;
+  const ResultCode schema = checkSchema(entry, diagnostic);
+  if (schema != ResultCode::Success) {
+    return makeLdapResult(request.message_id, ProtocolOp::AddResponse, schema, diagnostic);
+  }
+  if (!backend_.add(entry)) {
     return makeLdapResult(request.message_id, ProtocolOp::AddResponse,
                           ResultCode::OperationsError, "add failed");
   }
@@ -222,6 +236,11 @@ LdapMessage Session::handleModify(const LdapMessage &request) {
   if (applied != ResultCode::Success) {
     return makeLdapResult(request.message_id, ProtocolOp::ModifyResponse, applied,
                           toString(applied));
+  }
+  std::string diagnostic;
+  const ResultCode schema = checkSchema(*entry, diagnostic);
+  if (schema != ResultCode::Success) {
+    return makeLdapResult(request.message_id, ProtocolOp::ModifyResponse, schema, diagnostic);
   }
   if (!backend_.modify(*entry)) {
     return makeLdapResult(request.message_id, ProtocolOp::ModifyResponse,
@@ -298,6 +317,12 @@ LdapMessage Session::handleModifyDn(const LdapMessage &request) {
       return makeLdapResult(request.message_id, ProtocolOp::ModifyDNResponse, added,
                             toString(added));
     }
+  }
+  std::string diagnostic;
+  const ResultCode schema = checkSchema(*entry, diagnostic);
+  if (schema != ResultCode::Success) {
+    return makeLdapResult(request.message_id, ProtocolOp::ModifyDNResponse, schema,
+                          diagnostic);
   }
   if (!backend_.modify(*entry)) {
     return makeLdapResult(request.message_id, ProtocolOp::ModifyDNResponse,

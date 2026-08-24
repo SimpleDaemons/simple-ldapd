@@ -116,7 +116,7 @@ void LdapDaemon::serveConnection(TcpConnection connection, bool ldaps) {
   if (ldaps && !connection.handshakeTls(tls_, true)) {
     return;
   }
-  Session session(std::move(connection), *backend_, config_, running_, &tls_);
+  Session session(std::move(connection), *backend_, config_, running_, &tls_, &schema_);
   session.serve();
 }
 

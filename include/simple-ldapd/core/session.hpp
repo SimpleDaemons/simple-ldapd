@@ -18,11 +18,13 @@
 namespace simple_ldapd {
 
 class TlsContext;
+class SchemaRegistry;
 
 class Session {
 public:
   Session(TcpConnection connection, Backend &backend, const LdapConfig &config,
-          std::atomic<bool> &running, TlsContext *tls = nullptr);
+          std::atomic<bool> &running, TlsContext *tls = nullptr,
+          SchemaRegistry *schema = nullptr);
 
   bool bound() const { return bound_; }
   const std::string &bindDn() const { return bind_dn_; }
@@ -39,12 +41,14 @@ private:
   LdapMessage handleModifyDn(const LdapMessage &request);
   SearchEntryData toSearchEntry(const DirectoryEntry &entry,
                                 const SearchRequestData &request) const;
+  ResultCode checkSchema(const DirectoryEntry &entry, std::string &diagnostic) const;
 
   TcpConnection connection_;
   Backend &backend_;
   const LdapConfig &config_;
   std::atomic<bool> &running_;
   TlsContext *tls_{nullptr};
+  SchemaRegistry *schema_{nullptr};
   bool bound_{false};
   std::string bind_dn_;
 };
