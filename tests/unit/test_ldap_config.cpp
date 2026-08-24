@@ -80,6 +80,20 @@ bool testRequireConfidentialityParse() {
          config.validate();
 }
 
+bool testGssapiKeytabParse() {
+  const std::string path = "test-simple-ldapd-gssapi.conf";
+  std::ofstream out(path);
+  out << "base_dn = dc=example,dc=com\n";
+  out << "krb_realm = EXAMPLE.COM\n";
+  out << "gssapi_service = ldap/localhost\n";
+  out << "gssapi_keytab = missing.keytab\n";
+  out.close();
+  LdapConfig config;
+  return config.loadFromFile(path) && config.krb_realm == "EXAMPLE.COM" &&
+         config.gssapi_service == "ldap/localhost" && config.gssapi_keytab == "missing.keytab" &&
+         !config.validate();
+}
+
 bool testFileLoad() {
   const auto path = writeTempConfig();
   LdapConfig config;
@@ -120,6 +134,7 @@ int main() {
   run("testEphemeralLdapsPortAllowed", testEphemeralLdapsPortAllowed);
   run("testTlsRequiresCertificate", testTlsRequiresCertificate);
   run("testRequireConfidentialityParse", testRequireConfidentialityParse);
+  run("testGssapiKeytabParse", testGssapiKeytabParse);
   run("testFileLoad", testFileLoad);
   run("testFilterParse", testFilterParse);
   run("testResultCodes", testResultCodes);

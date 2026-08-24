@@ -9,6 +9,7 @@
 #include "simple-ldapd/auth/sasl.hpp"
 
 #include "simple-ldapd/auth/bind.hpp"
+#include "simple-ldapd/auth/gssapi.hpp"
 #include "simple-ldapd/utils/dn.hpp"
 #include <algorithm>
 #include <cctype>
@@ -363,9 +364,44 @@ SaslBindResult SaslAuthenticator::bind(Backend &backend, const LdapConfig &confi
     result.bind_dn = *dn;
     return result;
   }
-  case SaslMechanism::Gssapi:
-    return fail(ResultCode::AuthMethodNotSupported,
-                "GSSAPI requires a ticket source (see v0.7.0)");
+  case SaslMechanism::Gssapi: {
+    if (config.gssapi_keytab.empty()) {
+      return fail(ResultCode::AuthMethodNotSupported,
+                  "GSSAPI requires gssapi_keytab (see v0.7.0)");
+    }
+    GssapiKeytab keytab;
+    std::string ticket_error;
+    if (!loadGssapiKeytab(config.gssapi_keytab, keytab, ticket_error)) {
+      return fail(ResultCode::OperationsError, ticket_error);
+    }
+    if (keytab.realm.empty()) {
+      keytab.realm = !config.krb_realm.empty() ? config.krb_realm
+                                               : kerberosRealmFromBase(config.base_dn);
+    }
+    if (keytab.service.empty()) {
+      keytab.service =
+          !config.gssapi_service.empty() ? config.gssapi_service : "ldap/localhost";
+    }
+    if (request.sasl_credentials.empty()) {
+      SaslBindResult result;
+      result.result = ResultCode::SaslBindInProgress;
+      result.server_creds =
+          "realm=\"" + keytab.realm + "\",service=\"" + keytab.service + "\"";
+      return result;
+    }
+    std::string principal;
+    if (!verifyGssapiTicket(keytab, request.sasl_credentials, principal, ticket_error)) {
+      return fail(ResultCode::InvalidCredentials, "invalid credentials");
+    }
+    const auto dn = authenticator.resolveName(principal);
+    if (!dn) {
+      return fail(ResultCode::InvalidCredentials, "invalid credentials");
+    }
+    SaslBindResult result;
+    result.result = ResultCode::Success;
+    result.bind_dn = *dn;
+    return result;
+  }
   case SaslMechanism::Anonymous:
     break;
   }

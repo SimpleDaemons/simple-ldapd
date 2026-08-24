@@ -93,6 +93,12 @@ bool LdapConfig::loadFromFile(const std::string &path) {
       foreground = parseBool(value);
     } else if (key == "require_confidentiality") {
       require_confidentiality = parseBool(value);
+    } else if (key == "krb_realm") {
+      krb_realm = value;
+    } else if (key == "gssapi_keytab") {
+      gssapi_keytab = value;
+    } else if (key == "gssapi_service") {
+      gssapi_service = value;
     }
   }
   return true;
@@ -115,6 +121,12 @@ bool LdapConfig::validateDetailed(std::vector<std::string> &errors) const {
   }
   if (base_dn.empty()) {
     errors.emplace_back("base_dn is required");
+  }
+  if (!gssapi_keytab.empty()) {
+    std::ifstream keytab(gssapi_keytab);
+    if (!keytab) {
+      errors.emplace_back("gssapi_keytab is not readable");
+    }
   }
   return errors.empty();
 }

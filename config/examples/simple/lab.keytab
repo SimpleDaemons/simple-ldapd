@@ -1,0 +1,6 @@
+# simple-ldapd lab keytab (not MIT krb5 binary format)
+# Used to mint and verify SASL GSSAPI tickets without a companion KDC.
+
+realm = EXAMPLE.COM
+service = ldap/localhost
+key = lab-service-secret

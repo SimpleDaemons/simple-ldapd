@@ -40,6 +40,9 @@ public:
   std::string log_level{"info"};
   bool foreground{true};
   bool require_confidentiality{false};
+  std::string krb_realm;
+  std::string gssapi_keytab;
+  std::string gssapi_service;
 };
 
 }  // namespace simple_ldapd
