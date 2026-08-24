@@ -1,7 +1,7 @@
 # Progress report
 
-v0.1.0 stands up a SimpleDaemons-shaped tree so protocol work can land without fighting packaging.
+v0.1.0 can bind and search on the wire against an in-memory tree (optionally seeded from LDIF).
 
-What works today: `--help` / `--version` / `--test-config`, in-memory backend CRUD in process, schema name loading from `.schema` files, and `ctest`.
+What works today: `--help` / `--version` / `--test-config`, TCP listen/accept, simple bind (anonymous, root DN, `userPassword`), search with a filter subset, `ldapsearch`, schema name loading, and `ctest`.
 
-What does not work: no client can bind or search on the wire. CLI tools other than help/version exit 2.
+What does not work: add/modify/delete, LDAPS/StartTLS/SASL, and the remaining CLI write tools (they still exit 2).

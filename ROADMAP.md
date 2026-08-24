@@ -1,6 +1,6 @@
 # simple-ldapd roadmap
 
-## Milestone 1 — Skeleton (current)
+## Milestone 1 — Skeleton
 
 - Cross-platform CMake / GNU Make build
 - Packaging for Linux, macOS, Windows, FreeBSD
@@ -8,12 +8,13 @@
 - Pluggable backend interface (memory + LDIF stubs)
 - Schema file placeholders and AD-compat names
 
-## Milestone 2 — BER + bind/search (memory)
+## Milestone 2 — BER + bind/search (memory) (current)
 
 - RFC 4511 message codec
 - Simple bind against the in-memory tree
 - Search with a useful filter subset (`equality`, `and`/`or`/`not`, `present`)
 - Anonymous and root-DN binds for labs
+- `ldapsearch` talking to a live server
 
 ## Milestone 3 — Write ops + LDIF
 

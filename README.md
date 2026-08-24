@@ -2,7 +2,7 @@
 
 Lightweight LDAPv3 directory daemon for SSO via LDAP bind, with an OpenLDAP-style CLI and Active Directory-friendly schema names.
 
-simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). v0.1.0 is a **buildable skeleton**: configuration, packaging, schema files, and pluggable backends compile and test; the wire protocol is not implemented yet.
+simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). v0.1.0 implements **simple bind and search** over LDAPv3 (memory backend, optional LDIF seed). Write operations, LDAPS, and SASL are still ahead.
 
 ## Goals
 
@@ -22,9 +22,10 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). v0.1.
 
 | Area | State |
 |------|--------|
-| Build, tests, CPack packaging | Skeleton complete |
-| Config, schema registry, memory/LDIF backends | Stubs with unit tests |
-| LDAPv3 BER codec, bind/search/write | Not implemented |
+| Build, tests, CPack packaging | Implemented |
+| Config, schema registry, memory/LDIF backends | Implemented |
+| LDAPv3 BER codec, simple bind, search | Implemented (filter subset) |
+| Add / modify / delete | Not implemented |
 | LDAPS / StartTLS / SASL | Interfaces only |
 
 ## Build
@@ -53,6 +54,8 @@ Platform scripts: `scripts/build-linux.sh`, `scripts/build-macos.sh`, `scripts/b
 
 ## Run
 
+Development binds **3389** so root is not required, seeds `config/examples/simple/example.ldif`, and uses root DN `cn=admin,dc=example,dc=com` / password `secret`. Production templates use **389** / **636**.
+
 ```bash
 ./build/simple-ldapd --help
 ./build/simple-ldapd --version
@@ -60,14 +63,14 @@ Platform scripts: `scripts/build-linux.sh`, `scripts/build-macos.sh`, `scripts/b
 ./build/simple-ldapd --foreground --config config/templates/development.conf
 ```
 
-Development binds **3389** so root is not required. Production templates use **389** / **636**.
-
-Client tools accept OpenLDAP-style flags and currently exit with a "not implemented" status:
+Search the seeded tree (anonymous or simple bind):
 
 ```bash
-./build/ldapsearch -h
 ./build/ldapsearch -H ldap://127.0.0.1:3389 -x -b dc=example,dc=com '(uid=alice)'
+./build/ldapsearch -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -b dc=example,dc=com '(objectClass=*)'
 ```
+
+`ldapadd` / `ldapmodify` / `ldapdelete` / `ldappasswd` still exit with a "not implemented" status.
 
 ## Layout
 

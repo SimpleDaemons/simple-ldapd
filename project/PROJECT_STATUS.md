@@ -1,21 +1,22 @@
 # simple-ldapd project status
 
 **Version:** 0.1.0  
-**Status:** Skeleton / early development  
-**Progress:** ~10% (infrastructure only)  
+**Status:** Early development (bind/search)  
+**Progress:** ~25%  
 **Last updated:** August 2026
 
 ## Complete
 
 - CMake + GNU Make + CPack (Linux, macOS, Windows, FreeBSD)
-- Daemon and OpenLDAP-style CLI binaries that parse flags
-- Config parser, schema registry stub, memory/LDIF backends
-- Unit/integration/security/performance smoke tests
+- Daemon listen/accept loop and OpenLDAP-style `ldapsearch`
+- Config parser (including `root_password` and LDIF seed path)
+- Schema registry stub, memory backend, LDIF import seed
+- LDAPv3 BER codec, simple bind, search filter subset
+- Unit/integration/security/performance tests
 - systemd, launchd, Windows service, Docker, Ansible/Vagrant stubs
 
 ## Not started (product)
 
-- LDAPv3 BER codec and operations
-- Real simple-bind password verification
+- Add / modify / delete / modrdn on the wire
 - SASL mechanisms, LDAPS/StartTLS handshakes
 - Kerberos / AD DC features (explicitly later)
