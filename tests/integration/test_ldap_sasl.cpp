@@ -13,9 +13,12 @@
 #include "simple-ldapd/protocol/filter.hpp"
 #include "simple-ldapd/protocol/message.hpp"
 #include "simple-ldapd/utils/net.hpp"
+#include "simple-ldapd/utils/platform.hpp"
 
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -255,6 +258,137 @@ bool testPlainConfidentiality() {
   return !client && error == "confidentialityRequired";
 }
 
+#ifdef SIMPLE_LDAPD_SSL
+std::string uniqueSuffix() {
+#ifndef SIMPLE_LDAPD_WINDOWS
+  return std::to_string(getpid());
+#else
+  return "win";
+#endif
+}
+
+bool makeCaSignedPair(const std::string &ca_crt, const std::string &ca_key, const std::string &cn,
+                      int serial, std::string &cert_path, std::string &key_path) {
+  const std::string suffix = uniqueSuffix();
+  cert_path = "test-simple-ldapd-" + cn + "-" + suffix + ".crt";
+  key_path = "test-simple-ldapd-" + cn + "-" + suffix + ".key";
+  const std::string csr = "test-simple-ldapd-" + cn + "-" + suffix + ".csr";
+  std::ostringstream command;
+  command << "openssl req -newkey rsa:2048 -nodes -keyout '" << key_path << "' -out '" << csr
+          << "' -subj '/CN=" << cn << "' >/dev/null 2>&1 && openssl x509 -req -in '" << csr
+          << "' -CA '" << ca_crt << "' -CAkey '" << ca_key << "' -set_serial " << serial
+          << " -out '" << cert_path << "' -days 1 >/dev/null 2>&1";
+  return std::system(command.str().c_str()) == 0;
+}
+
+bool makeExternalTlsMaterial(std::string &ca_crt, std::string &server_crt, std::string &server_key,
+                             std::string &client_crt, std::string &client_key) {
+  const std::string suffix = uniqueSuffix();
+  ca_crt = "test-simple-ldapd-ca-" + suffix + ".crt";
+  const std::string ca_key = "test-simple-ldapd-ca-" + suffix + ".key";
+  std::ostringstream ca;
+  ca << "openssl req -x509 -newkey rsa:2048 -nodes -keyout '" << ca_key << "' -out '" << ca_crt
+     << "' -days 1 -subj '/CN=test-ca' >/dev/null 2>&1";
+  if (std::system(ca.str().c_str()) != 0) {
+    return false;
+  }
+  return makeCaSignedPair(ca_crt, ca_key, "127.0.0.1", 1, server_crt, server_key) &&
+         makeCaSignedPair(ca_crt, ca_key, "alice", 2, client_crt, client_key);
+}
+
+LdapConfig externalTlsConfig(const std::string &ca_crt, const std::string &server_crt,
+                             const std::string &server_key) {
+  auto config = testConfig();
+  config.enable_ldaps = true;
+  config.ldaps_port = 0;
+  config.tls_cert_file = server_crt;
+  config.tls_key_file = server_key;
+  config.tls_ca_file = ca_crt;
+  return config;
+}
+
+bool testExternalTlsWithoutClientCert() {
+  std::string ca_crt;
+  std::string server_crt;
+  std::string server_key;
+  std::string client_crt;
+  std::string client_key;
+  if (!makeExternalTlsMaterial(ca_crt, server_crt, server_key, client_crt, client_key)) {
+    return false;
+  }
+  LdapDaemon daemon(externalTlsConfig(ca_crt, server_crt, server_key));
+  if (!seed(daemon) || !daemon.start() || daemon.boundLdapsPort() == 0) {
+    return false;
+  }
+  cli::ClientOptions options;
+  options.host = "127.0.0.1";
+  options.port = daemon.boundLdapsPort();
+  options.ldaps = true;
+  options.ca_file = ca_crt;
+  options.sasl_mechanism = "EXTERNAL";
+  options.sasl_authcid = "alice";
+  std::string error;
+  auto client = cli::LdapClient::openBound(options, error);
+  daemon.stop();
+  return !client && error == "invalidCredentials";
+}
+
+bool testExternalWithClientCert() {
+  std::string ca_crt;
+  std::string server_crt;
+  std::string server_key;
+  std::string client_crt;
+  std::string client_key;
+  if (!makeExternalTlsMaterial(ca_crt, server_crt, server_key, client_crt, client_key)) {
+    return false;
+  }
+  LdapDaemon daemon(externalTlsConfig(ca_crt, server_crt, server_key));
+  if (!seed(daemon) || !daemon.start() || daemon.boundLdapsPort() == 0) {
+    return false;
+  }
+  cli::ClientOptions options;
+  options.host = "127.0.0.1";
+  options.port = daemon.boundLdapsPort();
+  options.ldaps = true;
+  options.ca_file = ca_crt;
+  options.tls_cert_file = client_crt;
+  options.tls_key_file = client_key;
+  options.sasl_mechanism = "EXTERNAL";
+  std::string error;
+  auto client = cli::LdapClient::openBound(options, error);
+  daemon.stop();
+  return static_cast<bool>(client) && error.empty();
+}
+
+bool testExternalMismatchedAuthzid() {
+  std::string ca_crt;
+  std::string server_crt;
+  std::string server_key;
+  std::string client_crt;
+  std::string client_key;
+  if (!makeExternalTlsMaterial(ca_crt, server_crt, server_key, client_crt, client_key)) {
+    return false;
+  }
+  LdapDaemon daemon(externalTlsConfig(ca_crt, server_crt, server_key));
+  if (!seed(daemon) || !daemon.start() || daemon.boundLdapsPort() == 0) {
+    return false;
+  }
+  cli::ClientOptions options;
+  options.host = "127.0.0.1";
+  options.port = daemon.boundLdapsPort();
+  options.ldaps = true;
+  options.ca_file = ca_crt;
+  options.tls_cert_file = client_crt;
+  options.tls_key_file = client_key;
+  options.sasl_mechanism = "EXTERNAL";
+  options.sasl_authcid = "mallory";
+  std::string error;
+  auto client = cli::LdapClient::openBound(options, error);
+  daemon.stop();
+  return !client && error == "invalidCredentials";
+}
+#endif
+
 }  // namespace
 
 int main() {
@@ -277,6 +411,11 @@ int main() {
   run("testGssapiUnknownPrincipal", testGssapiUnknownPrincipal);
   run("testExternalRequiresTls", testExternalRequiresTls);
   run("testPlainConfidentiality", testPlainConfidentiality);
+#ifdef SIMPLE_LDAPD_SSL
+  run("testExternalTlsWithoutClientCert", testExternalTlsWithoutClientCert);
+  run("testExternalWithClientCert", testExternalWithClientCert);
+  run("testExternalMismatchedAuthzid", testExternalMismatchedAuthzid);
+#endif
   std::cout << "SASL tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }

@@ -9,6 +9,7 @@
 #include "simple-ldapd/config/config.hpp"
 #include "simple-ldapd/protocol/filter.hpp"
 #include "simple-ldapd/protocol/result_codes.hpp"
+#include "simple-ldapd/utils/logger.hpp"
 #include "simple-ldapd/version.hpp"
 
 #include <cassert>
@@ -145,6 +146,39 @@ bool testSqliteValidatesWithFile() {
 #endif
 }
 
+bool testLogLevelParseAndApply() {
+  const std::string path = "test-simple-ldapd-log.conf";
+  std::ofstream out(path);
+  out << "base_dn = dc=example,dc=com\n";
+  out << "log_level = warning\n";
+  out << "bind_rate_limit = 30\n";
+  out << "tls_verify_client = false\n";
+  out.close();
+  LdapConfig config;
+  LogLevel level = LogLevel::Info;
+  if (!config.loadFromFile(path) || config.log_level != "warning" ||
+      config.bind_rate_limit != 30 || !parseLogLevel(config.log_level, level) ||
+      level != LogLevel::Warning || !config.validate()) {
+    return false;
+  }
+  Logger::instance().setLevel(level);
+  const bool applied = Logger::instance().level() == LogLevel::Warning;
+  Logger::instance().setLevel(LogLevel::Info);
+  return applied;
+}
+
+bool testInvalidLogLevel() {
+  LdapConfig config;
+  config.log_level = "verbose";
+  return !config.validate();
+}
+
+bool testTlsVerifyClientRequiresCa() {
+  LdapConfig config;
+  config.tls_verify_client = true;
+  return !config.validate();
+}
+
 }  // namespace
 
 int main() {
@@ -172,6 +206,9 @@ int main() {
   run("testSqliteRequiresFile", testSqliteRequiresFile);
   run("testSqliteConfigParse", testSqliteConfigParse);
   run("testSqliteValidatesWithFile", testSqliteValidatesWithFile);
+  run("testLogLevelParseAndApply", testLogLevelParseAndApply);
+  run("testInvalidLogLevel", testInvalidLogLevel);
+  run("testTlsVerifyClientRequiresCa", testTlsVerifyClientRequiresCa);
   std::cout << "Config tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }

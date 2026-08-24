@@ -313,6 +313,31 @@ bool testDisabledAccountBind() {
   return bind && bind->result == ResultCode::InvalidCredentials;
 }
 
+bool testBindRateLimit() {
+  LdapConfig config;
+  config.listen_address = "127.0.0.1";
+  config.ldap_port = 0;
+  config.bind_rate_limit = 1;
+  LdapDaemon daemon(config);
+  if (!seed(daemon) || !daemon.start()) {
+    return false;
+  }
+  auto first = TcpConnection::connectTo("127.0.0.1", daemon.boundPort());
+  if (!first || !sendMessage(*first, makeBindRequest(1, "", ""))) {
+    daemon.stop();
+    return false;
+  }
+  auto ok = recvMessage(*first);
+  auto second = TcpConnection::connectTo("127.0.0.1", daemon.boundPort());
+  if (!second || !sendMessage(*second, makeBindRequest(1, "", ""))) {
+    daemon.stop();
+    return false;
+  }
+  auto busy = recvMessage(*second);
+  daemon.stop();
+  return ok && ok->result == ResultCode::Success && busy && busy->result == ResultCode::Busy;
+}
+
 }  // namespace
 
 int main() {
@@ -334,6 +359,7 @@ int main() {
   run("testAnonymousDeniedByAcl", testAnonymousDeniedByAcl);
   run("testHashedPasswordBind", testHashedPasswordBind);
   run("testDisabledAccountBind", testDisabledAccountBind);
+  run("testBindRateLimit", testBindRateLimit);
   std::cout << "Bind/search tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }
