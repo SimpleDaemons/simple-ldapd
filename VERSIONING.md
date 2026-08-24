@@ -1,6 +1,6 @@
 # Versioning
 
-simple-ldapd uses [Semantic Versioning](https://semver.org/) on the **0.x** series. Each completed [roadmap](ROADMAP.md) milestone is a **minor** bump. Fixes and docs inside a milestone are **patch** bumps. 1.0.0 is reserved until remaining LDAP ops and hardening land on top of bind, search, writes, TLS, concurrent sessions, ACLs, and hashed passwords (see [ROADMAP.md](ROADMAP.md)).
+simple-ldapd uses [Semantic Versioning](https://semver.org/) on the **0.x** series. Each completed [roadmap](ROADMAP.md) milestone is a **minor** bump. Fixes and docs inside a milestone are **patch** bumps. 1.0.0 is reserved until a durable backend and hardening land on top of bind, search, writes, TLS, concurrent sessions, ACLs, hashed passwords, and remaining LDAP ops (see [ROADMAP.md](ROADMAP.md)).
 
 Git tags and GitHub Releases use the `vMAJOR.MINOR.PATCH` form and point at the commit that finished that version.
 
@@ -20,10 +20,10 @@ Git tags and GitHub Releases use the `vMAJOR.MINOR.PATCH` form and point at the 
 | **0.10.0** | 10 — Concurrent connections | More than one client at a time | Released (`v0.10.0`) |
 | **0.11.0** | 11 — Access control | Subtree search/write ACLs | Released (`v0.11.0`) |
 | **0.12.0** | 12 — Password storage | Hashed `userPassword`, disabled accounts | Released (`v0.12.0`) |
-| **0.13.0** | 13 — Remaining LDAP ops | Compare, Who Am I, paged results | Planned |
+| **0.13.0** | 13 — Remaining LDAP ops | Compare, Who Am I, paged results | Released (`v0.13.0`) |
 | **0.14.0** | 14 — SQLite backend | Durable store without full-LDIF rewrite | Planned |
 | **0.15.0** | 15 — Hardening | log level, rate limit, EXTERNAL certs | Planned |
-| **1.0.0** | Production-usable SSO directory | After 10–12 (and TLS already shipped) | Reserved |
+| **1.0.0** | Production-usable SSO directory | After 14–15 (durable store and hardening) | Reserved |
 
 ## Rules
 

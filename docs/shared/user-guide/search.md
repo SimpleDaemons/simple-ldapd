@@ -25,7 +25,8 @@ Anonymous-readable:
 - `namingContexts` — `base_dn`
 - `supportedLDAPVersion` — `3`
 - `vendorName` / `vendorVersion`
-- `supportedExtension` — Password Modify (`1.3.6.1.4.1.4203.1.11.1`); StartTLS when enabled (`1.3.6.1.4.1.1466.20037`)
+- `supportedExtension` — Password Modify (`1.3.6.1.4.1.4203.1.11.1`), Who Am I (`1.3.6.1.4.1.4203.1.11.3`); StartTLS when enabled (`1.3.6.1.4.1.1466.20037`)
+- `supportedControl` — paged results (`1.2.840.113556.1.4.319`)
 - `supportedSASLMechanisms` — advertised SASL names
 
 ## Filters
@@ -55,10 +56,11 @@ Not implemented: extensible match, approximate match (`~=`), greater/less orderi
 - Named attributes: only those types
 - `*` — all user attributes (same `userPassword` rule)
 - `1.1` — no attributes (DN only)
+- `-A` / `typesOnly` — attribute names with empty values
 
-## Size limit
+## Size, time, and pages
 
-If the client sends a size limit greater than zero, extra matches produce `sizeLimitExceeded` after that many entries.
+If the client sends a size limit greater than zero, extra matches produce `sizeLimitExceeded` after that many entries. A time limit greater than zero is wall-clock seconds for that search (`timeLimitExceeded`). RFC 2696 paged results (`-E pr=N`) return a cookie on `SearchResultDone` until the last page.
 
 ## Examples
 

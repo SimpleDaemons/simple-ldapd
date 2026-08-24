@@ -14,14 +14,18 @@ flowchart TD
   Decode -->|Search| Search[Search entries then SearchResultDone]
   Decode -->|Bind| Bind[BindResponse]
   Decode -->|Add Modify Delete ModDN| Write[Result; root DN or ACL write]
+  Decode -->|Compare| Cmp[CompareTrue or CompareFalse]
   Decode -->|StartTLS| STLS[ExtendedResponse then handshake]
   Decode -->|Password Modify| Pw[RFC 3062]
+  Decode -->|Who Am I| Who[authzid dn: or empty]
   Decode -->|other| Err[ProtocolError or UnwillingToPerform]
   Search --> Read
   Bind --> Read
   Write --> Read
+  Cmp --> Read
   STLS --> Read
   Pw --> Read
+  Who --> Read
   Err --> Read
 ```
 

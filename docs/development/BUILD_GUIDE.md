@@ -33,7 +33,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-Binaries land in `build/`: `simple-ldapd`, `ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldappasswd`.
+Binaries land in `build/`: `simple-ldapd`, `ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldappasswd`, `ldapcompare`, `ldapwhoami`.
 
 ### Options
 

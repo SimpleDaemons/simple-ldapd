@@ -1,6 +1,6 @@
 # Production performance
 
-v0.12.0 serves overlapping LDAP clients on one host and applies `acl` search/write rules. It is still sized for labs and small SSO bind/search loads, not a multi-tenant directory farm.
+v0.13.0 serves overlapping LDAP clients on one host and applies `acl` search/write rules. It is still sized for labs and small SSO bind/search loads, not a multi-tenant directory farm.
 
 ## Accept loop
 

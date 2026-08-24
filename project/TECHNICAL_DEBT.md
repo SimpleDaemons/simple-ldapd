@@ -2,8 +2,6 @@
 
 Tracked as [roadmap](../ROADMAP.md) milestones where they are product work.
 
-- No Compare, Who Am I, or paged results — milestone 13
-- Search `time_limit` is decoded and ignored — milestone 13
 - LDIF persist rewrites the whole file — milestone 14
 - `log_level` is parsed and not applied — milestone 15
 - `RateLimiter` is a stub — milestone 15

@@ -1,6 +1,6 @@
 # Production
 
-v0.12.0 can bind, search, write, encrypt, enforce schema, apply ACLs, hash passwords, and change passwords, and it serves more than one client at a time. It is still early: lab GSSAPI rather than MIT Kerberos, and no `stop`/`reload` commands.
+v0.13.0 can bind, search, write, encrypt, enforce schema, apply ACLs, hash passwords, compare, page results, and change passwords, and it serves more than one client at a time. It is still early: lab GSSAPI rather than MIT Kerberos, and no `stop`/`reload` commands.
 
 Use this section when exposing 389/636 on a host, not for the 3389 lab template.
 

@@ -42,6 +42,15 @@ Lab host: `127.0.0.1:3389`, template `config/templates/development.conf`. Seeded
   -D uid=alice,ou=People,dc=example,dc=com -w alice-new -s alice-newer
 ```
 
+## Compare and Who Am I
+
+```bash
+./build/ldapcompare -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret \
+  uid=alice,ou=People,dc=example,dc=com uid:alice
+./build/ldapwhoami -H ldap://127.0.0.1:3389 -x \
+  -D uid=alice,ou=People,dc=example,dc=com -w alice-secret
+```
+
 ## TLS (after certs and `enable_ldaps` / `enable_starttls`)
 
 ```bash

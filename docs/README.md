@@ -1,6 +1,6 @@
 # simple-ldapd documentation
 
-Documentation for **simple-ldapd v0.12.0**, a lightweight LDAPv3 directory daemon for SSO via LDAP bind. OpenLDAP-style CLI tools and Active Directory–friendly schema names are included. This is not a domain controller and not a Kerberos KDC.
+Documentation for **simple-ldapd v0.13.0**, a lightweight LDAPv3 directory daemon for SSO via LDAP bind. OpenLDAP-style CLI tools and Active Directory–friendly schema names are included. This is not a domain controller and not a Kerberos KDC.
 
 License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 
@@ -25,7 +25,7 @@ License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 | Troubleshooting | [Troubleshooting](shared/troubleshooting/README.md) |
 | Building and tests | [Development](development/README.md) |
 
-## What works in v0.12.0
+## What works in v0.13.0
 
 - LDAPv3 bind (anonymous, simple, SASL PLAIN / DIGEST-MD5 / EXTERNAL / lab GSSAPI)
 - Search with equality, present, substring, and/or/not filters
@@ -34,6 +34,7 @@ License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 - Repeatable `acl` search/write rules (`anonymous`, `users`, `dn:`, `group:`)
 - RFC 3062 password modify (`ldappasswd`); new passwords stored as `{SSHA}`
 - `{SSHA}` / `{SHA}` / `{CLEARTEXT}` `userPassword`; `userAccountControl` disable bit
+- Compare, Who Am I, RFC 2696 paged results, `typesOnly`, search time limit
 - LDAPS and StartTLS
 - Schema enforcement on writes
 - In-memory directory with optional LDIF seed and persist (`ldif_file`)

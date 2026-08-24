@@ -94,7 +94,7 @@
 
 ## Toward 1.0.0
 
-Milestones 10–12 (concurrent sessions, ACLs, hashed passwords) are released. **1.0.0** still waits on remaining LDAP ops and hardening (milestones 13–15) so a small SSO deployment is not missing Compare / Who Am I / paged results or bind rate limits.
+Milestones 10–13 (concurrent sessions, ACLs, hashed passwords, remaining LDAP ops) are released. **1.0.0** still waits on a durable backend and hardening (milestones 14–15) so a small SSO deployment is not rewriting LDIF on every write or missing bind rate limits.
 
 ## Later (not scheduled)
 

@@ -6,7 +6,7 @@ simple-ldapd is a single-process LDAPv3 server. One accept thread polls LDAP and
 flowchart TB
   subgraph clients [Clients]
     Apps[Applications and SSO]
-    CLI["ldapsearch / ldapadd / ldapmodify / ldapdelete / ldappasswd"]
+    CLI["ldapsearch / ldapadd / ldapmodify / ldapdelete / ldappasswd / ldapcompare / ldapwhoami"]
   end
 
   subgraph net [Network]
@@ -50,7 +50,7 @@ flowchart TB
 |-------|------|
 | `LdapDaemon` | Load config and schemas, start listeners, run `acceptLoop` |
 | `TcpListener` | Bind LDAP and optional LDAPS; `ldap_port = 0` uses an ephemeral port in tests |
-| `Session` | Read PDUs, dispatch bind/search/write/extended ops, apply ACLs, hide `userPassword` unless bound as root |
+| `Session` | Read PDUs, dispatch bind/search/write/compare/extended ops, apply ACLs, hide `userPassword` unless bound as root |
 | BER codec | Encode/decode messages and search filters |
 | `SimpleBindAuthenticator` | Anonymous, root DN + `root_password`, hashed or cleartext `userPassword`; resolve uid / sAMAccountName; honor `userAccountControl` |
 | `SaslAuthenticator` | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |

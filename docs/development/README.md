@@ -12,7 +12,7 @@ simple-ldapd is a C++17 library plus several binaries. Public headers live under
 ```
 include/simple-ldapd/   public headers
 src/simple-ldapd/       library (core, protocol, auth, backend, schema, security)
-main/                   simple-ldapd, ldapsearch, ldapadd, ldapmodify, ldapdelete, ldappasswd
+main/                   simple-ldapd, ldapsearch, ldapadd, ldapmodify, ldapdelete, ldappasswd, ldapcompare, ldapwhoami
 tests/unit/             BER, filters, bind, config, backend, ACLs, passwords
 tests/integration/      live TCP bind/search/write/TLS/SASL/password
 schemas/                OpenLDAP-style schema packs

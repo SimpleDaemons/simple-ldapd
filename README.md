@@ -2,13 +2,13 @@
 
 Lightweight LDAPv3 directory daemon for SSO via LDAP bind, with an OpenLDAP-style CLI and Active Directory-friendly schema names.
 
-simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.12.0** implements simple bind, SASL, search, concurrent sessions, ACLs, hashed `userPassword`, directory writes, TLS, schema enforcement, GSSAPI lab tickets, and `ldappasswd`. Versions follow [VERSIONING.md](VERSIONING.md).
+simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.13.0** implements simple bind, SASL, search, concurrent sessions, ACLs, hashed `userPassword`, Compare, Who Am I, paged results, directory writes, TLS, schema enforcement, GSSAPI lab tickets, and `ldappasswd`. Versions follow [VERSIONING.md](VERSIONING.md).
 
 ## Goals
 
 - Authenticate applications, services, and devices over LDAPv3 simple bind (and later SASL)
 - Stay standards-based (RFC 4511 operations, RFC 4519/2798/2307 schemas)
-- Offer OpenLDAP-compatible CLI tools: `ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldappasswd`
+- Offer OpenLDAP-compatible CLI tools: `ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldappasswd`, `ldapcompare`, `ldapwhoami`
 - Ship AD-like attributes (`sAMAccountName`, `memberOf`, `userAccountControl`) so Windows and Unix clients can search/bind against a familiar tree
 - Cross-compile and package for Linux (DEB/RPM), macOS (pkg/dmg), Windows (MSI/NSIS/ZIP), and FreeBSD
 
@@ -31,6 +31,7 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 | SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |
 | Access control | Implemented (`acl` lines; root DN is superuser) |
 | `ldappasswd` | Implemented (RFC 3062; stores `{SSHA}`) |
+| Compare / Who Am I / paged results | Implemented (`ldapcompare`, `ldapwhoami`, `-E pr=N`) |
 | Password storage | `{SSHA}` / `{SHA}` / `{CLEARTEXT}`; `userAccountControl` disable bit |
 
 ## Documentation
@@ -88,6 +89,9 @@ Search the seeded tree (anonymous or simple bind):
 ./build/ldapdelete -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret 'uid=bob,ou=People,dc=example,dc=com'
 ./build/ldappasswd -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret -s alice-new uid=alice,ou=People,dc=example,dc=com
 ./build/ldappasswd -H ldap://127.0.0.1:3389 -x -D uid=alice,ou=People,dc=example,dc=com -w alice-secret -s alice-newer
+./build/ldapcompare -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret \
+  uid=alice,ou=People,dc=example,dc=com uid:alice
+./build/ldapwhoami -H ldap://127.0.0.1:3389 -x -D uid=alice,ou=People,dc=example,dc=com -w alice-secret
 ```
 
 Writes (add/modify/delete/modrdn) require the root DN unless an `acl` line grants `write` on that subtree. `ldappasswd` can also be used by a bound user to change their own `userPassword`; new values are stored as `{SSHA}`. Seed LDIF plaintext and `{CLEARTEXT}` still bind. `userAccountControl` with bit `0x0002` (typical `514`) disables bind. Simple bind accepts the entry DN, a uid / sAMAccountName, or a DN whose RDN matches that account (so `uid=alice,dc=example,dc=com` still finds `uid=alice,ou=People,dc=example,dc=com`). LDAPS and StartTLS need `enable_ldaps` / `enable_starttls` plus `tls_cert_file` and `tls_key_file`; the high-security template also sets `require_confidentiality` so password binds are refused on cleartext, and `acl = users search *` so anonymous cannot read the tree. SASL GSSAPI needs `gssapi_keytab` (a text lab keytab, not MIT krb5 binary format). SASL DIGEST-MD5 needs a recoverable password, not `{SSHA}`.

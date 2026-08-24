@@ -10,16 +10,17 @@
 | LDIF import/export | Implemented (seed + persist; change records in CLI) |
 | Schema registry | Implemented (OpenLDAP attributetype/objectclass) |
 | Daemon listen | Implemented (concurrent session threads, port 0 for tests) |
-| LDAPv3 BER codec | Implemented (bind/search/unbind/add/modify/delete/modrdn) |
+| LDAPv3 BER codec | Implemented (bind/search/unbind/add/modify/delete/modrdn/compare) |
 | Simple bind | Implemented (anonymous, root DN, `{SSHA}` / `{CLEARTEXT}` `userPassword`) |
 | Search filters | Implemented (`equality`, `and`/`or`/`not`, `present`, substring) |
-| `ldapsearch` | Implemented |
+| `ldapsearch` | Implemented (paged `-E pr=N`, typesOnly `-A`, `-l`/`-z`) |
 | Add / modify / delete / modrdn | Implemented (root DN or `acl` write) |
 | SASL | PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI lab tickets |
 | LDAPS / StartTLS | Implemented |
 | Access control | Implemented (`acl` WHO/PERM/subtree) |
 | CLI help/version | Implemented |
 | `ldapadd` / `ldapmodify` / `ldapdelete` | Implemented |
+| `ldapcompare` / `ldapwhoami` | Implemented |
 | `ldappasswd` | Implemented (RFC 3062; stores `{SSHA}`) |
 | Password storage | `{SSHA}` / `{SHA}` / `{CLEARTEXT}`; `userAccountControl` disable bit |
 | Kerberos KDC | Out of scope |

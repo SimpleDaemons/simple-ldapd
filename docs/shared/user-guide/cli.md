@@ -33,7 +33,7 @@ SIGINT and SIGTERM stop the accept loop. There is no pidfile or `simple-ldapd st
 
 ## Client tools
 
-`ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, and `ldappasswd` share OpenLDAP-compatible flags.
+`ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldappasswd`, `ldapcompare`, and `ldapwhoami` share OpenLDAP-compatible flags.
 
 | Flag | Meaning |
 |------|---------|
@@ -51,6 +51,10 @@ SIGINT and SIGTERM stop the accept loop. There is no pidfile or `simple-ldapd st
 | `-W` | Prompt for bind password |
 | `-b BASE_DN` | Search base |
 | `-s SCOPE` | `base`, `one`, or `sub` (default `sub`; not used by `ldappasswd`) |
+| `-A` | `ldapsearch`: attribute names only |
+| `-l SECONDS` | `ldapsearch`: time limit (`0` unlimited) |
+| `-z COUNT` | `ldapsearch`: size limit (`0` unlimited) |
+| `-E pr=N` | `ldapsearch`: RFC 2696 paged results |
 | `-a` | `ldapmodify`: treat records as add; `ldappasswd`: old password |
 | `-f FILE` | LDIF input |
 | `--help` | Usage |
@@ -66,7 +70,16 @@ Default URI is `ldap://127.0.0.1:389`. Lab daemons listen on **3389**, so pass `
 ldapsearch -H ldap://127.0.0.1:3389 -x -b dc=example,dc=com '(uid=alice)'
 ldapsearch -H ldap://127.0.0.1:3389 -x -b dc=example,dc=com '(cn=Ali*)' cn mail
 ldapsearch -H ldap://127.0.0.1:3389 -x -b '' -s base '(objectClass=*)'
+ldapsearch -H ldap://127.0.0.1:3389 -x -b dc=example,dc=com -E pr=100 '(objectClass=*)'
 ldapsearch -H ldap://127.0.0.1:3389 -Y PLAIN -U alice -w alice-secret -b dc=example,dc=com '(uid=alice)'
+```
+
+### ldapcompare / ldapwhoami
+
+```bash
+ldapcompare -H ldap://127.0.0.1:3389 -x -D cn=admin,dc=example,dc=com -w secret \
+  uid=alice,ou=People,dc=example,dc=com uid:alice
+ldapwhoami -H ldap://127.0.0.1:3389 -x -D uid=alice,ou=People,dc=example,dc=com -w alice-secret
 ```
 
 ### ldapadd / ldapmodify / ldapdelete

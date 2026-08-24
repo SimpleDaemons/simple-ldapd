@@ -4,6 +4,17 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.13.0] — 2026-08-24
+
+Milestone 13 — Remaining LDAP ops.
+
+### Added
+
+- Compare (`ldapcompare DN attr:value`); `userPassword` compare verifies `{SSHA}`
+- RFC 4532 Who Am I (`ldapwhoami`); Root DSE advertises `1.3.6.1.4.1.4203.1.11.3`
+- RFC 2696 paged results (`ldapsearch -E pr=N`)
+- Search `typesOnly` (`-A`) and time limit (`-l`); size limit already existed (`-z`)
+
 ## [0.12.0] — 2026-08-24
 
 Milestone 12 — Password storage.
