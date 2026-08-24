@@ -70,18 +70,30 @@ bool testFilterMatch() {
   const auto combined = SearchFilter::parse("(&(objectClass=inetOrgPerson)(uid=alice))");
   const auto missing = SearchFilter::parse("(uid=bob)");
   const auto negated = SearchFilter::parse("(!(uid=bob))");
+  const auto initial = SearchFilter::parse("(cn=ALI*)");
+  const auto any = SearchFilter::parse("(cn=*Exam*)");
+  const auto final_part = SearchFilter::parse("(cn=*example)");
+  const auto both = SearchFilter::parse("(cn=A*e)");
+  const auto miss = SearchFilter::parse("(cn=bob*)");
   const auto bad = SearchFilter::parse("uid=alice");
   return present.valid() && present.matches(alice) && equality.matches(alice) &&
          combined.matches(alice) && !missing.matches(alice) && negated.matches(alice) &&
-         !bad.valid();
+         initial.valid() && initial.root().type == FilterType::Substring &&
+         initial.matches(alice) && any.matches(alice) && final_part.matches(alice) &&
+         both.matches(alice) && !miss.matches(alice) && !bad.valid();
 }
 
-bool testFilterBerUnknownFails() {
-  BerWriter writer;
-  writer.writeOctetString(0xA4, "unused");  // substring filter, not implemented
-  BerReader reader(writer.bytes());
-  SearchFilter filter;
-  return !SearchFilter::decodeBer(reader, filter);
+bool testSubstringFilterRoundtrip() {
+  const auto parsed = SearchFilter::parse("(cn=Ali*Ex*ple)");
+  const auto wire = parsed.encodeBer();
+  BerReader reader(wire);
+  SearchFilter decoded;
+  return parsed.valid() && parsed.root().initial == "Ali" && parsed.root().any.size() == 1 &&
+         parsed.root().any.front() == "Ex" && parsed.root().final == "ple" &&
+         SearchFilter::decodeBer(reader, decoded) && decoded.root().type == FilterType::Substring &&
+         decoded.root().attribute == "cn" && decoded.root().initial == "Ali" &&
+         decoded.root().any.size() == 1 && decoded.root().any.front() == "Ex" &&
+         decoded.root().final == "ple";
 }
 
 bool testDnHelpers() {
@@ -214,7 +226,7 @@ int main() {
   run("testBindMessageRoundtrip", testBindMessageRoundtrip);
   run("testSearchMessageRoundtrip", testSearchMessageRoundtrip);
   run("testFilterMatch", testFilterMatch);
-  run("testFilterBerUnknownFails", testFilterBerUnknownFails);
+  run("testSubstringFilterRoundtrip", testSubstringFilterRoundtrip);
   run("testDnHelpers", testDnHelpers);
   run("testSimpleBind", testSimpleBind);
   run("testAddModifyMessages", testAddModifyMessages);

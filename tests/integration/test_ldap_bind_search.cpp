@@ -152,6 +152,37 @@ bool testRootSeesPasswordAndUserBind() {
          bad_bind->result == ResultCode::InvalidCredentials;
 }
 
+bool testSubstringSearch() {
+  LdapConfig config;
+  config.listen_address = "127.0.0.1";
+  config.ldap_port = 0;
+  LdapDaemon daemon(config);
+  if (!seed(daemon) || !daemon.start()) {
+    return false;
+  }
+  auto connection = TcpConnection::connectTo("127.0.0.1", daemon.boundPort());
+  if (!connection || !sendMessage(*connection, makeBindRequest(1, "", ""))) {
+    daemon.stop();
+    return false;
+  }
+  auto bind = recvMessage(*connection);
+  SearchRequestData search;
+  search.base_dn = "dc=example,dc=com";
+  search.filter = SearchFilter::parse("(cn=Ali*)");
+  if (!bind || bind->result != ResultCode::Success ||
+      !sendMessage(*connection, makeSearchRequest(2, search))) {
+    daemon.stop();
+    return false;
+  }
+  auto entry = recvMessage(*connection);
+  auto done = recvMessage(*connection);
+  sendMessage(*connection, makeUnbindRequest(3));
+  daemon.stop();
+  return entry && entry->op == ProtocolOp::SearchResultEntry &&
+         entry->entry.dn == "uid=alice,dc=example,dc=com" && done &&
+         done->op == ProtocolOp::SearchResultDone && done->result == ResultCode::Success;
+}
+
 }  // namespace
 
 int main() {
@@ -168,6 +199,7 @@ int main() {
   };
   run("testAnonymousSearch", testAnonymousSearch);
   run("testRootSeesPasswordAndUserBind", testRootSeesPasswordAndUserBind);
+  run("testSubstringSearch", testSubstringSearch);
   std::cout << "Bind/search tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }
