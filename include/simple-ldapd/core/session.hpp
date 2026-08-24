@@ -19,12 +19,13 @@ namespace simple_ldapd {
 
 class TlsContext;
 class SchemaRegistry;
+class SaslAuthenticator;
 
 class Session {
 public:
   Session(TcpConnection connection, Backend &backend, const LdapConfig &config,
           std::atomic<bool> &running, TlsContext *tls = nullptr,
-          SchemaRegistry *schema = nullptr);
+          SchemaRegistry *schema = nullptr, SaslAuthenticator *sasl = nullptr);
 
   bool bound() const { return bound_; }
   const std::string &bindDn() const { return bind_dn_; }
@@ -42,6 +43,7 @@ private:
   SearchEntryData toSearchEntry(const DirectoryEntry &entry,
                                 const SearchRequestData &request) const;
   ResultCode checkSchema(const DirectoryEntry &entry, std::string &diagnostic) const;
+  DirectoryEntry rootDse() const;
 
   TcpConnection connection_;
   Backend &backend_;
@@ -49,8 +51,10 @@ private:
   std::atomic<bool> &running_;
   TlsContext *tls_{nullptr};
   SchemaRegistry *schema_{nullptr};
+  SaslAuthenticator *sasl_{nullptr};
   bool bound_{false};
   std::string bind_dn_;
+  std::string sasl_digest_nonce_;
 };
 
 }  // namespace simple_ldapd

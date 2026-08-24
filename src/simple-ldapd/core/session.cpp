@@ -9,9 +9,11 @@
 #include "simple-ldapd/core/session.hpp"
 
 #include "simple-ldapd/auth/bind.hpp"
+#include "simple-ldapd/auth/sasl.hpp"
 #include "simple-ldapd/schema/registry.hpp"
 #include "simple-ldapd/security/tls.hpp"
 #include "simple-ldapd/utils/dn.hpp"
+#include "simple-ldapd/version.hpp"
 
 namespace simple_ldapd {
 
@@ -48,9 +50,10 @@ bool attributeRequested(const std::vector<std::string> &names,
 }  // namespace
 
 Session::Session(TcpConnection connection, Backend &backend, const LdapConfig &config,
-                 std::atomic<bool> &running, TlsContext *tls, SchemaRegistry *schema)
+                 std::atomic<bool> &running, TlsContext *tls, SchemaRegistry *schema,
+                 SaslAuthenticator *sasl)
     : connection_(std::move(connection)), backend_(backend), config_(config),
-      running_(running), tls_(tls), schema_(schema) {}
+      running_(running), tls_(tls), schema_(schema), sasl_(sasl) {}
 
 void Session::serve() {
   while (running_.load()) {
@@ -137,9 +140,20 @@ LdapMessage Session::handleBind(const LdapMessage &request) {
                             "only LDAPv3 is supported");
   }
   if (!request.bind.simple) {
-    return makeBindResponse(request.message_id, ResultCode::AuthMethodNotSupported,
-                            "SASL bind is not implemented");
+    if (sasl_ == nullptr) {
+      return makeBindResponse(request.message_id, ResultCode::AuthMethodNotSupported,
+                              "SASL bind is not implemented");
+    }
+    const auto outcome =
+        sasl_->bind(backend_, config_, request.bind, connection_.tls(), sasl_digest_nonce_);
+    if (outcome.result == ResultCode::Success) {
+      bound_ = true;
+      bind_dn_ = outcome.bind_dn;
+    }
+    return makeBindResponse(request.message_id, outcome.result, outcome.diagnostic,
+                            outcome.server_creds);
   }
+  sasl_digest_nonce_.clear();
   if (config_.require_confidentiality && !connection_.tls() &&
       !request.bind.password.empty()) {
     return makeBindResponse(request.message_id, ResultCode::ConfidentialityRequired,
@@ -165,7 +179,21 @@ bool Session::handleSearch(const LdapMessage &request) {
     return send(makeSearchDone(request.message_id, ResultCode::NoSuchObject,
                                "no such object"));
   }
-  auto matches = backend_.search(base, request.search.scope, request.search.filter);
+  std::vector<DirectoryEntry> matches;
+  if (base.empty() && request.search.scope != SearchScope::OneLevel) {
+    DirectoryEntry dse = rootDse();
+    if (request.search.filter.matches(dse)) {
+      matches.push_back(std::move(dse));
+    }
+    if (request.search.scope == SearchScope::Base) {
+      // Root DSE only.
+    } else {
+      auto rest = backend_.search(base, request.search.scope, request.search.filter);
+      matches.insert(matches.end(), rest.begin(), rest.end());
+    }
+  } else {
+    matches = backend_.search(base, request.search.scope, request.search.filter);
+  }
   int sent = 0;
   for (const auto &entry : matches) {
     if (request.search.size_limit > 0 && sent >= request.search.size_limit) {
@@ -177,6 +205,22 @@ bool Session::handleSearch(const LdapMessage &request) {
     ++sent;
   }
   return send(makeSearchDone(request.message_id, ResultCode::Success));
+}
+
+DirectoryEntry Session::rootDse() const {
+  DirectoryEntry entry;
+  entry.attributes["objectClass"].push_back("top");
+  entry.attributes["namingContexts"].push_back(config_.base_dn);
+  entry.attributes["supportedLDAPVersion"].push_back("3");
+  entry.attributes["vendorName"].push_back("SimpleDaemons");
+  entry.attributes["vendorVersion"].push_back(kVersion);
+  if (config_.enable_starttls) {
+    entry.attributes["supportedExtension"].push_back(kStartTlsOid);
+  }
+  if (sasl_ != nullptr) {
+    entry.attributes["supportedSASLMechanisms"] = sasl_->advertised();
+  }
+  return entry;
 }
 
 bool Session::mayWrite() const {
