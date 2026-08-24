@@ -17,6 +17,8 @@
 namespace simple_ldapd {
 namespace cli {
 
+std::optional<TcpConnection> connectLdap(const ClientOptions &options, std::string &error);
+
 class LdapClient {
 public:
   static std::optional<LdapClient> connect(const std::string &host, port_t port);

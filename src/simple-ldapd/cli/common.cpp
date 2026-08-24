@@ -64,9 +64,11 @@ void printClientUsage(const std::string &tool, const std::string &summary) {
   std::cout << "Usage: " << tool << " [options] [filter [attributes...]]\n"
             << summary << "\n\n"
             << "Options:\n"
-            << "  -H URI         LDAP URI (ldap://host:port)\n"
+            << "  -H URI         LDAP URI (ldap://host:port or ldaps://host:port)\n"
             << "  -h HOST        LDAP host (OpenLDAP-compatible)\n"
             << "  -p PORT        LDAP port\n"
+            << "  -Z             StartTLS after connect\n"
+            << "  --ca-file FILE Trust CA (or server cert) for TLS\n"
             << "  -x             Simple authentication\n"
             << "  -D BIND_DN     Bind DN\n"
             << "  -w PASSWORD    Bind password\n"
@@ -119,6 +121,10 @@ ClientOptions parseClientArgs(int argc, char *argv[]) {
       }
     } else if (arg == "-x") {
       options.simple_auth = true;
+    } else if (arg == "-Z") {
+      options.starttls = true;
+    } else if (arg == "--ca-file") {
+      options.ca_file = next();
     } else if (arg == "-a") {
       options.add_mode = true;
     } else if (arg == "-D") {

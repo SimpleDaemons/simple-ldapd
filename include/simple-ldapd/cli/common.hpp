@@ -21,6 +21,8 @@ struct ClientOptions {
   std::string host{"127.0.0.1"};
   port_t port{kLdapDefaultPort};
   bool ldaps{false};
+  bool starttls{false};
+  std::string ca_file;
   std::string bind_dn;
   std::string password;
   std::string base_dn;

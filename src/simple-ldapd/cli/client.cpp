@@ -8,6 +8,7 @@
 
 #include "simple-ldapd/cli/client.hpp"
 
+#include "simple-ldapd/security/tls.hpp"
 #include <iostream>
 #include <string>
 #include <utility>
@@ -15,6 +16,50 @@
 
 namespace simple_ldapd {
 namespace cli {
+
+std::optional<TcpConnection> connectLdap(const ClientOptions &options, std::string &error) {
+  auto connection = TcpConnection::connectTo(options.host, options.port);
+  if (!connection) {
+    error = "cannot connect to " + options.host + ":" + std::to_string(options.port);
+    return std::nullopt;
+  }
+  const bool want_tls = options.ldaps || options.starttls;
+  if (!want_tls) {
+    return connection;
+  }
+  TlsContext tls;
+  if (!tls.initClient(options.ca_file)) {
+    error = "TLS client initialization failed";
+    return std::nullopt;
+  }
+  if (options.ldaps) {
+    if (!connection->handshakeTls(tls, false, options.host)) {
+      error = "LDAPS handshake failed";
+      return std::nullopt;
+    }
+    return connection;
+  }
+  if (!connection->sendAll(encodeLdapMessage(makeExtendedRequest(1, kStartTlsOid)))) {
+    error = "StartTLS request failed";
+    return std::nullopt;
+  }
+  std::vector<uint8_t> pdu;
+  if (!connection->recvPdu(pdu)) {
+    error = "StartTLS response truncated";
+    return std::nullopt;
+  }
+  const auto response = decodeLdapMessage(pdu);
+  if (!response || response->op != ProtocolOp::ExtendedResponse ||
+      response->result != ResultCode::Success) {
+    error = response ? toString(response->result) : "StartTLS failed";
+    return std::nullopt;
+  }
+  if (!connection->handshakeTls(tls, false, options.host)) {
+    error = "StartTLS handshake failed";
+    return std::nullopt;
+  }
+  return connection;
+}
 
 LdapClient::LdapClient(TcpConnection connection) : connection_(std::move(connection)) {}
 
@@ -27,21 +72,17 @@ std::optional<LdapClient> LdapClient::connect(const std::string &host, port_t po
 }
 
 std::optional<LdapClient> LdapClient::openBound(const ClientOptions &options, std::string &error) {
-  if (options.ldaps) {
-    error = "LDAPS is not implemented yet";
+  auto connection = connectLdap(options, error);
+  if (!connection) {
     return std::nullopt;
   }
-  auto client = connect(options.host, options.port);
-  if (!client) {
-    error = "cannot connect to " + options.host + ":" + std::to_string(options.port);
-    return std::nullopt;
-  }
+  LdapClient client(std::move(*connection));
   std::string password = options.password;
   if (options.prompt_password) {
     std::cerr << "Enter LDAP Password: ";
     std::getline(std::cin, password);
   }
-  const ResultCode bound = client->simpleBind(options.bind_dn, password);
+  const ResultCode bound = client.simpleBind(options.bind_dn, password);
   if (bound != ResultCode::Success) {
     error = toString(bound);
     return std::nullopt;

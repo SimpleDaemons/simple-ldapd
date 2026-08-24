@@ -6,6 +6,7 @@
  * @license Apache-2.0
  */
 
+#include "simple-ldapd/cli/client.hpp"
 #include "simple-ldapd/cli/common.hpp"
 #include "simple-ldapd/protocol/filter.hpp"
 #include "simple-ldapd/protocol/message.hpp"
@@ -52,6 +53,7 @@ int main(int argc, char *argv[]) {
   using simple_ldapd::SearchFilter;
   using simple_ldapd::SearchRequestData;
   using simple_ldapd::TcpConnection;
+  using simple_ldapd::cli::connectLdap;
   using simple_ldapd::cli::parseClientArgs;
   using simple_ldapd::cli::printClientUsage;
   using simple_ldapd::cli::printVersion;
@@ -73,10 +75,6 @@ int main(int argc, char *argv[]) {
     printVersion("ldapsearch");
     return 0;
   }
-  if (options.ldaps) {
-    std::cerr << "ldapsearch: LDAPS is not implemented yet" << std::endl;
-    return 1;
-  }
 
   std::string password = options.password;
   if (options.prompt_password) {
@@ -90,10 +88,10 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  auto connection = TcpConnection::connectTo(options.host, options.port);
+  std::string error;
+  auto connection = connectLdap(options, error);
   if (!connection) {
-    std::cerr << "ldapsearch: cannot connect to " << options.host << ":"
-              << options.port << std::endl;
+    std::cerr << "ldapsearch: " << error << std::endl;
     return 1;
   }
 
