@@ -18,4 +18,10 @@ void Listener::stop() { tcp_.close(); }
 
 bool Listener::running() const { return tcp_.isOpen(); }
 
+port_t Listener::boundPort() const { return tcp_.boundPort(); }
+
+std::optional<TcpConnection> Listener::acceptConnection(int timeout_ms) {
+  return tcp_.acceptConnection(timeout_ms);
+}
+
 }  // namespace simple_ldapd

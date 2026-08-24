@@ -22,13 +22,9 @@
 namespace {
 
 std::atomic<bool> g_shutdown{false};
-simple_ldapd::LdapDaemon *g_daemon = nullptr;
 
 void handleSignal(int) {
   g_shutdown = true;
-  if (g_daemon != nullptr) {
-    g_daemon->stop();
-  }
 }
 
 void printUsage() {
@@ -99,7 +95,6 @@ int main(int argc, char *argv[]) {
 
   std::signal(SIGINT, handleSignal);
   std::signal(SIGTERM, handleSignal);
-  g_daemon = &daemon;
   if (!daemon.start()) {
     return 1;
   }

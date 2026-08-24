@@ -9,6 +9,7 @@
 #pragma once
 
 #include "simple-ldapd/utils/net.hpp"
+#include <optional>
 #include <string>
 
 namespace simple_ldapd {
@@ -18,6 +19,8 @@ public:
   bool start(const std::string &address, port_t port);
   void stop();
   bool running() const;
+  port_t boundPort() const;
+  std::optional<TcpConnection> acceptConnection(int timeout_ms = 200);
 
 private:
   TcpListener tcp_;
