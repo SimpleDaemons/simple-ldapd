@@ -17,7 +17,7 @@ simple-ldapd logs text lines. There is no Prometheus endpoint, tracing, or SNMP.
 - Listen sockets 389/636 (or 3389 in the lab)
 - Bind failures in client applications (`invalidCredentials`, `confidentialityRequired`)
 - Disk space and permissions on `ldif_file` and `log_file`
-- Latency under load (serial accept loop)
+- Latency under load (session threads share one in-memory tree)
 
 ## Useful commands
 

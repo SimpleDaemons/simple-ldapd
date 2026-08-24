@@ -4,6 +4,16 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-08-24
+
+Milestone 10 — Concurrent connections.
+
+### Added
+
+- Per-connection session threads so overlapping LDAP/LDAPS clients are served together
+- Fair accept polling of the LDAP and LDAPS listeners
+- Serialized LDIF persist so concurrent writes do not interleave the seed file
+
 ## [0.9.0] — 2026-08-24
 
 Milestone 9 — Substring filters.

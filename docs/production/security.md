@@ -12,7 +12,7 @@ This is a bind-centric directory, not an AD DC. Treat `root_dn` as superuser.
 ## Secrets
 
 - `root_password` in the config file is the directory manager password. Mode `640`, not world-readable.
-- Entry `userPassword` values are compared as given, or with a `{CLEARTEXT}` prefix stripped. There is no `{SSHA}` / `{CRYPT}` hashing in v0.9.0.
+- Entry `userPassword` values are compared as given, or with a `{CLEARTEXT}` prefix stripped. There is no `{SSHA}` / `{CRYPT}` hashing yet.
 - `ldappasswd` cannot change `root_password`.
 - Do not commit live LDIF after password changes.
 
@@ -34,6 +34,5 @@ Writes require the configured root DN. There are no per-entry ACLs. Password Mod
 
 - Dedicated service account; do not run as root except to bind 389/636 (or use capabilities).
 - Keep `schema_dir` read-only to the service user if you do not expect runtime schema edits.
-- One connection is served at a time; that is availability, not a sandbox. Do not rely on it as a security control.
 
 Diagram: [security](../diagrams/security.md).

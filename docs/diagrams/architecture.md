@@ -1,6 +1,6 @@
 # Architecture
 
-simple-ldapd is a single-process LDAPv3 server. One accept thread serializes connections: each client is served to completion before the next accept. That is a known limit, not a cluster.
+simple-ldapd is a single-process LDAPv3 server. One accept thread polls LDAP and LDAPS and starts a session thread per connection. It is not a cluster.
 
 ```mermaid
 flowchart TB

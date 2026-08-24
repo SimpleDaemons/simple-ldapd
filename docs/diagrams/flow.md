@@ -25,7 +25,7 @@ flowchart TD
   Err --> Read
 ```
 
-The accept loop calls `serveConnection` and waits until that session ends before accepting again.
+The accept loop starts a session thread per connection and keeps polling both listeners. `stop()` sets `running_` false and joins workers.
 
 ## Simple bind
 

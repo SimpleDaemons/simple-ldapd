@@ -13,3 +13,4 @@
 - Schema packs: core, cosine, inetOrgPerson, nis, ad-compat (enforced on writes)
 - SASL PLAIN, DIGEST-MD5, EXTERNAL, and GSSAPI lab tickets from `gssapi_keytab`
 - RFC 3062 password modify: a bound user may change their own `userPassword`; the root DN may set another entry
+- Concurrent sessions: one thread per accepted LDAP or LDAPS connection

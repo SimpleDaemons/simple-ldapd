@@ -1,6 +1,6 @@
 # Production
 
-v0.9.0 can bind, search, write, encrypt, enforce schema, and change passwords. It is still early: one connection at a time, root-DN-only writes, lab GSSAPI rather than MIT Kerberos, and no `stop`/`reload` commands.
+v0.10.0 can bind, search, write, encrypt, enforce schema, and change passwords, and it serves more than one client at a time. It is still early: root-DN-only writes, lab GSSAPI rather than MIT Kerberos, and no `stop`/`reload` commands.
 
 Use this section when exposing 389/636 on a host, not for the 3389 lab template.
 
@@ -10,7 +10,7 @@ Use this section when exposing 389/636 on a host, not for the 3389 lab template.
 | [Deployment](deployment.md) | systemd, launchd, Windows, Docker, packages |
 | [Security](security.md) | TLS, bind, SASL, secrets |
 | [Operations](operations.md) | Start/stop, backup, updates |
-| [Performance](performance.md) | Accept-loop limit and practical sizing |
+| [Performance](performance.md) | Concurrent sessions and practical sizing |
 
 Shared references: [configuration](../shared/configuration/README.md), [deployment diagrams](../diagrams/deployment.md), [deployment/](../../deployment/README.md).
 

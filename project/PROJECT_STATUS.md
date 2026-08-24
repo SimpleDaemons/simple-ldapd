@@ -1,14 +1,14 @@
 # simple-ldapd project status
 
-**Version:** 0.9.0  
-**Status:** Early development (bind/search/writes/TLS/schemas/SASL/ldappasswd)  
-**Progress:** ~92%  
+**Version:** 0.10.0  
+**Status:** Early development (bind/search/writes/TLS/schemas/SASL/ldappasswd/concurrent sessions)  
+**Progress:** ~94%  
 **Last updated:** August 2026
 
 ## Complete
 
 - CMake + GNU Make + CPack (Linux, macOS, Windows, FreeBSD)
-- Daemon listen/accept loop and OpenLDAP-style CLI (`ldapsearch` / `ldapadd` / `ldapmodify` / `ldapdelete` / `ldappasswd`)
+- Daemon listen/accept loop (one session thread per connection) and OpenLDAP-style CLI (`ldapsearch` / `ldapadd` / `ldapmodify` / `ldapdelete` / `ldappasswd`)
 - Config parser (including `root_password` and LDIF seed path)
 - Schema registry (OpenLDAP attributetype/objectclass), memory backend, LDIF import/export persist
 - LDAPv3 BER codec, simple bind, search, add/modify/delete/modrdn

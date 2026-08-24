@@ -1,12 +1,12 @@
 # Production performance
 
-v0.9.0 is sized for labs and small SSO bind/search loads, not a multi-tenant directory farm.
+v0.10.0 serves overlapping LDAP clients on one host. It is still sized for labs and small SSO bind/search loads, not a multi-tenant directory farm.
 
 ## Accept loop
 
-`LdapDaemon::acceptLoop` accepts one TCP connection, then `Session::serve` until unbind or disconnect, then accepts the next. LDAP and LDAPS share that loop (short timeouts when both ports are enabled). Concurrent clients queue in the kernel listen backlog; they are not handled in parallel.
+`LdapDaemon::acceptLoop` polls the LDAP and LDAPS listeners and starts a session thread per connection. The in-memory tree is mutex-protected; LDIF persist is serialized so concurrent writes do not interleave the file.
 
-If you need overlapping binds from many application servers, run more than one instance (separate ports or hosts) or wait for a concurrent accept milestone.
+A stuck client no longer blocks accept of others. CPU and file-rewrite cost still grow with tree size and write rate.
 
 ## What is cheap vs expensive
 

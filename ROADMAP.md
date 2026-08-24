@@ -53,3 +53,56 @@
 
 - RFC 4511 substring filters (`initial` / `any` / `final`)
 - String parse, BER encode/decode, and live `ldapsearch`
+
+## Milestone 10 — Concurrent connections — v0.10.0
+
+- Serve more than one LDAP client at a time
+- Per-connection TLS / StartTLS unchanged
+- Keep accept fair between the LDAP and LDAPS listeners
+
+## Milestone 11 — Access control — v0.11.0
+
+- Configured ACLs for search vs write on a subtree (bind DN or group)
+- Root DN remains the superuser
+- Anonymous search can be limited (today any anonymous bind can read the tree)
+
+## Milestone 12 — Password storage — v0.12.0
+
+- Store `userPassword` hashed (`{SSHA}` or similar), still accept `{CLEARTEXT}` for labs
+- Honor `userAccountControl` disabled bit on bind
+- Keep `root_password` in config (not an entry)
+
+## Milestone 13 — Remaining LDAP ops — v0.13.0
+
+- Compare
+- Who Am I (`1.3.6.1.4.1.4203.1.11.3`)
+- Paged results (RFC 2696) so large trees do not dump in one response
+- Search `typesOnly` and time limit (size limit already works)
+
+## Milestone 14 — SQLite backend — v0.14.0
+
+- Durable store without rewriting the whole LDIF on every write
+- Keep LDIF import/export as the lab and backup format
+
+## Milestone 15 — Hardening — v0.15.0
+
+- Apply `log_level` (parsed today, unused)
+- Bind rate limiter (stub exists)
+- SASL EXTERNAL: require a verified client certificate before trusting authzid
+- Optional install prefix / binary names that do not collide with OpenLDAP
+
+## Toward 1.0.0
+
+Bind, search, writes, and TLS already exist. **1.0.0** waits until concurrent accept, ACLs, and hashed passwords are in (milestones 10–12) so a small SSO deployment is not a single-client, root-or-nothing, cleartext-password directory.
+
+## Later (not scheduled)
+
+- Ordering / approximate / extensible match filters
+- Computed `memberOf` (today it is a static attribute)
+- MIT Kerberos / RFC 4120 GSSAPI (lab HMAC tickets stay)
+- Replication, referrals, overlays, a KDC, or an AD DC
+
+## Out of scope (v0.x)
+
+- In-tree Kerberos KDC, SMB, Group Policy
+- OIDC or SAML (see `simple-oidcd`)

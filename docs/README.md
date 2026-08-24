@@ -1,6 +1,6 @@
 # simple-ldapd documentation
 
-Documentation for **simple-ldapd v0.9.0**, a lightweight LDAPv3 directory daemon for SSO via LDAP bind. OpenLDAP-style CLI tools and Active Directory–friendly schema names are included. This is not a domain controller and not a Kerberos KDC.
+Documentation for **simple-ldapd v0.10.0**, a lightweight LDAPv3 directory daemon for SSO via LDAP bind. OpenLDAP-style CLI tools and Active Directory–friendly schema names are included. This is not a domain controller and not a Kerberos KDC.
 
 License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 
@@ -25,10 +25,11 @@ License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 | Troubleshooting | [Troubleshooting](shared/troubleshooting/README.md) |
 | Building and tests | [Development](development/README.md) |
 
-## What works in v0.9.0
+## What works in v0.10.0
 
 - LDAPv3 bind (anonymous, simple, SASL PLAIN / DIGEST-MD5 / EXTERNAL / lab GSSAPI)
 - Search with equality, present, substring, and/or/not filters
+- Concurrent sessions (one thread per TCP connection)
 - Add, modify, delete, and modrdn (root DN bind)
 - RFC 3062 password modify (`ldappasswd`)
 - LDAPS and StartTLS
@@ -37,7 +38,6 @@ License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 
 ## Known limits
 
-- One TCP connection at a time (accept loop is serial)
 - Directory writes require the configured root DN (no per-entry ACLs)
 - GSSAPI tickets are HMAC lab tickets, not MIT Kerberos / RFC 4120
 - `stop` / `status` / `reload` and `--daemon` fork are not implemented

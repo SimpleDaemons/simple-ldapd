@@ -2,7 +2,7 @@
 
 Lightweight LDAPv3 directory daemon for SSO via LDAP bind, with an OpenLDAP-style CLI and Active Directory-friendly schema names.
 
-simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.9.0** implements simple bind, SASL, search (including substring filters), directory writes, TLS, schema enforcement, GSSAPI lab tickets, and `ldappasswd`. Versions follow [VERSIONING.md](VERSIONING.md).
+simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.10.0** implements simple bind, SASL, search (including substring filters), concurrent sessions, directory writes, TLS, schema enforcement, GSSAPI lab tickets, and `ldappasswd`. Versions follow [VERSIONING.md](VERSIONING.md).
 
 ## Goals
 

@@ -13,7 +13,6 @@
 ## Client cannot connect
 
 - Lab URI must include the port: `-H ldap://127.0.0.1:3389` (default client port is 389).
-- Only one connection is served at a time. A stuck client (or a tool waiting on stdin) blocks everyone else. Unbind or kill the holder.
 - LDAPS vs LDAP: `ldaps://` uses the LDAPS listener; `-Z` is StartTLS on the LDAP port.
 
 ## invalidCredentials
