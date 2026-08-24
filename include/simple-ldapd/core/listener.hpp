@@ -20,6 +20,7 @@ public:
   void stop();
   bool running() const;
   port_t boundPort() const;
+  socket_t native() const;
   std::optional<TcpConnection> acceptConnection(int timeout_ms = 200);
 
 private:

@@ -8,7 +8,12 @@
 
 #include "simple-ldapd/utils/net.hpp"
 
+#include "simple-ldapd/security/tls.hpp"
 #include "simple-ldapd/utils/logger.hpp"
+
+#ifdef SIMPLE_LDAPD_SSL
+#include <openssl/ssl.h>
+#endif
 
 #ifndef SIMPLE_LDAPD_WINDOWS
 #include <netdb.h>
@@ -67,6 +72,75 @@ bool pollReadable(socket_t fd, int timeout_ms) {
 #endif
 }
 
+bool pollWritable(socket_t fd, int timeout_ms) {
+#ifdef SIMPLE_LDAPD_WINDOWS
+  WSAPOLLFD pfd{};
+  pfd.fd = fd;
+  pfd.events = POLLOUT;
+  return WSAPoll(&pfd, 1, timeout_ms) > 0;
+#else
+  pollfd pfd{};
+  pfd.fd = fd;
+  pfd.events = POLLOUT;
+  return ::poll(&pfd, 1, timeout_ms) > 0;
+#endif
+}
+
+#ifdef SIMPLE_LDAPD_SSL
+bool sslWait(socket_t fd, SSL *ssl, int result, int timeout_ms) {
+  const int err = SSL_get_error(ssl, result);
+  if (err == SSL_ERROR_WANT_READ) {
+    return pollReadable(fd, timeout_ms);
+  }
+  if (err == SSL_ERROR_WANT_WRITE) {
+    return pollWritable(fd, timeout_ms);
+  }
+  return false;
+}
+
+bool sslHandshake(socket_t fd, SSL *ssl, bool server) {
+  for (;;) {
+    const int rc = server ? SSL_accept(ssl) : SSL_connect(ssl);
+    if (rc == 1) {
+      return true;
+    }
+    if (!sslWait(fd, ssl, rc, 5000)) {
+      return false;
+    }
+  }
+}
+
+bool sslRecvAll(socket_t fd, SSL *ssl, uint8_t *data, size_t size) {
+  size_t got = 0;
+  while (got < size) {
+    const int n = SSL_read(ssl, data + got, static_cast<int>(size - got));
+    if (n > 0) {
+      got += static_cast<size_t>(n);
+      continue;
+    }
+    if (!sslWait(fd, ssl, n, 5000)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool sslSendAll(socket_t fd, SSL *ssl, const uint8_t *data, size_t size) {
+  size_t sent = 0;
+  while (sent < size) {
+    const int n = SSL_write(ssl, data + sent, static_cast<int>(size - sent));
+    if (n > 0) {
+      sent += static_cast<size_t>(n);
+      continue;
+    }
+    if (!sslWait(fd, ssl, n, 5000)) {
+      return false;
+    }
+  }
+  return true;
+}
+#endif
+
 }  // namespace
 
 bool initializeSockets() {
@@ -88,8 +162,9 @@ TcpConnection::TcpConnection(socket_t fd, std::string peer)
     : fd_(fd), peer_(std::move(peer)) {}
 
 TcpConnection::TcpConnection(TcpConnection &&other) noexcept
-    : fd_(other.fd_), peer_(std::move(other.peer_)) {
+    : fd_(other.fd_), peer_(std::move(other.peer_)), ssl_(other.ssl_) {
   other.fd_ = INVALID_SOCKET_VALUE;
+  other.ssl_ = nullptr;
 }
 
 TcpConnection &TcpConnection::operator=(TcpConnection &&other) noexcept {
@@ -97,7 +172,9 @@ TcpConnection &TcpConnection::operator=(TcpConnection &&other) noexcept {
     close();
     fd_ = other.fd_;
     peer_ = std::move(other.peer_);
+    ssl_ = other.ssl_;
     other.fd_ = INVALID_SOCKET_VALUE;
+    other.ssl_ = nullptr;
   }
   return *this;
 }
@@ -107,22 +184,80 @@ TcpConnection::~TcpConnection() { close(); }
 bool TcpConnection::valid() const { return fd_ != INVALID_SOCKET_VALUE; }
 
 void TcpConnection::close() {
+#ifdef SIMPLE_LDAPD_SSL
+  if (ssl_ != nullptr) {
+    SSL_shutdown(ssl_);
+    SSL_free(ssl_);
+    ssl_ = nullptr;
+  }
+#endif
   if (fd_ != INVALID_SOCKET_VALUE) {
     CLOSE_SOCKET(fd_);
     fd_ = INVALID_SOCKET_VALUE;
   }
 }
 
+bool TcpConnection::handshakeTls(const TlsContext &ctx, bool server, const std::string &sni) {
+#ifdef SIMPLE_LDAPD_SSL
+  if (!valid() || ssl_ != nullptr || ctx.native() == nullptr) {
+    return false;
+  }
+  SSL *ssl = SSL_new(static_cast<SSL_CTX *>(ctx.native()));
+  if (ssl == nullptr) {
+    return false;
+  }
+  SSL_set_fd(ssl, static_cast<int>(fd_));
+  if (!server && !sni.empty()) {
+    SSL_set_tlsext_host_name(ssl, sni.c_str());
+  }
+  if (!sslHandshake(fd_, ssl, server)) {
+    SSL_free(ssl);
+    return false;
+  }
+  ssl_ = ssl;
+  return true;
+#else
+  (void)ctx;
+  (void)server;
+  (void)sni;
+  return false;
+#endif
+}
+
 bool TcpConnection::sendAll(const std::vector<uint8_t> &data) {
-  return valid() && sendAllBytes(fd_, data.data(), data.size());
+  if (!valid()) {
+    return false;
+  }
+#ifdef SIMPLE_LDAPD_SSL
+  if (ssl_ != nullptr) {
+    return sslSendAll(fd_, ssl_, data.data(), data.size());
+  }
+#endif
+  return sendAllBytes(fd_, data.data(), data.size());
 }
 
 bool TcpConnection::recvExact(uint8_t *data, size_t size) {
-  return valid() && recvAll(fd_, data, size);
+  if (!valid()) {
+    return false;
+  }
+#ifdef SIMPLE_LDAPD_SSL
+  if (ssl_ != nullptr) {
+    return sslRecvAll(fd_, ssl_, data, size);
+  }
+#endif
+  return recvAll(fd_, data, size);
 }
 
 bool TcpConnection::waitReadable(int timeout_ms) const {
-  return valid() && pollReadable(fd_, timeout_ms);
+  if (!valid()) {
+    return false;
+  }
+#ifdef SIMPLE_LDAPD_SSL
+  if (ssl_ != nullptr && SSL_pending(ssl_) > 0) {
+    return true;
+  }
+#endif
+  return pollReadable(fd_, timeout_ms);
 }
 
 bool TcpConnection::recvPdu(std::vector<uint8_t> &pdu) {

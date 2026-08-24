@@ -14,7 +14,12 @@
 #include <string>
 #include <vector>
 
+struct ssl_st;
+struct ssl_ctx_st;
+
 namespace simple_ldapd {
+
+class TlsContext;
 
 class TcpConnection {
 public:
@@ -31,7 +36,9 @@ public:
   void close();
   const std::string &peer() const { return peer_; }
   socket_t native() const { return fd_; }
+  bool tls() const { return ssl_ != nullptr; }
 
+  bool handshakeTls(const TlsContext &ctx, bool server, const std::string &sni = {});
   bool sendAll(const std::vector<uint8_t> &data);
   bool recvExact(uint8_t *data, size_t size);
   bool recvPdu(std::vector<uint8_t> &pdu);
@@ -42,6 +49,7 @@ public:
 private:
   socket_t fd_{INVALID_SOCKET_VALUE};
   std::string peer_;
+  ssl_st *ssl_{nullptr};
 };
 
 class TcpListener {
