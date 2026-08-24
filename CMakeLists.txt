@@ -201,6 +201,7 @@ if(ENABLE_TESTS)
 
     add_ldap_test(test_ldap_config tests/unit/test_ldap_config.cpp)
     add_ldap_test(test_ldap_acl tests/unit/test_ldap_acl.cpp)
+    add_ldap_test(test_ldap_password tests/unit/test_ldap_password.cpp)
     add_ldap_test(test_ldap_backend tests/unit/test_ldap_backend.cpp)
     add_ldap_test(test_ldap_protocol tests/unit/test_ldap_protocol.cpp)
     add_ldap_test(test_ldap_cli tests/integration/test_ldap_cli.cpp)

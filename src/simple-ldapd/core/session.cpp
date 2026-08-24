@@ -9,6 +9,7 @@
 #include "simple-ldapd/core/session.hpp"
 
 #include "simple-ldapd/auth/bind.hpp"
+#include "simple-ldapd/auth/password.hpp"
 #include "simple-ldapd/auth/sasl.hpp"
 #include "simple-ldapd/schema/registry.hpp"
 #include "simple-ldapd/security/acl.hpp"
@@ -273,7 +274,8 @@ LdapMessage Session::handleAdd(const LdapMessage &request) {
     return makeLdapResult(request.message_id, ProtocolOp::AddResponse,
                           ResultCode::NamingViolation, "parent does not exist");
   }
-  const DirectoryEntry entry = toDirectoryEntry(request.add);
+  DirectoryEntry entry = toDirectoryEntry(request.add);
+  encodeUserPasswords(entry);
   std::string diagnostic;
   const ResultCode schema = checkSchema(entry, diagnostic);
   if (schema != ResultCode::Success) {
@@ -297,7 +299,9 @@ LdapMessage Session::handleModify(const LdapMessage &request) {
     return makeLdapResult(request.message_id, ProtocolOp::ModifyResponse,
                           ResultCode::NoSuchObject, "no such object");
   }
-  const ResultCode applied = applyModifications(*entry, request.modify.changes);
+  auto changes = request.modify.changes;
+  encodeUserPasswordChanges(changes);
+  const ResultCode applied = applyModifications(*entry, changes);
   if (applied != ResultCode::Success) {
     return makeLdapResult(request.message_id, ProtocolOp::ModifyResponse, applied,
                           toString(applied));
@@ -448,8 +452,8 @@ LdapMessage Session::handlePasswordModify(const LdapMessage &request) {
     return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse,
                           ResultCode::NoSuchObject, "no such object");
   }
-  const ResultCode applied =
-      applyModifications(*entry, {{ModifyOp::Replace, "userPassword", {*change.new_password}}});
+  const ResultCode applied = applyModifications(
+      *entry, {{ModifyOp::Replace, "userPassword", {encodeUserPassword(*change.new_password)}}});
   if (applied != ResultCode::Success) {
     return makeLdapResult(request.message_id, ProtocolOp::ExtendedResponse, applied,
                           toString(applied));

@@ -8,32 +8,13 @@
 
 #include "simple-ldapd/auth/bind.hpp"
 
+#include "simple-ldapd/auth/password.hpp"
 #include "simple-ldapd/protocol/filter.hpp"
 #include "simple-ldapd/utils/dn.hpp"
 
 namespace simple_ldapd {
 
 namespace {
-
-bool passwordsEqual(const std::string &left, const std::string &right) {
-  const size_t size = left.size() > right.size() ? left.size() : right.size();
-  unsigned char acc = static_cast<unsigned char>(left.size() ^ right.size());
-  for (size_t i = 0; i < size; ++i) {
-    const unsigned char a = i < left.size() ? static_cast<unsigned char>(left[i]) : 0;
-    const unsigned char b = i < right.size() ? static_cast<unsigned char>(right[i]) : 0;
-    acc = static_cast<unsigned char>(acc | (a ^ b));
-  }
-  return acc == 0;
-}
-
-std::string storedPassword(const std::string &value) {
-  constexpr char kCleartext[] = "{CLEARTEXT}";
-  const size_t prefix_len = sizeof(kCleartext) - 1;
-  if (value.size() >= prefix_len && iequals(value.substr(0, prefix_len), kCleartext)) {
-    return value.substr(prefix_len);
-  }
-  return value;
-}
 
 const std::vector<std::string> *findAttribute(const DirectoryEntry &entry,
                                               const std::string &name) {
@@ -62,7 +43,7 @@ ResultCode SimpleBindAuthenticator::bind(const std::string &dn,
   }
   if (!config_.root_dn.empty() && dnEquals(*resolved, config_.root_dn)) {
     if (config_.root_password.empty() ||
-        !passwordsEqual(password, config_.root_password)) {
+        !verifyUserPassword(config_.root_password, password)) {
       return ResultCode::InvalidCredentials;
     }
     return ResultCode::Success;
@@ -71,12 +52,15 @@ ResultCode SimpleBindAuthenticator::bind(const std::string &dn,
   if (!entry) {
     return ResultCode::InvalidCredentials;
   }
+  if (accountDisabled(*entry)) {
+    return ResultCode::InvalidCredentials;
+  }
   const auto *values = findAttribute(*entry, "userPassword");
   if (values == nullptr || values->empty()) {
     return ResultCode::InvalidCredentials;
   }
   for (const auto &value : *values) {
-    if (passwordsEqual(password, storedPassword(value))) {
+    if (verifyUserPassword(value, password)) {
       return ResultCode::Success;
     }
   }
@@ -140,7 +124,15 @@ std::optional<std::string> SimpleBindAuthenticator::passwordFor(const std::strin
   if (values == nullptr || values->empty()) {
     return std::nullopt;
   }
-  return storedPassword(values->front());
+  return recoverablePassword(values->front());
+}
+
+bool SimpleBindAuthenticator::isAccountDisabled(const std::string &dn) const {
+  if (!config_.root_dn.empty() && dnEquals(dn, config_.root_dn)) {
+    return false;
+  }
+  const auto entry = backend_.lookup(dn);
+  return entry && accountDisabled(*entry);
 }
 
 }  // namespace simple_ldapd

@@ -322,8 +322,16 @@ SaslBindResult SaslAuthenticator::bind(Backend &backend, const LdapConfig &confi
       return fail(ResultCode::InvalidCredentials, "invalid DIGEST-MD5 response");
     }
     const auto dn = authenticator.resolveName(username);
-    const auto password = dn ? authenticator.passwordFor(*dn) : std::nullopt;
-    if (!dn || !password) {
+    if (!dn) {
+      digest_nonce.clear();
+      return fail(ResultCode::InvalidCredentials, "invalid credentials");
+    }
+    if (authenticator.isAccountDisabled(*dn)) {
+      digest_nonce.clear();
+      return fail(ResultCode::InvalidCredentials, "invalid credentials");
+    }
+    const auto password = authenticator.passwordFor(*dn);
+    if (!password) {
       digest_nonce.clear();
       return fail(ResultCode::InvalidCredentials, "invalid credentials");
     }
@@ -358,6 +366,9 @@ SaslBindResult SaslAuthenticator::bind(Backend &backend, const LdapConfig &confi
     const auto dn = authenticator.resolveName(identity);
     if (!dn) {
       return fail(ResultCode::InvalidCredentials, "EXTERNAL identity is unknown");
+    }
+    if (authenticator.isAccountDisabled(*dn)) {
+      return fail(ResultCode::InvalidCredentials, "invalid credentials");
     }
     SaslBindResult result;
     result.result = ResultCode::Success;
@@ -395,6 +406,9 @@ SaslBindResult SaslAuthenticator::bind(Backend &backend, const LdapConfig &confi
     }
     const auto dn = authenticator.resolveName(principal);
     if (!dn) {
+      return fail(ResultCode::InvalidCredentials, "invalid credentials");
+    }
+    if (authenticator.isAccountDisabled(*dn)) {
       return fail(ResultCode::InvalidCredentials, "invalid credentials");
     }
     SaslBindResult result;

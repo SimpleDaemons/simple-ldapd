@@ -23,6 +23,7 @@ public:
   ResultCode bind(const std::string &dn, const std::string &password) const;
   std::optional<std::string> resolveName(const std::string &name) const;
   std::optional<std::string> passwordFor(const std::string &dn) const;
+  bool isAccountDisabled(const std::string &dn) const;
 
 private:
   std::optional<std::string> findAccount(const std::string &name) const;
