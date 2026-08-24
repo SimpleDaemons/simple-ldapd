@@ -70,8 +70,9 @@ void printClientUsage(const std::string &tool, const std::string &summary) {
             << "  -Z             StartTLS after connect\n"
             << "  --ca-file FILE Trust CA (or server cert) for TLS\n"
             << "  -x             Simple authentication\n"
-            << "  -Y MECH        SASL mechanism (PLAIN, DIGEST-MD5, EXTERNAL)\n"
+            << "  -Y MECH        SASL mechanism (PLAIN, DIGEST-MD5, EXTERNAL, GSSAPI)\n"
             << "  -U AUTHCID     SASL authentication identity\n"
+            << "  --keytab FILE  Lab GSSAPI keytab (or SIMPLE_LDAPD_KTNAME)\n"
             << "  -D BIND_DN     Bind DN\n"
             << "  -w PASSWORD    Bind password\n"
             << "  -W             Prompt for bind password\n"
@@ -128,6 +129,8 @@ ClientOptions parseClientArgs(int argc, char *argv[]) {
       options.simple_auth = false;
     } else if (arg == "-U") {
       options.sasl_authcid = next();
+    } else if (arg == "--keytab") {
+      options.keytab = next();
     } else if (arg == "-Z") {
       options.starttls = true;
     } else if (arg == "--ca-file") {

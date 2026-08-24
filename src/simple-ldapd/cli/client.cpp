@@ -9,7 +9,9 @@
 #include "simple-ldapd/cli/client.hpp"
 
 #include "simple-ldapd/auth/sasl.hpp"
+#include "simple-ldapd/auth/gssapi.hpp"
 #include "simple-ldapd/security/tls.hpp"
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -118,6 +120,42 @@ ResultCode bindLdap(TcpConnection &connection, int &message_id, const ClientOpti
     if (!saslDigestClientResponse(challenge->server_sasl_creds, authcid, password,
                                   "ldap/" + options.host, credentials, error)) {
       return ResultCode::AuthMethodNotSupported;
+    }
+  } else if (mechanism == SaslMechanism::Gssapi) {
+    std::string keytab_path = options.keytab;
+    if (keytab_path.empty()) {
+      if (const char *env = std::getenv("SIMPLE_LDAPD_KTNAME")) {
+        keytab_path = env;
+      }
+    }
+    if (keytab_path.empty()) {
+      error = "GSSAPI requires --keytab";
+      return ResultCode::AuthMethodNotSupported;
+    }
+    GssapiKeytab keytab;
+    if (!loadGssapiKeytab(keytab_path, keytab, error)) {
+      return ResultCode::OperationsError;
+    }
+    if (keytab.realm.empty()) {
+      error = "GSSAPI keytab is missing realm";
+      return ResultCode::OperationsError;
+    }
+    auto challenge = sendBind(makeSaslBindRequest(message_id++, options.bind_dn, "GSSAPI"));
+    if (!challenge) {
+      return ResultCode::Unavailable;
+    }
+    if (challenge->result != ResultCode::SaslBindInProgress) {
+      error = toString(challenge->result);
+      return challenge->result;
+    }
+    if (authcid.empty()) {
+      error = "GSSAPI requires -U";
+      return ResultCode::InvalidCredentials;
+    }
+    credentials = mintGssapiTicket(keytab, authcid);
+    if (credentials.empty()) {
+      error = "GSSAPI ticket mint failed";
+      return ResultCode::OperationsError;
     }
   } else {
     error = "SASL mechanism is not available in the client";

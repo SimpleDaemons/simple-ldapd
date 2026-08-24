@@ -34,6 +34,7 @@ struct ClientOptions {
   bool simple_auth{true};
   std::string sasl_mechanism;
   std::string sasl_authcid;
+  std::string keytab;
   bool prompt_password{false};
   bool add_mode{false};
   bool help{false};
