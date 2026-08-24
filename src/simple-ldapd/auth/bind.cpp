@@ -8,6 +8,7 @@
 
 #include "simple-ldapd/auth/bind.hpp"
 
+#include "simple-ldapd/protocol/filter.hpp"
 #include "simple-ldapd/utils/dn.hpp"
 
 namespace simple_ldapd {
@@ -76,6 +77,57 @@ ResultCode SimpleBindAuthenticator::bind(const std::string &dn,
     }
   }
   return ResultCode::InvalidCredentials;
+}
+
+std::optional<std::string> SimpleBindAuthenticator::resolveName(const std::string &name) const {
+  if (name.empty()) {
+    return std::nullopt;
+  }
+  if (name.find('=') != std::string::npos) {
+    if (!config_.root_dn.empty() && dnEquals(name, config_.root_dn)) {
+      return config_.root_dn;
+    }
+    const auto entry = backend_.lookup(name);
+    if (!entry) {
+      return std::nullopt;
+    }
+    return entry->dn;
+  }
+  if (!config_.root_dn.empty()) {
+    std::string type;
+    std::string value;
+    if (parseRdn(dnRdn(config_.root_dn), type, value) && iequals(value, name)) {
+      return config_.root_dn;
+    }
+  }
+  if (name.find_first_of("()*\\") != std::string::npos) {
+    return std::nullopt;
+  }
+  const auto filter =
+      SearchFilter::parse("(|(uid=" + name + ")(sAMAccountName=" + name + "))");
+  const auto matches = backend_.search(config_.base_dn, SearchScope::Subtree, filter);
+  if (matches.size() != 1) {
+    return std::nullopt;
+  }
+  return matches.front().dn;
+}
+
+std::optional<std::string> SimpleBindAuthenticator::passwordFor(const std::string &dn) const {
+  if (!config_.root_dn.empty() && dnEquals(dn, config_.root_dn)) {
+    if (config_.root_password.empty()) {
+      return std::nullopt;
+    }
+    return config_.root_password;
+  }
+  const auto entry = backend_.lookup(dn);
+  if (!entry) {
+    return std::nullopt;
+  }
+  const auto *values = findAttribute(*entry, "userPassword");
+  if (values == nullptr || values->empty()) {
+    return std::nullopt;
+  }
+  return storedPassword(values->front());
 }
 
 }  // namespace simple_ldapd
