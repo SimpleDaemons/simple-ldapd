@@ -39,6 +39,7 @@ public:
   std::string log_file;
   std::string log_level{"info"};
   bool foreground{true};
+  bool require_confidentiality{false};
 };
 
 }  // namespace simple_ldapd

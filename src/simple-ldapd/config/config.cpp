@@ -91,6 +91,8 @@ bool LdapConfig::loadFromFile(const std::string &path) {
       log_level = value;
     } else if (key == "foreground") {
       foreground = parseBool(value);
+    } else if (key == "require_confidentiality") {
+      require_confidentiality = parseBool(value);
     }
   }
   return true;
@@ -103,8 +105,10 @@ bool LdapConfig::validate() const {
 
 bool LdapConfig::validateDetailed(std::vector<std::string> &errors) const {
   errors.clear();
-  if (enable_ldaps && ldaps_port == 0) {
-    errors.emplace_back("ldaps_port must be non-zero when LDAPS is enabled");
+  if ((enable_ldaps || enable_starttls) &&
+      (tls_cert_file.empty() || tls_key_file.empty())) {
+    errors.emplace_back(
+        "tls_cert_file and tls_key_file are required when TLS is enabled");
   }
   if (backend != "memory" && backend != "ldif") {
     errors.emplace_back("backend must be memory or ldif");
