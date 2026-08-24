@@ -9,6 +9,7 @@
 #include "simple-ldapd/core/session.hpp"
 
 #include "simple-ldapd/auth/bind.hpp"
+#include "simple-ldapd/security/tls.hpp"
 #include "simple-ldapd/utils/dn.hpp"
 
 namespace simple_ldapd {
@@ -46,9 +47,9 @@ bool attributeRequested(const std::vector<std::string> &names,
 }  // namespace
 
 Session::Session(TcpConnection connection, Backend &backend, const LdapConfig &config,
-                 std::atomic<bool> &running)
+                 std::atomic<bool> &running, TlsContext *tls)
     : connection_(std::move(connection)), backend_(backend), config_(config),
-      running_(running) {}
+      running_(running), tls_(tls) {}
 
 void Session::serve() {
   while (running_.load()) {
@@ -90,6 +91,24 @@ void Session::serve() {
       response = handleModifyDn(*request);
       break;
     case ProtocolOp::ExtendedRequest:
+      if (request->extended_oid == kStartTlsOid) {
+        if (!config_.enable_starttls || tls_ == nullptr || !tls_->enabled() ||
+            connection_.tls()) {
+          response = makeLdapResult(request->message_id, ProtocolOp::ExtendedResponse,
+                                    ResultCode::UnwillingToPerform,
+                                    connection_.tls() ? "TLS already active"
+                                                      : "StartTLS is not available");
+          break;
+        }
+        if (!send(makeLdapResult(request->message_id, ProtocolOp::ExtendedResponse,
+                                 ResultCode::Success))) {
+          return;
+        }
+        if (!connection_.handshakeTls(*tls_, true)) {
+          return;
+        }
+        continue;
+      }
       response =
           makeLdapResult(request->message_id, ProtocolOp::ExtendedResponse,
                          ResultCode::UnwillingToPerform, "extended operations not implemented");
@@ -119,6 +138,11 @@ LdapMessage Session::handleBind(const LdapMessage &request) {
   if (!request.bind.simple) {
     return makeBindResponse(request.message_id, ResultCode::AuthMethodNotSupported,
                             "SASL bind is not implemented");
+  }
+  if (config_.require_confidentiality && !connection_.tls() &&
+      !request.bind.password.empty()) {
+    return makeBindResponse(request.message_id, ResultCode::ConfidentialityRequired,
+                            "confidentiality required");
   }
   SimpleBindAuthenticator authenticator(backend_, config_);
   const ResultCode result = authenticator.bind(request.bind.dn, request.bind.password);

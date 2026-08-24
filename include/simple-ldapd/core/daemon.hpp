@@ -34,6 +34,7 @@ public:
   bool running() const;
   bool testConfig() const;
   port_t boundPort() const;
+  port_t boundLdapsPort() const;
 
   const LdapConfig &config() const { return config_; }
   SchemaRegistry &schema() { return schema_; }
@@ -41,12 +42,14 @@ public:
 
 private:
   void acceptLoop();
+  void serveConnection(TcpConnection connection, bool ldaps);
 
   LdapConfig config_;
   SchemaRegistry schema_;
   TlsContext tls_;
   SaslAuthenticator sasl_;
   Listener listener_;
+  Listener ldaps_listener_;
   std::unique_ptr<Backend> backend_;
   std::atomic<bool> running_{false};
   std::atomic<bool> initialized_{false};

@@ -17,10 +17,12 @@
 
 namespace simple_ldapd {
 
+class TlsContext;
+
 class Session {
 public:
   Session(TcpConnection connection, Backend &backend, const LdapConfig &config,
-          std::atomic<bool> &running);
+          std::atomic<bool> &running, TlsContext *tls = nullptr);
 
   bool bound() const { return bound_; }
   const std::string &bindDn() const { return bind_dn_; }
@@ -42,6 +44,7 @@ private:
   Backend &backend_;
   const LdapConfig &config_;
   std::atomic<bool> &running_;
+  TlsContext *tls_{nullptr};
   bool bound_{false};
   std::string bind_dn_;
 };
