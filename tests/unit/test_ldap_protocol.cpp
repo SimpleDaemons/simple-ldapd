@@ -88,7 +88,47 @@ bool testDnHelpers() {
   return dnEquals("CN=Admin,DC=Example,DC=com", "cn=admin,dc=example,dc=com") &&
          dnEndsWith("uid=alice,ou=People,dc=example,dc=com", "dc=example,dc=com") &&
          dnIsOneLevelChild("ou=People,dc=example,dc=com", "dc=example,dc=com") &&
-         !dnIsOneLevelChild("uid=alice,ou=People,dc=example,dc=com", "dc=example,dc=com");
+         !dnIsOneLevelChild("uid=alice,ou=People,dc=example,dc=com", "dc=example,dc=com") &&
+         dnParent("uid=alice,ou=People,dc=example,dc=com") == "ou=People,dc=example,dc=com" &&
+         dnRdn("uid=alice,ou=People,dc=example,dc=com") == "uid=alice";
+}
+
+bool testAddModifyMessages() {
+  AddRequestData add;
+  add.dn = "uid=bob,dc=example,dc=com";
+  add.attributes.push_back({"uid", {"bob"}});
+  const auto add_wire = encodeLdapMessage(makeAddRequest(3, add));
+  const auto add_decoded = decodeLdapMessage(add_wire);
+  ModifyRequestData modify;
+  modify.dn = add.dn;
+  modify.changes.push_back({ModifyOp::Replace, "mail", {"bob@example.com"}});
+  const auto modify_wire = encodeLdapMessage(makeModifyRequest(4, modify));
+  const auto modify_decoded = decodeLdapMessage(modify_wire);
+  const auto del_decoded = decodeLdapMessage(encodeLdapMessage(makeDelRequest(5, add.dn)));
+  const auto add_result =
+      decodeLdapMessage(encodeLdapMessage(makeLdapResult(6, ProtocolOp::AddResponse,
+                                                        ResultCode::EntryAlreadyExists, "exists")));
+  return add_decoded && add_decoded->add.dn == add.dn &&
+         modify_decoded && modify_decoded->modify.changes.size() == 1 && del_decoded &&
+         del_decoded->delete_dn == add.dn && add_result &&
+         add_result->op == ProtocolOp::AddResponse &&
+         add_result->result == ResultCode::EntryAlreadyExists;
+}
+
+bool testApplyModifications() {
+  DirectoryEntry entry;
+  entry.dn = "uid=bob,dc=example,dc=com";
+  entry.attributes["cn"].push_back("Bob");
+  if (applyModifications(entry, {{ModifyOp::Add, "mail", {"bob@example.com"}}}) !=
+      ResultCode::Success) {
+    return false;
+  }
+  if (applyModifications(entry, {{ModifyOp::Replace, "cn", {"Robert"}}}) != ResultCode::Success) {
+    return false;
+  }
+  return entry.attributes["mail"].size() == 1 && entry.attributes["cn"].front() == "Robert" &&
+         applyModifications(entry, {{ModifyOp::Delete, "mail", {}}}) == ResultCode::Success &&
+         entry.attributes.count("mail") == 0;
 }
 
 bool testSimpleBind() {
@@ -133,6 +173,8 @@ int main() {
   run("testFilterBerUnknownFails", testFilterBerUnknownFails);
   run("testDnHelpers", testDnHelpers);
   run("testSimpleBind", testSimpleBind);
+  run("testAddModifyMessages", testAddModifyMessages);
+  run("testApplyModifications", testApplyModifications);
   std::cout << "Protocol tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }
