@@ -68,8 +68,6 @@ else ifeq ($(UNAME_S),Darwin)
     CXX = clang++
     CXXFLAGS = -std=c++17 -Wall -Wextra -Wpedantic -O2 -DNDEBUG
     LDFLAGS = -lssl -lcrypto
-    # macOS specific flags
-    CXXFLAGS += -target x86_64-apple-macos12.0 -target arm64-apple-macos12.0
     # Detect processor cores for parallel builds
     PARALLEL_JOBS = $(shell sysctl -n hw.ncpu)
     # macOS install paths

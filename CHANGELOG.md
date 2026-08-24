@@ -4,6 +4,10 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
+### Fixed
+
+- macOS `.pkg` is rebuilt without CPack's leaked `Contents/` payload, without a `<product>` OS-update tag, and with `hostArchitectures` for Intel and Apple silicon (`CMAKE_OSX_DEPLOYMENT_TARGET` 12.0)
+
 ## [0.15.0] — 2026-08-24
 
 Milestone 15 — Hardening.

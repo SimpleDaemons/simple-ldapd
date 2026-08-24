@@ -3,6 +3,9 @@
 # Copyright 2026 SimpleDaemons
 
 cmake_minimum_required(VERSION 3.16)
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum macOS version")
+endif()
 project(simple-ldapd VERSION 0.15.0 LANGUAGES CXX)
 
 set(PROJECT_DESCRIPTION "Simple LDAP Daemon - A lightweight directory service")
@@ -314,7 +317,6 @@ if(ENABLE_PACKAGING)
         set(CPACK_PACKAGE_RELOCATABLE FALSE)
         set(CPACK_DMG_VOLUME_NAME "${PROJECT_NAME}")
         set(CPACK_DMG_FORMAT "UDBZ")
-        set(CPACK_PRODUCTBUILD_IDENTIFIER "com.simpledaemons.${PROJECT_NAME}")
         set(CPACK_PRODUCTBUILD_PACKAGE_NAME "${PROJECT_NAME}")
         list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
         set(CPACK_POSTFLIGHT_Unspecified_SCRIPT
