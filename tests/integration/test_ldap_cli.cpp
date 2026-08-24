@@ -49,6 +49,25 @@ int main() {
     return 1;
   }
 
+  std::vector<char *> sasl_args{
+      const_cast<char *>("ldapsearch"),
+      const_cast<char *>("-H"),
+      const_cast<char *>("ldap://127.0.0.1:3389"),
+      const_cast<char *>("-Y"),
+      const_cast<char *>("PLAIN"),
+      const_cast<char *>("-U"),
+      const_cast<char *>("alice"),
+      const_cast<char *>("-w"),
+      const_cast<char *>("secret"),
+  };
+  auto sasl_options =
+      cli::parseClientArgs(static_cast<int>(sasl_args.size()), sasl_args.data());
+  if (sasl_options.simple_auth || sasl_options.sasl_mechanism != "PLAIN" ||
+      sasl_options.sasl_authcid != "alice") {
+    std::cout << "FAIL parseSaslArgs" << std::endl;
+    return 1;
+  }
+
   LdapConfig config;
   config.ldap_port = 3389;
   LdapDaemon daemon(config);
