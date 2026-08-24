@@ -167,7 +167,11 @@ LdapMessage Session::handleBind(const LdapMessage &request) {
   const ResultCode result = authenticator.bind(request.bind.dn, request.bind.password);
   if (result == ResultCode::Success) {
     bound_ = true;
-    bind_dn_ = request.bind.dn;
+    if (request.bind.dn.empty()) {
+      bind_dn_.clear();
+    } else {
+      bind_dn_ = authenticator.resolveName(request.bind.dn).value_or(request.bind.dn);
+    }
     return makeBindResponse(request.message_id, ResultCode::Success);
   }
   return makeBindResponse(request.message_id, result, "invalid credentials");

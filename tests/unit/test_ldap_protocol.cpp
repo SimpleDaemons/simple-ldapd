@@ -135,11 +135,14 @@ bool testSimpleBind() {
   MemoryBackend backend;
   backend.initialize();
   DirectoryEntry alice;
-  alice.dn = "uid=alice,dc=example,dc=com";
+  alice.dn = "uid=alice,ou=People,dc=example,dc=com";
+  alice.attributes["uid"].push_back("alice");
+  alice.attributes["sAMAccountName"].push_back("alice");
   alice.attributes["userPassword"].push_back("{CLEARTEXT}alice-secret");
   backend.add(alice);
 
   LdapConfig config;
+  config.base_dn = "dc=example,dc=com";
   config.root_dn = "cn=admin,dc=example,dc=com";
   config.root_password = "secret";
   SimpleBindAuthenticator auth(backend, config);
@@ -148,8 +151,11 @@ bool testSimpleBind() {
          auth.bind(config.root_dn, "secret") == ResultCode::Success &&
          auth.bind(config.root_dn, "wrong") == ResultCode::InvalidCredentials &&
          auth.bind(alice.dn, "alice-secret") == ResultCode::Success &&
+         auth.bind("uid=alice,dc=example,dc=com", "alice-secret") == ResultCode::Success &&
+         auth.bind("alice", "alice-secret") == ResultCode::Success &&
          auth.bind(alice.dn, "nope") == ResultCode::InvalidCredentials &&
-         auth.bind("uid=missing,dc=example,dc=com", "x") == ResultCode::InvalidCredentials;
+         auth.bind("uid=missing,dc=example,dc=com", "x") == ResultCode::InvalidCredentials &&
+         auth.resolveName("uid=alice,dc=example,dc=com") == alice.dn;
 }
 
 bool testExtendedRequestRoundtrip() {

@@ -146,6 +146,44 @@ bool testRootSetsPassword() {
   return changed == ResultCode::Success && bound_new && !bound_old;
 }
 
+bool testSelfChangeWithPeopleOu() {
+  LdapDaemon daemon(testConfig());
+  DirectoryEntry base;
+  base.dn = "dc=example,dc=com";
+  base.attributes["objectClass"].push_back("organization");
+  base.attributes["dc"].push_back("example");
+  DirectoryEntry people;
+  people.dn = "ou=People,dc=example,dc=com";
+  people.attributes["objectClass"].push_back("organizationalUnit");
+  people.attributes["ou"].push_back("People");
+  DirectoryEntry alice;
+  alice.dn = "uid=alice,ou=People,dc=example,dc=com";
+  alice.attributes["objectClass"].push_back("inetOrgPerson");
+  alice.attributes["uid"].push_back("alice");
+  alice.attributes["cn"].push_back("Alice Example");
+  alice.attributes["sn"].push_back("Example");
+  alice.attributes["userPassword"].push_back("alice-secret");
+  if (!daemon.initialize() || daemon.backend() == nullptr || !daemon.backend()->add(base) ||
+      !daemon.backend()->add(people) || !daemon.backend()->add(alice) || !daemon.start()) {
+    return false;
+  }
+  std::string error;
+  auto client = cli::LdapClient::openBound(
+      bound(daemon, "uid=alice,dc=example,dc=com", "alice-secret"), error);
+  if (!client) {
+    daemon.stop();
+    return false;
+  }
+  PasswordModifyRequest request;
+  request.new_password = "alice-newer";
+  const ResultCode changed = client->passwordModify(request);
+  client->unbind();
+  const bool ok =
+      canBind(daemon.boundPort(), "uid=alice,ou=People,dc=example,dc=com", "alice-newer");
+  daemon.stop();
+  return changed == ResultCode::Success && ok;
+}
+
 bool testSelfChangePassword() {
   LdapDaemon daemon(testConfig());
   if (!seed(daemon) || !daemon.start()) {
@@ -259,6 +297,7 @@ int main() {
   };
   run("testRootDseAdvertisesPasswordModify", testRootDseAdvertisesPasswordModify);
   run("testRootSetsPassword", testRootSetsPassword);
+  run("testSelfChangeWithPeopleOu", testSelfChangeWithPeopleOu);
   run("testSelfChangePassword", testSelfChangePassword);
   run("testCannotChangeAnotherPassword", testCannotChangeAnotherPassword);
   run("testWrongOldPassword", testWrongOldPassword);

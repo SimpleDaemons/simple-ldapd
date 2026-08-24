@@ -56,14 +56,18 @@ ResultCode SimpleBindAuthenticator::bind(const std::string &dn,
   if (dn.empty()) {
     return password.empty() ? ResultCode::Success : ResultCode::InvalidCredentials;
   }
-  if (!config_.root_dn.empty() && dnEquals(dn, config_.root_dn)) {
+  const auto resolved = resolveName(dn);
+  if (!resolved) {
+    return ResultCode::InvalidCredentials;
+  }
+  if (!config_.root_dn.empty() && dnEquals(*resolved, config_.root_dn)) {
     if (config_.root_password.empty() ||
         !passwordsEqual(password, config_.root_password)) {
       return ResultCode::InvalidCredentials;
     }
     return ResultCode::Success;
   }
-  const auto entry = backend_.lookup(dn);
+  const auto entry = backend_.lookup(*resolved);
   if (!entry) {
     return ResultCode::InvalidCredentials;
   }
@@ -79,28 +83,8 @@ ResultCode SimpleBindAuthenticator::bind(const std::string &dn,
   return ResultCode::InvalidCredentials;
 }
 
-std::optional<std::string> SimpleBindAuthenticator::resolveName(const std::string &name) const {
-  if (name.empty()) {
-    return std::nullopt;
-  }
-  if (name.find('=') != std::string::npos) {
-    if (!config_.root_dn.empty() && dnEquals(name, config_.root_dn)) {
-      return config_.root_dn;
-    }
-    const auto entry = backend_.lookup(name);
-    if (!entry) {
-      return std::nullopt;
-    }
-    return entry->dn;
-  }
-  if (!config_.root_dn.empty()) {
-    std::string type;
-    std::string value;
-    if (parseRdn(dnRdn(config_.root_dn), type, value) && iequals(value, name)) {
-      return config_.root_dn;
-    }
-  }
-  if (name.find_first_of("()*\\") != std::string::npos) {
+std::optional<std::string> SimpleBindAuthenticator::findAccount(const std::string &name) const {
+  if (name.empty() || name.find_first_of("()*\\") != std::string::npos) {
     return std::nullopt;
   }
   const auto filter =
@@ -110,6 +94,35 @@ std::optional<std::string> SimpleBindAuthenticator::resolveName(const std::strin
     return std::nullopt;
   }
   return matches.front().dn;
+}
+
+std::optional<std::string> SimpleBindAuthenticator::resolveName(const std::string &name) const {
+  if (name.empty()) {
+    return std::nullopt;
+  }
+  if (name.find('=') != std::string::npos) {
+    if (!config_.root_dn.empty() && dnEquals(name, config_.root_dn)) {
+      return config_.root_dn;
+    }
+    const auto entry = backend_.lookup(name);
+    if (entry) {
+      return entry->dn;
+    }
+    std::string type;
+    std::string value;
+    if (!parseRdn(dnRdn(name), type, value)) {
+      return std::nullopt;
+    }
+    return findAccount(value);
+  }
+  if (!config_.root_dn.empty()) {
+    std::string type;
+    std::string value;
+    if (parseRdn(dnRdn(config_.root_dn), type, value) && iequals(value, name)) {
+      return config_.root_dn;
+    }
+  }
+  return findAccount(name);
 }
 
 std::optional<std::string> SimpleBindAuthenticator::passwordFor(const std::string &dn) const {

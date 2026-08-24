@@ -25,6 +25,9 @@ public:
   std::optional<std::string> passwordFor(const std::string &dn) const;
 
 private:
+  std::optional<std::string> findAccount(const std::string &name) const;
+
+private:
   Backend &backend_;
   const LdapConfig &config_;
 };
