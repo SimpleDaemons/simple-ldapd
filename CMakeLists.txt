@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.16)
 if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum macOS version")
 endif()
-project(simple-ldapd VERSION 0.15.0 LANGUAGES CXX)
+project(simple-ldapd VERSION 1.0.0 LANGUAGES CXX)
 
 set(PROJECT_DESCRIPTION "Simple LDAP Daemon - A lightweight directory service")
 
