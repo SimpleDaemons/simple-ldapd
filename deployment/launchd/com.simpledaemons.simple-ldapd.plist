@@ -11,6 +11,10 @@
         <string>/etc/simple-ldapd/simple-ldapd.conf</string>
         <string>--foreground</string>
     </array>
+    <key>WorkingDirectory</key>
+    <string>/var/lib/simple-ldapd</string>
+    <key>UserName</key>
+    <string>simple-ldapd</string>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>

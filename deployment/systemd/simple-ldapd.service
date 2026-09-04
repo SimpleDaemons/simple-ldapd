@@ -18,10 +18,12 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=simple-ldapd
 
-# systemd creates these as simple-ldapd:simple-ldapd
+# systemd creates these as simple-ldapd:simple-ldapd under /var/lib and /var/log
 StateDirectory=simple-ldapd
 LogsDirectory=simple-ldapd
 ConfigurationDirectory=simple-ldapd
+WorkingDirectory=/var/lib/simple-ldapd
+ReadWritePaths=/var/lib/simple-ldapd /var/log/simple-ldapd
 
 NoNewPrivileges=true
 PrivateTmp=true
@@ -32,6 +34,8 @@ ProtectKernelModules=true
 ProtectControlGroups=true
 RestrictRealtime=true
 RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
 
 [Install]
 WantedBy=multi-user.target
