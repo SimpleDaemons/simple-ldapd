@@ -2,7 +2,7 @@
 
 Documentation for **simple-ldapd v0.15.0**, a lightweight LDAPv3 directory daemon for SSO via LDAP bind. OpenLDAP-style CLI tools and Active Directory–friendly schema names are included. This is not a domain controller and not a Kerberos KDC.
 
-License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
+License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md). Product promise: [README 1.0 contract](../README.md#10-contract).
 
 ## Start here
 
@@ -25,6 +25,10 @@ License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 | Troubleshooting | [Troubleshooting](shared/troubleshooting/README.md) |
 | Building and tests | [Development](development/README.md) |
 
+## 1.0 contract (same as README)
+
+Single-host SSO directory via LDAP bind: anonymous / simple / SASL bind, search, writes, TLS, ACLs, `{SSHA}`, SQLite persist, `log_level`, `bind_rate_limit`. One process per host; supervise with systemd / launchd / Windows service (`--daemon` does not fork).
+
 ## What works in v0.15.0
 
 - LDAPv3 bind (anonymous, simple, SASL PLAIN / DIGEST-MD5 / EXTERNAL / lab GSSAPI)
@@ -43,9 +47,10 @@ License: Apache 2.0. Versions follow [VERSIONING.md](../VERSIONING.md).
 
 ## Known limits
 
-- DIGEST-MD5 needs a recoverable `userPassword` (`{CLEARTEXT}` or unprefixed); `{SSHA}` is simple-bind only
+- DIGEST-MD5 needs a recoverable `userPassword` (`{CLEARTEXT}` or unprefixed); `{SSHA}` is salted SHA-1 and simple-bind oriented
 - GSSAPI tickets are HMAC lab tickets, not MIT Kerberos / RFC 4120
-- `stop` / `status` / `reload` and `--daemon` fork are not implemented
-- Extensible match and approximate filters are not implemented
+- SQLite search still loads matching entries in-process; `memberOf` is a static attribute
+- `stop` / `status` / `reload` and `--daemon` fork are not implemented (use the OS supervisor)
+- Extensible match, approximate, and ordering filters are not implemented
 
 See [TECHNICAL_DEBT.md](../project/TECHNICAL_DEBT.md) and the [roadmap](../ROADMAP.md).

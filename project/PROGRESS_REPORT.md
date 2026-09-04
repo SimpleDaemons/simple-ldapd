@@ -1,7 +1,9 @@
 # Progress report
 
-v0.15.0 can bind (simple and SASL), search, page results, compare, identify the bound DN, serve overlapping clients, apply ACLs, hash `userPassword`, write, persist to SQLite, encrypt, enforce schema, consume GSSAPI lab tickets, change passwords with `ldappasswd`, apply `log_level`, throttle binds, and require a verified client certificate for SASL EXTERNAL. See [VERSIONING.md](../VERSIONING.md).
+**v1.0.0** is the production contract cut on top of milestones 1–15. See [VERSIONING.md](../VERSIONING.md) and the 1.0 section in [ROADMAP.md](../ROADMAP.md).
 
-What works today: `--help` / `--version` / `--test-config`, TCP listen/accept with concurrent sessions, simple bind, SASL PLAIN / DIGEST-MD5 / EXTERNAL / GSSAPI, search with equality / present / substring / and/or/not filters, `acl` search/write rules, `{SSHA}` password storage, `userAccountControl` disable bit, add/modify/delete/modrdn, Compare, Who Am I, RFC 2696 paged results, `ldapsearch` / `ldapadd` / `ldapmodify` / `ldapdelete` / `ldappasswd` / `ldapcompare` / `ldapwhoami`, LDAPS/StartTLS, `require_confidentiality`, schema MUST/MAY/SYNTAX on writes, Root DSE SASL and Password Modify discovery, SQLite (`backend = sqlite`) and LDIF persist, `log_level`, `bind_rate_limit`, and `ctest`.
+What works today: concurrent LDAPv3 sessions; anonymous/simple/SASL bind; search (equality/present/substring/and-or-not); writes; Compare; Who Am I; paged results; LDAPS/StartTLS; ACLs; `{SSHA}` passwords; SQLite/LDIF; `log_level`; `bind_rate_limit`; `max_pdu_size` / `max_sessions` / `idle_timeout`; OpenLDAP-style CLI; packaging units; GitHub Actions CI + `ctest`.
 
-What does not work: MIT Kerberos tickets and an in-tree KDC.
+What does not work (by design for 1.0): MIT Kerberos / in-tree KDC; `--daemon` fork; `stop` / `reload` CLI (use the OS supervisor); replication / referrals / overlays / AD DC.
+
+Note: `test_ldap_bind_search` can flake under full-suite parallel load; it passes when run alone.

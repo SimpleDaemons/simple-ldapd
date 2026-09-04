@@ -1,6 +1,6 @@
 # Versioning
 
-simple-ldapd uses [Semantic Versioning](https://semver.org/) on the **0.x** series. Each completed [roadmap](ROADMAP.md) milestone is a **minor** bump. Fixes and docs inside a milestone are **patch** bumps. **1.0.0** is the next cut after the 0.x milestone series (bind, search, writes, TLS, concurrent sessions, ACLs, hashed passwords, remaining LDAP ops, SQLite, and hardening).
+simple-ldapd uses [Semantic Versioning](https://semver.org/). Each completed [roadmap](ROADMAP.md) milestone was a **minor** bump on the 0.x series. **1.0.0** is the production contract cut after milestone **0.15.0**.
 
 Git tags and GitHub Releases use the `vMAJOR.MINOR.PATCH` form and point at the commit that finished that version.
 
@@ -23,7 +23,7 @@ Git tags and GitHub Releases use the `vMAJOR.MINOR.PATCH` form and point at the 
 | **0.13.0** | 13 — Remaining LDAP ops | Compare, Who Am I, paged results | Released (`v0.13.0`) |
 | **0.14.0** | 14 — SQLite backend | Durable store without full-LDIF rewrite | Released (`v0.14.0`) |
 | **0.15.0** | 15 — Hardening | log level, rate limit, EXTERNAL certs | Released (`v0.15.0`) |
-| **1.0.0** | Production-usable SSO directory | After 0.x milestones | Planned |
+| **1.0.0** | Contract cut | Hygiene release: packaging/docs contract after 0.15.0 | Released (`v1.0.0`) |
 
 ## Rules
 

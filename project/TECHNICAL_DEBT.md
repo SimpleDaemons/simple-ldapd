@@ -1,12 +1,10 @@
 # Technical debt
 
-Tracked as [roadmap](../ROADMAP.md) milestones where they are product work.
+Tracked intentionally; none of these block the 1.0.0 contract.
 
-- Client tool names (`ldapsearch`, …) still collide with OpenLDAP unless `-DLDAP_CLI_PREFIX=simple-` (or a private `CMAKE_INSTALL_PREFIX`) is used
-- Search filters still omit ordering, approximate, and extensible match — later
-- `memberOf` is a static attribute, not maintained from group membership — later
-- GSSAPI lab tickets are HMAC-SHA256, not MIT Kerberos / RFC 4120 — later / out of tree
-- LDIF persist still rewrites the whole file when `backend = ldif` (production templates use sqlite)
-- jsoncpp is optional and unused by the current config parser
-- `root_password` lives in config and cannot be changed with `ldappasswd` (intentional)
-- `stop` / `status` / `reload` and `--daemon` fork are not implemented (run under a supervisor)
+- `test_ldap_bind_search` can flake under full `ctest` parallel load; passes alone.
+- DIGEST-MD5 needs recoverable passwords; `{SSHA}` is salted SHA-1 (not modern KDFs).
+- GSSAPI uses HMAC lab tickets, not MIT / RFC 4120.
+- SQLite search still loads matching entries in-process.
+- `memberOf` is a static attribute (not computed).
+- `--daemon` does not fork; use the OS supervisor.

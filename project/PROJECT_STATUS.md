@@ -1,25 +1,18 @@
 # simple-ldapd project status
 
-**Version:** 0.15.0  
-**Status:** Early development (bind/search/writes/TLS/schemas/SASL/ldappasswd/ACLs/hashed passwords/Compare/SQLite/hardening)  
-**Progress:** ~99%  
-**Last updated:** August 2026
+**Version:** 1.0.0  
+**Status:** Production-usable single-host SSO directory via LDAP bind  
+**Progress:** 0.x milestone series complete; 1.0.0 contract cut  
+**Last updated:** September 2026  
 
 ## Complete
 
-- CMake + GNU Make + CPack (Linux, macOS, Windows, FreeBSD)
-- Daemon listen/accept loop (one session thread per connection) and OpenLDAP-style CLI (`ldapsearch` / `ldapadd` / `ldapmodify` / `ldapdelete` / `ldappasswd` / `ldapcompare` / `ldapwhoami`)
-- Config parser (including `root_password` and LDIF seed path)
-- Schema registry (OpenLDAP attributetype/objectclass), memory backend, LDIF import/export, SQLite persist
-- LDAPv3 BER codec, simple bind, search, add/modify/delete/modrdn, concurrent sessions, ACLs, hashed passwords, Compare / Who Am I / paged results, bind rate limits
-- Schema parser and write-time MUST/MAY/SYNTAX enforcement
-- SASL PLAIN, DIGEST-MD5, EXTERNAL, and GSSAPI lab tickets
-- RFC 3062 password modify (self-change, root-set, or `acl` write)
-- LDAPS listener, StartTLS, and `require_confidentiality` for simple bind
-- Unit/integration/security/performance tests
-- systemd, launchd, Windows service, Docker, Ansible/Vagrant stubs
+- Milestones 1–15 LDAP feature series
+- PDU / session / idle limits for public-port hardening
+- systemd / launchd units aligned with install paths
+- GitHub Actions CI (`cmake` + `ctest` + cppcheck)
 
-## Not started (product)
+## Next
 
-- MIT Kerberos / a companion KDC (explicitly out of tree)
-- Kerberos / AD DC features (explicitly later)
+- Maintain and harden (patch releases as needed)
+- Later: MIT GSSAPI, computed `memberOf`, replication (not in 1.0)

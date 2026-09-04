@@ -2,23 +2,38 @@
 
 Lightweight LDAPv3 directory daemon for SSO via LDAP bind, with an OpenLDAP-style CLI and Active Directory-friendly schema names.
 
-simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.15.0** implements simple bind, SASL, search, concurrent sessions, ACLs, hashed `userPassword`, Compare, Who Am I, paged results, SQLite persist, directory writes, TLS, schema enforcement, GSSAPI lab tickets, `ldappasswd`, applied `log_level`, bind rate limits, and verified SASL EXTERNAL client certificates. Versions follow [VERSIONING.md](VERSIONING.md).
+simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v1.0.0** is the production contract cut after the 0.x feature series (milestones 1–15). Versions follow [VERSIONING.md](VERSIONING.md).
+
+## 1.0 contract
+
+A small **single-host SSO directory via LDAP bind** — not OpenLDAP-at-scale and not an AD DC.
+
+| Included | Detail |
+|----------|--------|
+| Bind | Anonymous, simple, SASL PLAIN / DIGEST-MD5 / EXTERNAL / lab GSSAPI |
+| Directory | Search, writes (add / modify / delete / modrdn), Compare, Who Am I, paged results |
+| Security | LDAPS / StartTLS, ACLs, `{SSHA}` passwords, `log_level`, `bind_rate_limit` |
+| Persist | SQLite (`backend = sqlite`); LDIF for lab seed and backup |
+| Process model | One process, one host; run under systemd / launchd / a Windows service (`--daemon` does not fork) |
+| Limits | `max_pdu_size`, `max_sessions`, `idle_timeout`, `bind_rate_limit` |
+
+**Known limits that stay:** DIGEST-MD5 needs a recoverable password; `{SSHA}` is salted SHA-1; GSSAPI tickets are HMAC lab tickets (not MIT / RFC 4120); SQLite search still loads matching entries in-process; `memberOf` is a static attribute.
 
 ## Goals
 
-- Authenticate applications, services, and devices over LDAPv3 simple bind (and later SASL)
+- Authenticate applications, services, and devices over LDAPv3 (simple bind and SASL)
 - Stay standards-based (RFC 4511 operations, RFC 4519/2798/2307 schemas)
 - Offer OpenLDAP-compatible CLI tools: `ldapsearch`, `ldapadd`, `ldapmodify`, `ldapdelete`, `ldappasswd`, `ldapcompare`, `ldapwhoami`
 - Ship AD-like attributes (`sAMAccountName`, `memberOf`, `userAccountControl`) so Windows and Unix clients can search/bind against a familiar tree
 - Cross-compile and package for Linux (DEB/RPM), macOS (pkg/dmg), Windows (MSI/NSIS/ZIP), and FreeBSD
 
-## Non-goals (v0.x)
+## Non-goals
 
-- Kerberos KDC / MIT ticket-based AD SSO (reserved; lab GSSAPI tickets are not a KDC)
+- Kerberos KDC / MIT ticket-based AD SSO (lab GSSAPI tickets are not a KDC)
 - OIDC or SAML (see `simple-oidcd` in the SimpleDaemons future list)
-- SMB, Group Policy, or a full Active Directory domain controller
+- SMB, Group Policy, replication, referrals, overlays, or a full Active Directory domain controller
 
-## Status
+## Status (v1.0.0)
 
 | Area | State |
 |------|--------|
@@ -34,7 +49,7 @@ simple-ldapd is part of [SimpleDaemons](https://github.com/SimpleDaemons). **v0.
 | Compare / Who Am I / paged results | Implemented (`ldapcompare`, `ldapwhoami`, `-E pr=N`) |
 | Password storage | `{SSHA}` / `{SHA}` / `{CLEARTEXT}`; `userAccountControl` disable bit |
 | SQLite persist | Implemented (`backend = sqlite`; optional LDIF seed) |
-| Hardening | `log_level`, `bind_rate_limit`, SASL EXTERNAL client certs |
+| Hardening | `log_level`, `bind_rate_limit`, PDU/session/idle limits, SASL EXTERNAL client certs |
 
 ## Documentation
 

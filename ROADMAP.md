@@ -1,5 +1,7 @@
 # simple-ldapd roadmap
 
+**Honesty note:** Prefer [project/PROGRESS_REPORT.md](project/PROGRESS_REPORT.md) when docs disagree. Item-level checklists: [project/ROADMAP_CHECKLIST.md](project/ROADMAP_CHECKLIST.md). Versions: [VERSIONING.md](VERSIONING.md). Overview: [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md).
+
 ## Milestone 1 — Skeleton — v0.1.0
 
 - Cross-platform CMake / GNU Make build
@@ -98,10 +100,10 @@ Milestones 1–15 are released. **1.0.0** is a hygiene and contract cut on top o
 
 ### Contract (write this into README / docs / CHANGELOG at tag time)
 
-- Bind (anonymous, simple, SASL PLAIN / DIGEST-MD5 / EXTERNAL / lab GSSAPI), search, writes, TLS, ACLs, `{SSHA}` passwords, SQLite persist, `log_level`, `bind_rate_limit`
-- One process, one host; run under systemd / launchd / a Windows service (`--daemon` does not fork)
-- Known limits that stay: DIGEST-MD5 needs a recoverable password; `{SSHA}` is salted SHA-1; GSSAPI tickets are HMAC lab tickets, not MIT / RFC 4120; SQLite search still loads matching entries in-process; `memberOf` is a static attribute
-- Drop “early development” / “skeleton” language; refresh the `simple-ldapd` blurb in SimpleDaemons `docs/FUTURE_DAEMONS.md`
+- [x] Bind (anonymous, simple, SASL PLAIN / DIGEST-MD5 / EXTERNAL / lab GSSAPI), search, writes, TLS, ACLs, `{SSHA}` passwords, SQLite persist, `log_level`, `bind_rate_limit`
+- [x] One process, one host; run under systemd / launchd / a Windows service (`--daemon` does not fork)
+- [x] Known limits that stay: DIGEST-MD5 needs a recoverable password; `{SSHA}` is salted SHA-1; GSSAPI tickets are HMAC lab tickets, not MIT / RFC 4120; SQLite search still loads matching entries in-process; `memberOf` is a static attribute
+- [x] Drop “early development” / “skeleton” language; refresh the `simple-ldapd` blurb in SimpleDaemons `docs/FUTURE_DAEMONS.md`
 
 ### Packaging (must match production templates)
 
@@ -111,9 +113,9 @@ Milestones 1–15 are released. **1.0.0** is a hygiene and contract cut on top o
 
 ### Optional polish (do not block 1.0 unless “safe on a public 389” is the bar)
 
-- Max LDAP PDU size so a BER length cannot grow without bound
-- Max concurrent sessions and/or idle timeout (today: one thread per connection, no cap)
-- A CI workflow that builds and runs `ctest` (the feature audit overstates this today)
+- [x] Max LDAP PDU size so a BER length cannot grow without bound (`max_pdu_size`)
+- [x] Max concurrent sessions and/or idle timeout (`max_sessions`, `idle_timeout`)
+- [x] A CI workflow that builds and runs `ctest` (`.github/workflows/ci.yml`)
 
 ### Do not pull into 1.0
 

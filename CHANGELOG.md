@@ -4,9 +4,23 @@ All notable changes to simple-ldapd are documented in this file. Versions follow
 
 ## [Unreleased]
 
-### Fixed
+## [1.0.0] — 2026-09-04
 
-- macOS `.pkg` is rebuilt without CPack's leaked `Contents/` payload, without a `<product>` OS-update tag, and with `hostArchitectures` for Intel and Apple silicon (`CMAKE_OSX_DEPLOYMENT_TARGET` 12.0)
+Production contract cut after milestones 1–15.
+
+### Added
+- `max_pdu_size`, `max_sessions`, and `idle_timeout` configuration limits
+- Production template defaults for PDU/session/idle hardening
+- Release checklist and technical debt notes for 1.0
+
+### Changed
+- Documented the **1.0 contract** in README and project docs
+- systemd / launchd units aligned with install paths and service user
+- Dropped leftover early-development / skeleton language
+
+### Notes
+- Still no `--daemon` fork; use the OS supervisor for lifecycle
+- Known limits stay: DIGEST-MD5 recoverable passwords, lab GSSAPI tickets, static `memberOf`
 
 ## [0.15.0] — 2026-08-24
 
