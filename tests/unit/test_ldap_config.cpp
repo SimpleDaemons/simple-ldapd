@@ -179,6 +179,25 @@ bool testTlsVerifyClientRequiresCa() {
   return !config.validate();
 }
 
+bool testZeroPduSizeRejected() {
+  LdapConfig config;
+  config.max_pdu_size = 0;
+  return !config.validate();
+}
+
+bool testSessionLimitsParse() {
+  const std::string path = "test-simple-ldapd-limits.conf";
+  std::ofstream out(path);
+  out << "base_dn = dc=example,dc=com\n";
+  out << "max_pdu_size = 65536\n";
+  out << "max_sessions = 32\n";
+  out << "idle_timeout = 120\n";
+  out.close();
+  LdapConfig config;
+  return config.loadFromFile(path) && config.max_pdu_size == 65536 &&
+         config.max_sessions == 32 && config.idle_timeout == 120 && config.validate();
+}
+
 }  // namespace
 
 int main() {
@@ -209,6 +228,8 @@ int main() {
   run("testLogLevelParseAndApply", testLogLevelParseAndApply);
   run("testInvalidLogLevel", testInvalidLogLevel);
   run("testTlsVerifyClientRequiresCa", testTlsVerifyClientRequiresCa);
+  run("testZeroPduSizeRejected", testZeroPduSizeRejected);
+  run("testSessionLimitsParse", testSessionLimitsParse);
   std::cout << "Config tests: " << passed << "/" << total << std::endl;
   return passed == total ? 0 : 1;
 }

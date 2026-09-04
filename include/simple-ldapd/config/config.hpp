@@ -43,6 +43,9 @@ public:
   std::string log_file;
   std::string log_level{"info"};
   std::uint32_t bind_rate_limit{0};
+  std::uint32_t max_pdu_size{1024 * 1024};
+  std::uint32_t max_sessions{0};
+  std::uint32_t idle_timeout{0};
   bool foreground{true};
   bool require_confidentiality{false};
   std::string krb_realm;

@@ -64,14 +64,22 @@ Session::Session(TcpConnection connection, Backend &backend, const LdapConfig &c
       rate_limiter_(rate_limiter) {}
 
 void Session::serve() {
+  auto last_activity = std::chrono::steady_clock::now();
   while (running_.load()) {
     if (!connection_.waitReadable(200)) {
+      if (config_.idle_timeout > 0) {
+        const auto idle = std::chrono::steady_clock::now() - last_activity;
+        if (idle >= std::chrono::seconds(config_.idle_timeout)) {
+          break;
+        }
+      }
       continue;
     }
     std::vector<uint8_t> pdu;
-    if (!connection_.recvPdu(pdu)) {
+    if (!connection_.recvPdu(pdu, config_.max_pdu_size)) {
       break;
     }
+    last_activity = std::chrono::steady_clock::now();
     const auto request = decodeLdapMessage(pdu);
     if (!request) {
       break;

@@ -141,6 +141,14 @@ void LdapDaemon::serveConnection(TcpConnection connection, bool ldaps) {
 
 void LdapDaemon::launchSession(TcpConnection connection, bool ldaps) {
   reapWorkers();
+  {
+    std::lock_guard<std::mutex> lock(workers_mutex_);
+    if (config_.max_sessions > 0 && workers_.size() >= config_.max_sessions) {
+      Logger::instance().warning("max_sessions reached; rejecting connection from " +
+                                 connection.peer());
+      return;
+    }
+  }
   auto finished = std::make_shared<std::atomic<bool>>(false);
   SessionWorker worker;
   worker.finished = finished;

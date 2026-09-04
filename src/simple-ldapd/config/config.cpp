@@ -96,6 +96,12 @@ bool LdapConfig::loadFromFile(const std::string &path) {
       log_level = value;
     } else if (key == "bind_rate_limit") {
       bind_rate_limit = static_cast<std::uint32_t>(std::stoul(value));
+    } else if (key == "max_pdu_size") {
+      max_pdu_size = static_cast<std::uint32_t>(std::stoul(value));
+    } else if (key == "max_sessions") {
+      max_sessions = static_cast<std::uint32_t>(std::stoul(value));
+    } else if (key == "idle_timeout") {
+      idle_timeout = static_cast<std::uint32_t>(std::stoul(value));
     } else if (key == "foreground") {
       foreground = parseBool(value);
     } else if (key == "require_confidentiality") {
@@ -137,6 +143,9 @@ bool LdapConfig::validateDetailed(std::vector<std::string> &errors) const {
   LogLevel parsed_level = LogLevel::Info;
   if (!parseLogLevel(log_level, parsed_level)) {
     errors.emplace_back("log_level must be debug, info, warning, error, or fatal");
+  }
+  if (max_pdu_size == 0) {
+    errors.emplace_back("max_pdu_size must be greater than 0");
   }
   if (backend != "memory" && backend != "ldif" && backend != "sqlite") {
     errors.emplace_back("backend must be memory, ldif, or sqlite");

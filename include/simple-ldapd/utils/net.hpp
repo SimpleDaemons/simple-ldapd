@@ -43,7 +43,7 @@ public:
   std::string tlsPeerIdentity() const;
   bool sendAll(const std::vector<uint8_t> &data);
   bool recvExact(uint8_t *data, size_t size);
-  bool recvPdu(std::vector<uint8_t> &pdu);
+  bool recvPdu(std::vector<uint8_t> &pdu, size_t max_pdu_size = 1024 * 1024);
   bool waitReadable(int timeout_ms) const;
 
   static std::optional<TcpConnection> connectTo(const std::string &host, port_t port);

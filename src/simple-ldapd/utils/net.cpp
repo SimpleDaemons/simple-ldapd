@@ -295,7 +295,7 @@ bool TcpConnection::waitReadable(int timeout_ms) const {
   return pollReadable(fd_, timeout_ms);
 }
 
-bool TcpConnection::recvPdu(std::vector<uint8_t> &pdu) {
+bool TcpConnection::recvPdu(std::vector<uint8_t> &pdu, size_t max_pdu_size) {
   pdu.clear();
   uint8_t prefix[2];
   if (!recvExact(prefix, 2)) {
@@ -319,7 +319,7 @@ bool TcpConnection::recvPdu(std::vector<uint8_t> &pdu) {
       length = (length << 8) | byte;
     }
   }
-  if (length > 1024 * 1024) {
+  if (max_pdu_size == 0 || length > max_pdu_size) {
     return false;
   }
   if (length == 0) {
